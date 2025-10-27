@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleccionar tienda de destino - Repostock{% endblock %}
+
+{% block content %}
+    <section class="bg-gray-50 py-12">
+        <div class="container mx-auto px-4">
+            <div class="bg-white shadow-md rounded-lg p-8">
+                <h2 class="text-2xl font-semibold text-gray-800">Seleccionar tienda de destino</h2>
+                <p class="mt-2 text-gray-600">Por favor, selecciona la tienda de destino para la orden de recolección.</p>
+
+                <form action="#" method="POST" class="mt-6">
+                    <label for="store" class="block text-sm font-medium text-gray-700">Tienda de destino</label>
+                    <select id="store" name="store" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">                     
+                        {% for store in stores %}
+                        <option value="{{store.code }}">{{ store.description}}</option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit" class="mt-4 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 focus:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">
+                        Seleccionar Tienda
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}
