@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os, sys
 import datetime
 #importar funciones de la base de datos
-from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit
+from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit, get_store_by_code, get_departments
 
 
 
@@ -18,13 +18,11 @@ else:
 template_folder = os.path.join(base_path, "templates")
 
 env_path = os.path.join(base_path, ".env")
-load_dotenv(env_path) 
-
-
-
+load_dotenv(env_path)
 
 app = Flask(__name__, template_folder=template_folder)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "root1574**") 
+
 
 
 @app.route('/')
@@ -114,17 +112,28 @@ def select_store_destination_collection_order():
 @app.route('/create_collection_order', methods=['POST','GET'])
 def create_collection_order():
     products = []
-    stock_store_origin = os.environ.get('DEFAULT_STORE_CODE', '01')
+    stock_store_origin = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
+    print('este es el deposito de origen', stock_store_origin)
     department = None
 
     if request.method == 'POST':
-        stock_store_origin = request.form.get('stock_store_origin', stock_store_origin)
+        #BUSCAR LOS DEPOSITOS DE ORIGEN Y DESTINO
+        store_origin = get_store_by_code(stock_store_origin)
+        store_destination = get_store_by_code(session.get('store_code_destination'))
+        department = get_departments()
         session['store_code_destination'] = request.form.get('store_code_destination')
         department = request.form.get('department', None)
-
         products = get_collection_products(stock_store_origin, session.get('store_code_destination'), department)
+    # Construir lista única de departamentos presentes en los productos para el filtro
+    departments = []
+    seen = set()
+    for p in products:
+        d = p.get('department_description')
+        if d and d not in seen:
+            seen.add(d)
+            departments.append(d)
 
-    return render_template('create_collection_order.html', products=products)
+    return render_template('create_collection_order.html', products=products, departments=departments, store_origin=store_origin, store_destination=store_destination)
 
 
 @app.route('/process_collection_products', methods=['POST'])
@@ -138,7 +147,7 @@ def process_collection_products():
         products_info = {p['code']: p for p in get_products_by_codes(product_codes)} if product_codes else {}
 
         # origen/destino (si vienen en el formulario) o por defecto
-        stock_store_origin = request.form.get('stock_store_origin', os.environ.get('DEFAULT_STORE_CODE', '01'))
+        stock_store_origin = request.form.get('stock_store_origin', os.environ.get('DEFAULT_STORE_ORIGIN_CODE', '01'))
         store_stock_destination = session.get('store_code_destination', None)
 
         items = []

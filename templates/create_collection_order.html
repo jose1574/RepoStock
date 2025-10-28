@@ -3,7 +3,32 @@
 {% block title %}Seleccionar tienda de destino - Repostock{% endblock %}
 
 {% block content %}
-   <div class="container mx-auto px-4">
+   <div class="container mx-auto px-4 pt-6 pb-12">
+      <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
+      <div class="mb-4 flex items-center gap-3">
+         <label for="department-filter" class="text-sm font-medium text-gray-700">Departamento:</label>
+         <select id="department-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por departamento">
+            <option value="">-- Todos --</option>
+            {% if departments %}
+               {% for d in departments %}
+               <option value="{{ d }}">{{ d }}</option>
+               {% endfor %}
+            {% endif %}
+         </select>
+
+         <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
+         <input id="product-search" type="search" placeholder="Buscar por código o descripción..." class="border rounded px-2 py-1 text-sm w-64" />
+
+         <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
+         <form id="server-filter-form" method="post" action="{{ url_for('create_collection_order') }}">
+            <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
+            <input type="hidden" name="store_stock_destination" value="{{ store_destination.code if store_destination else '' }}">
+            <select name="department" id="server-department" class="hidden">
+               <option value=""></option>
+            </select>
+         </form>
+      </div>
+
       <!-- Form que envía la selección de productos -->
       <form id="collection-form" action="{{ url_for('process_collection_products')}}" method="post">
          <!-- Barra flotante de acciones -->
@@ -13,27 +38,27 @@
             <button id="send-selection" type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
          </div>
 
-         <div class="overflow-x-auto bg-white rounded-lg shadow">
-            <table class="min-w-full divide-y divide-gray-200">
+         <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-800">
             <caption class="sr-only">Lista de productos para traslado</caption>
-            <thead class="bg-gray-50">
+            <thead class="bg-gray-800">
                <tr>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">&nbsp;</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departamento</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Depósito origen</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Exist. Min</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Exist. Max.</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock destino</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Por trasladar</th>
-               </tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">&nbsp;</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Código</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Descripción</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Unidad</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Departamento</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock Depósito origen: <b>{{store_origin.description }}</b></th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Min</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Max.</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock destino: <b>{{ store_destination.description }}</b></th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Por trasladar</th>
+            </tr>
             </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
                      {% if products %}
                         {% for p in products %}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50" data-department="{{ p.department_description | e }}">
                            <!-- Checkbox para seleccionar el producto -->
                            <td class="px-4 py-3 text-sm text-gray-900">
                               <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
@@ -216,8 +241,64 @@
 
                // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
 
+               // BUSCADOR CLIENTE y filtro por departamento
+               const searchInput = document.getElementById('product-search');
+               const deptSelect = document.getElementById('department-filter');
+
+               function normalizeText(s){ return (s||'').toString().toLowerCase(); }
+
+               function filterRows(){
+                  const q = normalizeText(searchInput && searchInput.value);
+                  const dept = normalizeText(deptSelect && deptSelect.value);
+                  const rows = Array.from(document.querySelectorAll('tbody tr'));
+                  rows.forEach(row => {
+                     const codeCell = row.querySelector('td:nth-child(2)');
+                     const descCell = row.querySelector('td:nth-child(3)');
+                     const rowDept = normalizeText(row.getAttribute('data-department'));
+
+                     const matchesDept = !dept || rowDept === dept;
+                     const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).indexOf(q) !== -1) || (normalizeText(descCell && descCell.textContent).indexOf(q) !== -1);
+
+                     if(matchesDept && matchesQuery){
+                        row.style.display = '';
+                     } else {
+                        row.style.display = 'none';
+                     }
+                  });
+               }
+
+               if(searchInput) searchInput.addEventListener('input', filterRows);
+               if(deptSelect) deptSelect.addEventListener('change', filterRows);
+
+               // iniciar filtro en load
+               filterRows();
+
             // Si
          })();
       </script>
+      <!-- Modal de previsualización antes de enviar -->
+      <div id="preview-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+         <div class="absolute inset-0 bg-black opacity-40"></div>
+         <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-3xl p-4">
+            <h3 class="text-lg font-medium mb-3">Previsualización de productos seleccionados</h3>
+            <div class="overflow-x-auto">
+               <table class="min-w-full divide-y divide-gray-200 mb-4">
+                  <thead class="bg-gray-50">
+                     <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Por trasladar</th>
+                     </tr>
+                  </thead>
+                  <tbody id="preview-table-body" class="bg-white divide-y divide-gray-200">
+                  </tbody>
+               </table>
+            </div>
+            <div class="flex justify-end gap-2">
+               <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
+               <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Enviar selección ahora</button>
+            </div>
+         </div>
+      </div>
    </div>
 {% endblock %}

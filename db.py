@@ -69,6 +69,22 @@ def get_store_by_code(store_code):
                 return _serialize_row(row)
             return None
     finally:
+        close_db_connection(conn)   
+
+def get_store_by_code(store_code):
+    """Obtiene la información de un deposito por su código."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute('SELECT * FROM store WHERE code = %s', (store_code,))
+            row = cur.fetchone()
+            if row:
+                # serializar tipos no nativos de JSON (Decimal, datetime)
+                def _serialize_row(r):
+                    return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                return _serialize_row(row)
+            return None
+    finally:
         close_db_connection(conn)
 
 def search_product(code_product):
@@ -160,10 +176,13 @@ def get_collection_products(stock_store_origin=None, store_code_destination=None
         COALESCE(stock_store_origin.stock, 0) AS stock_store_origin,
         pf.minimal_stock,
         pf.maximum_stock,
-        COALESCE(stock_store_destination.stock, 0) AS stock_store_destination,
-        LEAST(
-            COALESCE(stock_store_origin.stock, 0),
-            GREATEST(COALESCE(pf.maximum_stock, 0) - COALESCE(stock_store_destination.stock, 0), 0)
+        ROUND(COALESCE(stock_store_destination.stock, 0)::numeric, 2) AS stock_store_destination,
+        ROUND(
+            LEAST(
+                COALESCE(stock_store_origin.stock, 0),
+                GREATEST(COALESCE(pf.maximum_stock, 0) - COALESCE(stock_store_destination.stock, 0), 0)
+            )::numeric,
+            2
         ) AS to_transfer
         FROM products_failures AS pf
         LEFT JOIN products AS p ON p.code = pf.product_code
@@ -383,7 +402,37 @@ def save_transfer_order_items(order_id, items):
         raise
     finally:
         close_db_connection(conn)
-    
+
+def get_store_by_code(store_code):
+    """Obtiene la información de un deposito por su código."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute('SELECT * FROM store WHERE code = %s', (store_code,))
+            row = cur.fetchone()
+            if row:
+                # serializar tipos no nativos de JSON (Decimal, datetime)
+                def _serialize_row(r):
+                    return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                return _serialize_row(row)
+            return None
+    finally:
+        close_db_connection(conn)   
+
+def get_departments():
+    """Obtiene la lista de departamentos de la base de datos."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute('SELECT * FROM department')
+            rows = cur.fetchall()
+            # serializar tipos no nativos de JSON (Decimal, datetime)
+            def _serialize_row(r):
+                return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+            return [_serialize_row(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
 #export functions
 __all__ = [
     'get_db_connection',
@@ -396,5 +445,7 @@ __all__ = [
     'save_transfer_order_in_wait',
     'save_transfer_order_items',
     'get_products_by_codes',
-    'get_correlative_product_unit'
+    'get_correlative_product_unit',
+    'get_store_by_code', 
+    'get_departments'
      ]
