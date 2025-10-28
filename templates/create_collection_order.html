@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleccionar tienda de destino - Repostock{% endblock %}
+
+{% block content %}
+   <div class="container mx-auto px-4">
+      <!-- Form que envía la selección de productos -->
+      <form id="collection-form" action="{{ url_for('process_collection_products')}}" method="post">
+         <!-- Barra flotante de acciones -->
+         <div id="action-bar" class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
+            <button id="select-all" type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
+            <button id="clear-selection" type="button" class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
+            <button id="send-selection" type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
+         </div>
+
+         <div class="overflow-x-auto bg-white rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-200">
+            <caption class="sr-only">Lista de productos para traslado</caption>
+            <thead class="bg-gray-50">
+               <tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">&nbsp;</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departamento</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Depósito origen</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Exist. Min</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Exist. Max.</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stock destino</th>
+                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Por trasladar</th>
+               </tr>
+            </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                     {% if products %}
+                        {% for p in products %}
+                        <tr class="hover:bg-gray-50">
+                           <!-- Checkbox para seleccionar el producto -->
+                           <td class="px-4 py-3 text-sm text-gray-900">
+                              <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
+                           </td>
+                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
+                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.product_description }}</td>
+                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
+                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
+                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_origin }}</td>
+                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.minimal_stock }}</td>
+                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.maximum_stock }}</td>
+                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_destination }}</td>
+                           <!-- Input editable para por trasladar. Nombre único por producto para recuperarlo en el servidor -->
+                           <td class="px-4 py-3 text-sm text-right text-gray-900">
+                              <div class="relative inline-block">
+                                 <!-- Mensaje de error que aparece debajo del input (no debe sobreponer) -->
+                                 <div class="input-error hidden text-red-700 text-xs mt-1"></div>
+                                 <input type="number" name="to_transfer_{{ p.code }}" value="{{ p.to_transfer }}" min="0.0000001" max="{{ p.stock_store_origin }}" step="any" class="w-24 text-right border rounded px-2 py-1 to-transfer-input">
+                              </div>
+                           </td>
+                        </tr>
+                        {% endfor %}
+                     {% else %}
+                        <tr>
+                           <td class="px-4 py-6 text-center text-sm text-gray-500" colspan="10">No hay productos para mostrar. Usa el formulario para seleccionar depósitos y departamento.</td>
+                        </tr>
+                     {% endif %}
+                  </tbody>
+         </table>
+         </div>
+         </div>
+         </form>
+
+      <!-- Scripts para manejar selección y envío -->
+      <script>
+         (function(){
+            const selectAllBtn = document.getElementById('select-all');
+            const clearBtn = document.getElementById('clear-selection');
+            const form = document.getElementById('collection-form');
+            const sendBtn = document.getElementById('send-selection');
+
+            function getCheckboxes(){
+               return Array.from(document.querySelectorAll('.product-checkbox'));
+            }
+
+            selectAllBtn && selectAllBtn.addEventListener('click', function(){
+               getCheckboxes().forEach(cb => cb.checked = true);
+            });
+
+            clearBtn && clearBtn.addEventListener('click', function(){
+               getCheckboxes().forEach(cb => cb.checked = false);
+            });
+
+            // Validación simple antes de enviar: debe haber al menos un producto seleccionado
+            form && form.addEventListener('submit', function(e){
+               const anyChecked = getCheckboxes().some(cb => cb.checked);
+               if(!anyChecked){
+                  e.preventDefault();
+                  alert('Selecciona al menos un producto antes de enviar.');
+                  return false;
+               }
+
+               // Opcional: compactar los inputs to_transfer solo para productos seleccionados
+               // Para esto no necesitamos hacer nada extra ahora; en el servidor se leerá por código
+               return true;
+            });
+            
+               // Manejo de Enter en inputs "to-transfer-input": evitar submit y mover foco al siguiente input
+               function getToTransferInputs(){
+                  return Array.from(document.querySelectorAll('.to-transfer-input'));
+               }
+
+               function setInvalid(input, message){
+                  input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                  const err = input.parentElement.querySelector('.input-error');
+                  if(err){
+                     err.textContent = message;
+                     err.classList.remove('hidden');
+                  }
+               }
+
+               function clearInvalid(input){
+                  input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                  const err = input.parentElement.querySelector('.input-error');
+                  if(err){
+                     err.textContent = '';
+                     err.classList.add('hidden');
+                  }
+               }
+
+               function validateInput(input){
+                  const raw = input.value;
+                  const val = Number(raw);
+                  const maxAttr = input.getAttribute('max');
+                  const max = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : Infinity;
+
+                  // Requerimos entero positivo (>0) y menor que stock origen (strictamente menor)
+                  if(!raw || isNaN(val) || val <= 0){
+                     setInvalid(input, 'El valor debe ser un número mayor que 0');
+                     return false;
+                  }
+                  if(!(val <= max)){
+                     setInvalid(input, `El valor debe ser menor que el stock de origen (${max})`);
+                     return false;
+                  }
+
+                  clearInvalid(input);
+                  return true;
+               }
+
+               function focusNextInput(current, offset = 1){
+                  const inputs = getToTransferInputs();
+                  const idx = inputs.indexOf(current);
+                  if(idx === -1) return;
+                  const next = inputs[idx + offset];
+                  if(next){
+                     next.focus();
+                     try { next.select(); } catch(e) { }
+                  }
+               }
+
+               // Atachamos listeners a todos los inputs actuales
+               function attachEnterHandlers(){
+                  getToTransferInputs().forEach(input => {
+                     // validar en cada cambio
+                     input.addEventListener('input', function(){ validateInput(this); });
+                     input.addEventListener('blur', function(){ validateInput(this); });
+
+                     input.addEventListener('keydown', function(e){
+                        // Enter o NumpadEnter
+                        if(e.key === 'Enter'){
+                           e.preventDefault();
+                           // validar antes de pasar al siguiente
+                           if(validateInput(this)){
+                              focusNextInput(this, 1);
+                           } else {
+                              // si inválido, mantener foco aquí
+                              this.focus();
+                           }
+                           return false;
+                        }
+                        // Flechas para navegar rápidamente
+                        if(e.key === 'ArrowDown'){
+                           e.preventDefault();
+                           focusNextInput(this, 1);
+                           return false;
+                        }
+                        if(e.key === 'ArrowUp'){
+                           e.preventDefault();
+                           focusNextInput(this, -1);
+                           return false;
+                        }
+                     });
+                  });
+               }
+
+               // Ejecutar al cargar
+               attachEnterHandlers();
+
+               // Validación de formulario al enviar: revisar solo los productos seleccionados
+               form && form.addEventListener('submit', function(e){
+                  const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+                  let firstInvalid = null;
+                  for(const cb of checked){
+                     const code = cb.value;
+                     const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+                     if(inp){
+                        const ok = validateInput(inp);
+                        if(!ok && !firstInvalid) firstInvalid = inp;
+                     }
+                  }
+                  if(firstInvalid){
+                     e.preventDefault();
+                     firstInvalid.focus();
+                     alert('Corrige los valores marcados en rojo antes de enviar.');
+                     return false;
+                  }
+                  return true;
+               });
+
+               // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
+
+            // Si
+         })();
+      </script>
+   </div>
+{% endblock %}

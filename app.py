@@ -3,9 +3,10 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask import jsonify
 from dotenv import load_dotenv
 import os, sys
-
+import datetime
 #importar funciones de la base de datos
-from db import get_stores, search_product, save_product_failure, get_store_by_code
+from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit
+
 
 
 
@@ -40,10 +41,9 @@ def logout():
     return redirect(url_for('index'))
 
 @app.route('/destination-store-selection')
-def destination_store_selection():
+def destination_store_selection_param_product():
     stores = get_stores()
-    print(stores)
-    return render_template('destination_store_selection.html', stores=stores)
+    return render_template('destination_store_selection_param_product.html', stores=stores)
 
 #seleccion de deposito para configurar productos 
 @app.route('/config_param_product_store')
@@ -63,11 +63,7 @@ def config_param_product():
         if store_code:
             search_store = get_store_by_code(store_code)
             session['store'] = search_store
-            print('este es el codigo que busca la funcion ', search_store)
-
         product = search_product(code_product)
-        print(product)
-
     # El store persiste en la sesión y se recupera en GET o POST
     return render_template('config_param_product.html', products=product, store=search_store)
 
@@ -108,6 +104,110 @@ def save_config_param_product():
             # En no-AJAX redirigir mostrando el error en logs; podrías usar flash para mostrar al usuario
             print('Error guardando parámetros:', e)
             return redirect(url_for('config_param_product'))
+
+@app.route('/select_store_destination_collection_order', methods=['POST','GET'])
+def select_store_destination_collection_order():
+    stores= get_stores()
+    return render_template('form_destination_store.html', stores=stores)
+
+#ruta para crear orden de recoleccion
+@app.route('/create_collection_order', methods=['POST','GET'])
+def create_collection_order():
+    products = []
+    stock_store_origin = os.environ.get('DEFAULT_STORE_CODE', '01')
+    department = None
+
+    if request.method == 'POST':
+        stock_store_origin = request.form.get('stock_store_origin', stock_store_origin)
+        session['store_code_destination'] = request.form.get('store_code_destination')
+        department = request.form.get('department', None)
+
+        products = get_collection_products(stock_store_origin, session.get('store_code_destination'), department)
+
+    return render_template('create_collection_order.html', products=products)
+
+
+@app.route('/process_collection_products', methods=['POST'])
+def process_collection_products():
+    if request.method == 'POST':
+        # Leer productos seleccionados y cantidades (permitir decimales, aceptar coma o punto)
+        selected = request.form.getlist('selected_products')
+        product_codes = [code for code in selected if code]
+
+        # obtener datos base de los productos (descripcion u otros campos si hacen falta)
+        products_info = {p['code']: p for p in get_products_by_codes(product_codes)} if product_codes else {}
+
+        # origen/destino (si vienen en el formulario) o por defecto
+        stock_store_origin = request.form.get('stock_store_origin', os.environ.get('DEFAULT_STORE_CODE', '01'))
+        store_stock_destination = session.get('store_code_destination', None)
+
+        items = []
+        for code in product_codes:
+            raw = request.form.get(f'to_transfer_{code}', '0')
+            if isinstance(raw, str):
+                raw = raw.replace(',', '.')
+            try:
+                qty = float(raw)
+            except (ValueError, TypeError):
+                qty = 0.0
+
+            if qty <= 0:
+                # saltar ítems con cantidad inválida
+                continue
+
+            prod = products_info.get(code, {})
+            item = {
+                'product_code': code,
+                'description': prod.get('description') if prod else None,
+                'quantity': qty,
+                'from_store': stock_store_origin,
+                'to_store': store_stock_destination or prod.get('store') if prod else store_stock_destination,
+                # valores por defecto para campos opcionales que espera la función
+                'unit': get_correlative_product_unit(code),
+                'conversion_factor': 1.0,
+                'unit_type': 1,
+                'unit_price': 0.0,
+                'total_price': 0.0,
+                'total_cost': 0.0,
+                'coin_code': '02',
+                'to_store' : session.get('store_code_destination', None)
+            }
+            items.append(item)
+
+        if not items:
+            # nada que procesar
+            print('No hay items válidos para procesar')
+            return redirect(url_for('create_collection_order'))
+
+        # Crear la orden de transferencia
+        transfer_data = {
+            'emission_date': datetime.date.today(),
+            'wait': True,
+            'description': 'CREACION DE ORDEN DE TRASLADO DESDE APP REPOSTOCK',
+            'user_code': session.get('user_id', '01'),  # usar usuario en sesión si existe
+            'station': '00',
+            'store': stock_store_origin,
+            'locations': '00',
+            'destination_store': session.get('store_code_destination', None),
+            'operation_comments': 'Orden creada desde interface Repostock',
+            'total': sum([it['quantity'] for it in items])
+        }
+
+        try:
+            order_id = save_transfer_order_in_wait(transfer_data)
+            if not order_id:
+                print('No se pudo crear la orden de transferencia')
+                return redirect(url_for('create_collection_order'))
+
+            # Guardar los items
+            save_transfer_order_items(order_id, items)
+            print('Orden creada id=', order_id)
+        except Exception as e:
+            print('Error procesando la orden de traslado:', e)
+            # aquí podrías usar flash() para mostrar el error al usuario
+            return redirect(url_for('create_collection_order'))
+
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(

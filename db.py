@@ -146,5 +146,255 @@ def save_product_failure(data):
         conn.rollback() 
     finally:
         close_db_connection(conn)
+
+# consulta sql para devolver los productos para visualizar la recoleccion de products
+
+def get_collection_products(stock_store_origin=None, store_code_destination=None, department=None):
+    # Calcula to_transfer = min(stock_store_origin.stock, max(pf.maximum_stock - stock_store_destination.stock, 0))
+    sql = """
+        SELECT 
+        p.code,
+        p.description AS product_description,
+        u.description AS unit_description,
+        d.description AS department_description,
+        COALESCE(stock_store_origin.stock, 0) AS stock_store_origin,
+        pf.minimal_stock,
+        pf.maximum_stock,
+        COALESCE(stock_store_destination.stock, 0) AS stock_store_destination,
+        LEAST(
+            COALESCE(stock_store_origin.stock, 0),
+            GREATEST(COALESCE(pf.maximum_stock, 0) - COALESCE(stock_store_destination.stock, 0), 0)
+        ) AS to_transfer
+        FROM products_failures AS pf
+        LEFT JOIN products AS p ON p.code = pf.product_code
+        LEFT JOIN products_units AS pu ON pf.product_code = pu.product_code AND pu.main_unit = true
+        LEFT JOIN units AS u ON u.code = pu.unit
+        LEFT JOIN products_stock AS stock_store_origin ON (stock_store_origin.product_code = pf.product_code AND stock_store_origin.store = %s)
+        LEFT JOIN products_stock AS stock_store_destination ON (stock_store_destination.product_code = pf.product_code AND stock_store_destination.store = %s)
+        LEFT JOIN department AS d ON d.code = p.department
+        WHERE pf.store_code IN (%s, %s)
+        AND COALESCE(stock_store_destination.stock, 0) < COALESCE(pf.minimal_stock, 0)
+        AND COALESCE(stock_store_origin.stock, 0) > 0
+    """
+    params = [stock_store_origin, store_code_destination, stock_store_origin, store_code_destination]
+
+    if department is not None:
+        sql += " AND p.department = %s"
+        params.append(department)
+
+    sql += """
+    GROUP BY
+        p.code,
+        p.description,
+        u.description,
+        d.description,
+        stock_store_origin.stock,
+        stock_store_destination.stock,
+        pf.minimal_stock,
+        pf.maximum_stock
+    ORDER BY p.code;
+    """
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, tuple(params))
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+#esta funcion optione un lote de codigos, y devuele todos los productos, correspondientes a una orden de traslado
+def get_products_by_codes(codes):
+    sql = """
+    SELECT 
+    *
+    FROM products AS p
+    WHERE p.code = ANY(%s);
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (codes,))
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+def save_transfer_order_in_wait(data):
+    print('datos de la orden de traslado: ', data)
+    sql_insert_order = """
+     SELECT set_inventory_operation(
+        null,  -- p_correlative (NULL para que la función genere)
+        'TRANSFER',  -- p_operation_type
+        '',  -- p_document_no
+        %s::date,  -- p_emission_date
+        true,  -- p_wait
+        'ESTA ES LA DESCRIPCION DEL TRASLADO PARA SER UBICADO',  -- p_description
+        '01',  -- p_user_code
+        '00',  -- p_station
+        '00',  -- p_store
+        '00',  -- p_locations
+        %s,  -- p_destination_store
+        '00',  -- p_destination_location
+        '',  -- p_operation_comments
+        150,  -- p_total_amount
+        150,  -- p_total_net
+        15,  -- p_total_tax
+       150,  -- p_total
+        '02',  -- p_coin_code
+        false   -- p_internal_use
+    );
+    """
+    params = (
+        data.get('emission_date', datetime.date.today()),
+        data.get('destination_store', None)
+    
+    )
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql_insert_order, params)
+            order_id = cur.fetchone()[0]
+        conn.commit()
+        return order_id
+    except Exception as e:
+        print(f"Error al guardar la orden de transferencia: {e}")
+        conn.rollback()
+        return None
+    finally:
+        close_db_connection(conn)
+
+def get_correlative_product_unit(product_code):
+    sql = """
+    SELECT 
+    correlative
+    FROM products_units AS pu
+    WHERE pu.product_code = %s AND pu.main_unit = true;
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (product_code,))
+            row = cur.fetchone()
+            if row:
+                return row[0]
+            return None
+    finally:
+        close_db_connection(conn)
+
+def save_transfer_order_items(order_id, items):
+    print('items a guardar en la orden de traslado: ', order_id, items)
+    # """
+    # Guarda los ítems de una orden de transferencia llamando a la función
+    # set_inventory_operation_details en la base de datos. Usa los campos
+    # del dict 'item' y aplica valores por defecto cuando falta alguno.
+    # """
+    sql_insert_item = """
+    SELECT set_inventory_operation_details(
+        %s::integer,    -- p_main_correlative
+        null::integer,  -- p_line (dejar que la función lo genere)
+        %s::varchar,    -- p_code_product
+        %s::varchar,    -- p_description_product
+        %s::varchar,    -- p_referenc
+        %s::varchar,    -- p_mark
+        %s::varchar,    -- p_model
+        %s::double precision, -- p_amount
+        %s::varchar,    -- p_store
+        %s::varchar,    -- p_locations
+        %s::varchar,    -- p_destination_store
+        %s::varchar,    -- p_destination_location
+        %s::integer,    -- p_unit
+        %s::double precision, -- p_conversion_factor
+        %s::integer,    -- p_unit_type
+        %s::double precision, -- p_unitary_cost
+        %s::varchar,    -- p_buy_tax
+        %s::double precision, -- p_aliquot
+        %s::double precision, -- p_total_cost
+        %s::double precision, -- p_total_tax
+        %s::double precision, -- p_total
+        %s::varchar,    -- p_coin_code
+        %s::boolean     -- p_change_price
+    );
+    """
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            for item in items:
+                # Normalizar y mapear keys esperadas por app.py
+                product_code = item.get('product_code') or item.get('code')
+                description = item.get('description', '')
+                referenc = item.get('reference') or item.get('referenc') or None
+                mark = item.get('mark') or None
+                model = item.get('model') or None
+                try:
+                    amount = float(item.get('quantity', 0))
+                except Exception:
+                    amount = 0.0
+
+                store_from = item.get('from_store') or item.get('store_from') or item.get('store') or '01'
+                location_from = item.get('from_location') or item.get('location_from') or '00'
+                store_to = item.get('to_store') or item.get('store_to') or item.get('destination_store') or '02'
+                location_to = item.get('to_location') or item.get('location_to') or '00'
+
+                unit = int(item.get('unit', 1))
+                conversion_factor = float(item.get('conversion_factor', 1.0))
+                unit_type = int(item.get('unit_type', 1))
+                unit_price = float(item.get('unit_price', 0.0))
+                buy_tax = item.get('buy_tax', None)
+                aliquot = (None if item.get('aliquot') is None else float(item.get('aliquot')))
+                total_cost = float(item.get('total_cost', item.get('total_price', 0.0)))
+                total_tax = (None if item.get('total_tax') is None else float(item.get('total_tax')))
+                total_price = float(item.get('total_price', item.get('total', 0.0)))
+                coin_code = item.get('coin_code', 'USD')
+                change_price = bool(item.get('change_price', False))
+
+                params = (
+                    order_id,
+                    product_code,
+                    description,
+                    referenc,
+                    mark,
+                    model,
+                    amount,
+                    store_from,
+                    location_from,
+                    store_to,
+                    location_to,
+                    unit,
+                    conversion_factor,
+                    unit_type,
+                    unit_price,
+                    buy_tax,
+                    aliquot,
+                    total_cost,
+                    total_tax,
+                    total_price,
+                    coin_code,
+                    change_price
+                )
+                cur.execute(sql_insert_item, params)
+        conn.commit()
+    except Exception as e:
+        print(f"Error al guardar los ítems de la orden de transferencia: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+    
 #export functions
-__all__ = ['get_db_connection', 'close_db_connection', 'login_user', 'get_stores', 'search_product', 'get_store_by_code', 'save_product_failure']
+__all__ = [
+    'get_db_connection',
+     'close_db_connection', 
+     'login_user', 'get_stores', 
+     'search_product', 
+     'get_store_by_code', 
+     'save_product_failure', 
+     'get_collection_products',
+    'save_transfer_order_in_wait',
+    'save_transfer_order_items',
+    'get_products_by_codes',
+    'get_correlative_product_unit'
+     ]

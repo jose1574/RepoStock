@@ -1,47 +1,24 @@
 {% extends 'base.html' %}
 
+{% from 'macros/store_select_form.html' import store_select_form %}
+
 {% block content %}
-    <section class="bg-gray-50 py-12">
-        <div class="container mx-auto px-4">
-            <div class="bg-white shadow-md rounded-lg p-8">
-                <h2 class="text-2xl font-semibold text-gray-800">Seleccionar Deposito</h2>
-                <p class="mt-2 text-gray-600">Por favor, Selecciona el deposito donde deseas configurar los parametros del producto</p>
+  {{ store_select_form(stores, url_for('config_param_product'), title='Seleccionar Depósito', description='Por favor, selecciona el depósito donde deseas configurar los parámetros del producto', select_label='Tienda de destino', submit_label='Seleccionar Tienda') }}
 
-                <form id="config-form" action="{{ url_for('config_param_product')}}" method="POST" class="mt-6">
-                    <label for="store" class="block text-sm font-medium text-gray-700">Tienda de destino</label>
-                    <select id="store" name="store_code" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">                     
-                        {% for store in stores %}
-                        <option value="{{store.code }}">{{ store.description}}</option>
-                        {% endfor %}
-                    </select>
+  <script>
+    // Añadir confirmación global usando el formulario renderizado por el macro
+    (function(){
+      const form = document.getElementById('store-select-form');
+      if (!form) return;
+      form.addEventListener('submit', function(e){
+        const confirmMsg = 'Estas a punto de configurar los parámetros para la tienda seleccionada. ¿Deseas continuar?';
+        if (!window.confirm(confirmMsg)){
+          e.preventDefault();
+          const sel = form.querySelector('select');
+          if (sel) sel.focus();
+        }
+      });
+    })();
+  </script>
 
-                    <button id="btn-submit" type="submit" class="mt-4 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 focus:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">
-                        Seleccionar Tienda
-                    </button>
-                </form>
-
-                <script>
-                    // Confirmación antes de enviar el formulario de configuración
-                    (function(){
-                        const form = document.getElementById('config-form');
-                        if (!form) return;
-
-                        form.addEventListener('submit', function(e){
-                            // Mensaje en español; cambia el texto si lo deseas
-                            const confirmMsg = 'Estas a punto de configurar los parametros de existencia minima y maxima para el producto en la tienda seleccionada. ¿Deseas continuar?';
-                            const ok = window.confirm(confirmMsg);
-                            if (!ok) {
-                                // Evita el envío si el usuario cancela
-                                e.preventDefault();
-                                // Mantener el foco en el botón o select para usabilidad
-                                const storeSelect = document.getElementById('store');
-                                if (storeSelect) storeSelect.focus();
-                            }
-                        });
-                    })();
-                </script>
-                </form>
-            </div>
-        </div>
-    </section>
 {% endblock %}

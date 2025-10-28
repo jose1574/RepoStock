@@ -1,0 +1,25 @@
+{% macro store_select_form(stores, action_url, title='Seleccionar Depósito', description='', select_label='Tienda de destino', select_name='store_code', submit_label='Seleccionar') -%}
+<section class="bg-gray-50 py-8">
+  <div class="container mx-auto px-4">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <h2 class="text-lg font-semibold text-gray-800">{{ title }}</h2>
+      {% if description %}
+      <p class="mt-2 text-gray-600">{{ description }}</p>
+      {% endif %}
+
+      <form id="store-select-form" action="{{ action_url }}" method="POST" class="mt-4">
+        <label for="{{ select_name }}" class="block text-sm font-medium text-gray-700">{{ select_label }}</label>
+        <select id="{{ select_name }}" name="{{ select_name }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+          {% for s in stores %}
+          <option value="{{ s.code }}">{{ s.description }}</option>
+          {% endfor %}
+        </select>
+
+        <div class="mt-4">
+          <button type="submit" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">{{ submit_label }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{%- endmacro %}
