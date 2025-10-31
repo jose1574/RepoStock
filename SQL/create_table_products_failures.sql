@@ -7,20 +7,22 @@ CREATE TABLE products_failures
   store_code character varying(50) NOT NULL,
   minimal_stock integer NOT NULL,
   maximum_stock integer NOT NULL,
-  CONSTRAINT products_failures_pkey PRIMARY KEY (correlative),
+  location character varying(100),
+  CONSTRAINT products_failures_pkey PRIMARY KEY (correlative ),
   CONSTRAINT fk_product FOREIGN KEY (product_code)
       REFERENCES products (code) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT fk_store FOREIGN KEY (store_code)
       REFERENCES store (code) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT unique_product_store UNIQUE (product_code, store_code)
+  CONSTRAINT unique_product_store UNIQUE (product_code , store_code )
 )
 WITH (
   OIDS=FALSE
 );
 ALTER TABLE products_failures
   OWNER TO postgres;
+
 
 
 

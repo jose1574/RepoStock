@@ -122,7 +122,8 @@ def search_product_failure(code_product, store_code):
     p.code, 
     p.description,
     pf.minimal_stock,
-    pf.maximum_stock
+    pf.maximum_stock,
+    pf.location
     FROM products_codes AS pc
     INNER JOIN products AS p ON pc.main_code = p.code
     INNER JOIN products_failures AS pf ON p.code = pf.product_code
@@ -151,29 +152,32 @@ def save_product_failure(data):
     UPDATE products_failures
     SET 
         minimal_stock = %s,
-        maximum_stock = %s
+        maximum_stock = %s,
+        location = %s
     WHERE product_code = %s AND store_code = %s;
     """
     
     # 2. Sentencia SQL de INSERCIÓN (INSERT)
     sql_insert = """
-    INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock)
-    VALUES (%s, %s, %s, %s);
+    INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
+    VALUES (%s, %s, %s, %s, %s);
     """
     
     # Prepara los datos para la ejecución
     update_data = (
         data['minimal_stock'], # -> SET minimal_stock = %s
         data['maximum_stock'], # -> SET maximum_stock = %s
+        data['location'],   # -> AND store_code = %s
         data['product_code'],  # -> WHERE product_code = %s
-        data['store_code']     # -> AND store_code = %s
+        data['store_code']
     )
 
     insert_data = (
         data['product_code'],
         data['store_code'],
         data['minimal_stock'],
-        data['maximum_stock']
+        data['maximum_stock'],
+        data['location']
     )
     
     conn = get_db_connection()

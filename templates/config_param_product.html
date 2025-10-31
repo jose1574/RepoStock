@@ -43,6 +43,11 @@
                     <label for="max_stock" class="block text-sm font-medium text-gray-700 mt-4">Stock Máximo</label>
                     <input type="number" id="max_stock" name="maximum_stock" value="{{ product.maximum_stock }}" required
                         class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+                    <label for="location" class="block text-sm font-medium text-gray-700 mt-4">Ubicacion en el deposito</label>
+                    <input type="text" id="location" name="location" value="{{ product.location }}" required
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        placeholder="Opcional"
+                        >
 
                     <button id="btn-submit-params" type="submit"
                         class="mt-4 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 focus:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">

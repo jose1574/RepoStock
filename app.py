@@ -91,6 +91,8 @@ def save_config_param_product():
         product_code = request.form.get('product_code')
         minimal_stock = request.form.get('minimal_stock')
         maximum_stock = request.form.get('maximum_stock')
+        location = request.form.get('location')
+
 
         # Normalizar tipos (int) y construir payload esperado por save_product_failure
         try:
@@ -101,12 +103,17 @@ def save_config_param_product():
             MaS = int(maximum_stock) if maximum_stock not in (None, '') else None
         except ValueError:
             MaS = None
+        try:
+            loc = str(location) if location not in (None, '') else None
+        except ValueError:
+            loc = None
 
         data = {
             'product_code': product_code,
             'store_code': store_code,
             'minimal_stock': ms,
-            'maximum_stock': MaS
+            'maximum_stock': MaS,
+            'location': loc
         }
 
         try:
