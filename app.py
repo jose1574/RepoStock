@@ -112,18 +112,18 @@ def select_store_destination_collection_order():
 @app.route('/create_collection_order', methods=['POST','GET'])
 def create_collection_order():
     products = []
-    stock_store_origin = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
-    print('este es el deposito de origen', stock_store_origin)
+    store_origin = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
+    print('este es el deposito de origen', store_origin)
     department = None
 
     if request.method == 'POST':
         #BUSCAR LOS DEPOSITOS DE ORIGEN Y DESTINO
-        store_origin = get_store_by_code(stock_store_origin)
-        store_destination = get_store_by_code(session.get('store_code_destination'))
+        search_store_origin = get_store_by_code(store_origin)
+        store_destination = get_store_by_code(session.get('store_code_destination', None))
         department = get_departments()
         session['store_code_destination'] = request.form.get('store_code_destination')
         department = request.form.get('department', None)
-        products = get_collection_products(stock_store_origin, session.get('store_code_destination'), department)
+        products = get_collection_products(store_origin, session.get('store_code_destination'), department)
     # Construir lista única de departamentos presentes en los productos para el filtro
     departments = []
     seen = set()
@@ -133,7 +133,7 @@ def create_collection_order():
             seen.add(d)
             departments.append(d)
 
-    return render_template('create_collection_order.html', products=products, departments=departments, store_origin=store_origin, store_destination=store_destination)
+    return render_template('create_collection_order.html', products=products, departments=departments, store_origin=search_store_origin, store_destination=store_destination, selected_department=department   )
 
 
 @app.route('/process_collection_products', methods=['POST'])
