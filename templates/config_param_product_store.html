@@ -3,7 +3,7 @@
 {% from 'macros/store_select_form.html' import store_select_form %}
 
 {% block content %}
-  {{ store_select_form(stores, url_for('config_param_product'), title='Seleccionar Depósito', description='Por favor, selecciona el depósito donde deseas configurar los parámetros del producto', select_label='Tienda de destino', submit_label='Seleccionar Tienda') }}
+  {{ store_select_form(stores, url_for('config_param_product'), title='Seleccionar Depósito', description='Por favor, selecciona el depósito donde deseas configurar los parámetros del producto', select_label='Tienda de destino', submit_label='Seleccionar Tienda', select_name='store_code') }}
 
   <script>
     // Añadir confirmación global usando el formulario renderizado por el macro

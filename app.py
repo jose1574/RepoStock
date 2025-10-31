@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os, sys
 import datetime
 #importar funciones de la base de datos
-from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit, get_store_by_code, get_departments
+from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit, get_store_by_code, get_departments, search_product_failure
 
 
 
@@ -51,17 +51,36 @@ def config_param_product_store():
 
 @app.route('/config_param_product', methods=['POST', 'GET'])
 def config_param_product():
-    product = []
-    # Recuperar el store de la sesión si existe
-    search_store = session.get('store')
+    # Inicializar valores por defecto
+    product = None
+    search_store = None
+
+    # Recuperar el código de store de la sesión (si existe)
+    session_store_code = session.get('store')
+    if isinstance(session_store_code, str):
+        session_store_code = session_store_code.strip()
 
     if request.method == 'POST':
-        code_product = request.form.get('product_code')
+        # obtiene los datos del formulario
+        product_code = request.form.get('product_code')
         store_code = request.form.get('store_code')
+
+        # Guardar el store en la sesión si viene del formulario
         if store_code:
-            search_store = get_store_by_code(store_code)
-            session['store'] = search_store
-        product = search_product(code_product)
+            session['store'] = store_code
+            session_store_code = store_code
+
+        print('esto es lo que tengo que la session de store ', session.get('store'))
+
+        # Buscar la tienda y el producto usando el código de store actual
+        search_store = get_store_by_code(session_store_code) if session_store_code else None
+        if product_code:
+            product = search_product_failure(product_code, session_store_code)
+            print('Producto encontrado:', product)
+    else:
+        # GET: intentar cargar la tienda desde sesión si existe
+        search_store = get_store_by_code(session_store_code) if session_store_code else None
+
     # El store persiste en la sesión y se recupera en GET o POST
     return render_template('config_param_product.html', products=product, store=search_store)
 

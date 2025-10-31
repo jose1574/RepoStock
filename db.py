@@ -93,7 +93,9 @@ def search_product(code_product):
     Devuelve una lista de dicts con campos del producto.
     """
     sql = """
-    SELECT p.code, p.description
+    SELECT 
+    p.code, 
+    p.description
     FROM products_codes AS pc
     INNER JOIN products AS p ON pc.main_code = p.code
     WHERE pc.other_code = %s;
@@ -102,6 +104,37 @@ def search_product(code_product):
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (code_product,))
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
+def search_product_failure(code_product, store_code):
+    """Busca productos relacionados con un código alterno (other_code).
+
+    Devuelve una lista de dicts con campos del producto.
+    """
+
+    # print('Buscando producto con código:', code_product, 'en deposito:', store_code)
+    sql = """
+    SELECT 
+    p.code, 
+    p.description,
+    pf.minimal_stock,
+    pf.maximum_stock
+    FROM products_codes AS pc
+    INNER JOIN products AS p ON pc.main_code = p.code
+    INNER JOIN products_failures AS pf ON p.code = pf.product_code
+    WHERE pc.other_code = %s
+    AND pf.store_code = %s
+    ;
+    """
+    conn = get_db_connection()
+
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code_product, store_code))
             rows = cur.fetchall()
             return [dict(r) for r in rows]
     finally:
@@ -191,11 +224,11 @@ def get_collection_products(stock_store_origin=None, store_code_destination=None
         LEFT JOIN products_stock AS stock_store_origin ON (stock_store_origin.product_code = pf.product_code AND stock_store_origin.store = %s)
         LEFT JOIN products_stock AS stock_store_destination ON (stock_store_destination.product_code = pf.product_code AND stock_store_destination.store = %s)
         LEFT JOIN department AS d ON d.code = p.department
-        WHERE pf.store_code IN (%s, %s)
+        WHERE pf.store_code IN (%s)
         AND COALESCE(stock_store_destination.stock, 0) < COALESCE(pf.minimal_stock, 0)
         AND COALESCE(stock_store_origin.stock, 0) > 0
     """
-    params = [stock_store_origin, store_code_destination, stock_store_origin, store_code_destination]
+    params = [stock_store_origin, store_code_destination, store_code_destination]
 
     if department is not None:
         sql += " AND p.department = %s"
@@ -405,6 +438,7 @@ def save_transfer_order_items(order_id, items):
 
 def get_store_by_code(store_code):
     """Obtiene la información de un deposito por su código."""
+    print('Obteniendo información del depósito con código:', store_code)
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -447,5 +481,6 @@ __all__ = [
     'get_products_by_codes',
     'get_correlative_product_unit',
     'get_store_by_code', 
-    'get_departments'
+    'get_departments',
+    'search_product_failure'
      ]
