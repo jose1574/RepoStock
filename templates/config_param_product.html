@@ -14,6 +14,7 @@
                     <label for="product_code" class="block text-sm font-medium text-gray-700">Código del Producto</label>
                     <input type="text" id="product_code" value="MOR001" name="product_code" required
                         class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                        style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase();"
                         placeholder="Ingresa el código del producto">
 
                     <button id="btn-submit-product" type="submit"
@@ -59,7 +60,7 @@
         {% endif %}
 
     <!-- contenedor para alertas de guardado -->
-    <div id="save-alert-container" class="fixed inset-x-0 top-6 flex justify-center z-50 pointer-events-none"></div>
+    <div id="save-alert-container" data-product-not-found="{{ product_not_found|default(false)|tojson }}" class="fixed inset-x-0 top-6 flex justify-center z-50 pointer-events-none"></div>
 
     <script>
     (function(){
@@ -100,6 +101,17 @@
 
         paramForm.addEventListener('submit', async function(e){
             e.preventDefault();
+
+            // Validación cliente: max_stock no puede ser menor que min_stock
+            const minEl = paramForm.querySelector('input[name="minimal_stock"]');
+            const maxEl = paramForm.querySelector('input[name="maximum_stock"]');
+            const minVal = minEl ? parseFloat(minEl.value) : NaN;
+            const maxVal = maxEl ? parseFloat(maxEl.value) : NaN;
+            if (!isNaN(minVal) && !isNaN(maxVal) && maxVal < minVal){
+                showAlert('El stock máximo no puede ser menor al stock mínimo.', { dismiss: true });
+                return;
+            }
+
             // ocultar formulario de parametros mientras guardamos
             paramForm.style.display = 'none';
             const fd = new FormData(paramForm);
@@ -114,11 +126,66 @@
                     showAlert(data.message || 'Producto guardado correctamente', { autoHide: 3000 });
                 } else {
                     showAlert('Error: ' + (data.error || data.message || 'Ocurrió un error'), { dismiss: true });
+                    // volver a mostrar el formulario para corrección
+                    paramForm.style.display = '';
                 }
             } catch(err){
                 showAlert('Error de red: ' + err.message, { dismiss: true });
+                paramForm.style.display = '';
             }
         });
+    })();
+    </script>
+
+    <!-- Script adicional: forzar mayúsculas en el buscador y en el envío -->
+    <script>
+    (function(){
+        const prodForm = document.getElementById('product-config-form');
+        const prodInput = document.getElementById('product_code');
+        if (!prodForm || !prodInput) return;
+
+        // Asegurar que el input se muestre en mayúsculas (estilo ya aplicado como fallback)
+        prodInput.style.textTransform = 'uppercase';
+
+        // Mantener la posición del cursor al transformar a mayúsculas
+        prodInput.addEventListener('input', function(e){
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.toUpperCase();
+            try{ this.setSelectionRange(start, end); } catch(err){}
+        });
+
+        // Antes de enviar, garantizar que el valor enviado esté en mayúsculas
+        prodForm.addEventListener('submit', function(e){
+            if (prodInput.value) prodInput.value = prodInput.value.toUpperCase();
+        });
+    })();
+    </script>
+
+    <!-- Mostrar alerta si el producto no fue encontrado -->
+    <script>
+    (function(){
+        const alertContainer = document.getElementById('save-alert-container');
+        const notFound = alertContainer && alertContainer.dataset && alertContainer.dataset.productNotFound === 'true';
+        if (!notFound) return;
+
+        const message = 'No se encontró el producto con el código ingresado.';
+
+        if (alertContainer){
+            alertContainer.innerHTML = '';
+            const wrap = document.createElement('div');
+            wrap.className = 'pointer-events-auto bg-red-50 border border-red-300 text-red-800 shadow-lg rounded-lg px-4 py-3 flex items-center gap-3';
+            const txt = document.createElement('div');
+            txt.className = 'text-sm';
+            txt.textContent = message;
+            wrap.appendChild(txt);
+            alertContainer.appendChild(wrap);
+            // ocultar después de 5s
+            setTimeout(function(){ alertContainer.innerHTML = ''; }, 5000);
+        } else {
+            // fallback simple
+            alert(message);
+        }
     })();
     </script>
 {% endblock %}

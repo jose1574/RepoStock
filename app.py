@@ -54,6 +54,7 @@ def config_param_product():
     # Inicializar valores por defecto
     product = None
     search_store = None
+    product_not_found = False
 
     # Recuperar el código de store de la sesión (si existe)
     session_store_code = session.get('store')
@@ -76,13 +77,14 @@ def config_param_product():
         search_store = get_store_by_code(session_store_code) if session_store_code else None
         if product_code:
             product = search_product_failure(product_code, session_store_code)
-            print('Producto encontrado:', product)
+            if not product:
+                product_not_found = True
     else:
         # GET: intentar cargar la tienda desde sesión si existe
         search_store = get_store_by_code(session_store_code) if session_store_code else None
 
     # El store persiste en la sesión y se recupera en GET o POST
-    return render_template('config_param_product.html', products=product, store=search_store)
+    return render_template('config_param_product.html', products=product, store=search_store, product_not_found=product_not_found)
 
 @app.route('/save_config_param_product', methods=['POST'])
 def save_config_param_product():
@@ -116,6 +118,14 @@ def save_config_param_product():
             'location': loc
         }
 
+        # Validación servidor: máximo no puede ser menor que mínimo
+        if ms is not None and MaS is not None and MaS < ms:
+            msg = 'El stock máximo no puede ser menor al stock mínimo.'
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({"ok": False, "error": msg}), 400
+            print(msg)
+            return redirect(url_for('config_param_product'))
+
         try:
             # save_product_failure espera un dict con las claves usadas en db.py
             save_product_failure(data)
@@ -139,7 +149,6 @@ def select_store_destination_collection_order():
 def create_collection_order():
     products = []
     store_origin = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
-    print('este es el deposito de origen', store_origin)
     department = None
 
     if request.method == 'POST':
