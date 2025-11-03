@@ -1,9 +1,14 @@
-import psycopg2
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask import jsonify
 from dotenv import load_dotenv
 import os, sys
 import datetime
+import json
+from typing import List, Dict, Any
+try:
+    import pdfkit
+except Exception:
+    pdfkit = None
 #importar funciones de la base de datos
 from db import get_stores, search_product, save_product_failure, get_store_by_code, get_collection_products, save_transfer_order_in_wait, save_transfer_order_items, get_products_by_codes, get_correlative_product_unit, get_store_by_code, get_departments, search_product_failure
 
@@ -22,6 +27,31 @@ load_dotenv(env_path)
 
 app = Flask(__name__, template_folder=template_folder)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "root1574**") 
+
+# Configuración de wkhtmltopdf (Windows):
+# - Usa variable de entorno WKHTMLTOPDF_BIN si existe
+# - Si no, intenta ruta típica por defecto en Windows
+WKHTMLTOPDF_BIN = os.environ.get("WKHTMLTOPDF_BIN")
+if not WKHTMLTOPDF_BIN:
+    # rutas típicas de instalación
+    possibles = [
+        r"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe",
+        r"C:\\Program Files (x86)\\wkhtmltopdf\\bin\\wkhtmltopdf.exe",
+    ]
+    for p in possibles:
+        if os.path.exists(p):
+            WKHTMLTOPDF_BIN = p
+            break
+
+def get_pdfkit_config():
+    if pdfkit is None:
+        return None
+    if not WKHTMLTOPDF_BIN or not os.path.exists(WKHTMLTOPDF_BIN):
+        return None
+    try:
+        return pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_BIN)
+    except Exception:
+        return None
 
 
 
@@ -148,17 +178,22 @@ def select_store_destination_collection_order():
 @app.route('/create_collection_order', methods=['POST','GET'])
 def create_collection_order():
     products = []
-    store_origin = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
-    department = None
+    store_origin_code = os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
+    selected_department = None
+
+    # Resolver tiendas origen/destino para GET y POST
+    search_store_origin = get_store_by_code(store_origin_code) if store_origin_code else None
+    store_destination = get_store_by_code(session.get('store_code_destination', None)) if session.get('store_code_destination') else None
 
     if request.method == 'POST':
-        #BUSCAR LOS DEPOSITOS DE ORIGEN Y DESTINO
-        search_store_origin = get_store_by_code(store_origin)
-        store_destination = get_store_by_code(session.get('store_code_destination', None))
-        department = get_departments()
-        session['store_code_destination'] = request.form.get('store_code_destination')
-        department = request.form.get('department', None)
-        products = get_collection_products(store_origin, session.get('store_code_destination'), department)
+        # Actualizar destino desde el formulario si viene
+        if request.form.get('store_code_destination'):
+            session['store_code_destination'] = request.form.get('store_code_destination')
+            store_destination = get_store_by_code(session.get('store_code_destination')) if session.get('store_code_destination') else None
+
+        selected_department = request.form.get('department', None)
+        products = get_collection_products(store_origin_code, session.get('store_code_destination'), selected_department)
+
     # Construir lista única de departamentos presentes en los productos para el filtro
     departments = []
     seen = set()
@@ -168,7 +203,134 @@ def create_collection_order():
             seen.add(d)
             departments.append(d)
 
-    return render_template('create_collection_order.html', products=products, departments=departments, store_origin=search_store_origin, store_destination=store_destination, selected_department=department   )
+    return render_template(
+        'create_collection_order.html',
+        products=products,
+        departments=departments,
+        store_origin=search_store_origin,
+        store_destination=store_destination,
+        selected_department=selected_department
+    )
+
+
+# ---------- PREVISUALIZACIÓN DE LA ORDEN ----------
+# Recibe JSON con items seleccionados y metadatos, los guarda en sesión para usar en PDF
+@app.route('/collection/preview', methods=['POST'])
+def collection_preview():
+    try:
+        payload = request.get_json(silent=True) or {}
+        items: List[Dict[str, Any]] = payload.get('items', []) or []
+        meta: Dict[str, Any] = payload.get('meta', {}) or {}
+
+        # Normalizar cantidades a float y filtrar inválidos
+        normalized_items = []
+        codes = []
+        for it in items:
+            code = (it.get('product_code') or it.get('code') or '').strip()
+            if not code:
+                continue
+            raw_qty = it.get('quantity', it.get('qty', 0))
+            if isinstance(raw_qty, str):
+                raw_qty = raw_qty.replace(',', '.')
+            try:
+                qty = float(raw_qty)
+            except Exception:
+                qty = 0.0
+            if qty <= 0:
+                continue
+            normalized_items.append({
+                'product_code': code,
+                'quantity': qty,
+                'description': it.get('description'),
+                'unit': it.get('unit')
+            })
+            codes.append(code)
+
+        # enriquecer con descripciones si faltan
+        if codes:
+            try:
+                base_info = {p['code']: p for p in get_products_by_codes(codes)}
+            except Exception:
+                base_info = {}
+        else:
+            base_info = {}
+
+        for it in normalized_items:
+            b = base_info.get(it['product_code'], {})
+            if not it.get('description'):
+                it['description'] = b.get('description') or b.get('product_description')
+            if not it.get('unit'):
+                it['unit'] = b.get('unit_description')
+
+        # resolver datos de tienda origen/destino
+        origin_code = meta.get('store_origin_code') or os.environ.get('DEFAULT_STORE_ORIGIN_CODE')
+        dest_code = meta.get('store_destination_code') or session.get('store_code_destination')
+        try:
+            origin_store = get_store_by_code(origin_code) if origin_code else None
+            dest_store = get_store_by_code(dest_code) if dest_code else None
+        except Exception:
+            origin_store = None
+            dest_store = None
+
+        preview_data = {
+            'generated_at': datetime.datetime.now().isoformat(timespec='seconds'),
+            'user_code': session.get('user_id', '01'),
+            'department': meta.get('department') or session.get('department'),
+            'store_origin': {
+                'code': (origin_store or {}).get('code') if isinstance(origin_store, dict) else getattr(origin_store, 'code', None),
+                'description': (origin_store or {}).get('description') if isinstance(origin_store, dict) else getattr(origin_store, 'description', None),
+            },
+            'store_destination': {
+                'code': (dest_store or {}).get('code') if isinstance(dest_store, dict) else getattr(dest_store, 'code', None),
+                'description': (dest_store or {}).get('description') if isinstance(dest_store, dict) else getattr(dest_store, 'description', None),
+            },
+            'items': normalized_items,
+            'total_quantity': sum(i['quantity'] for i in normalized_items)
+        }
+        session['collection_preview'] = preview_data
+        session.modified = True
+        return jsonify({'ok': True, 'count': len(normalized_items)}), 200
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+
+
+@app.route('/collection/preview.pdf', methods=['GET'])
+def collection_preview_pdf():
+    data = session.get('collection_preview')
+    if not data:
+        return 'No hay datos de previsualización en la sesión. Genera la previsualización primero.', 400
+
+    # Permitir ver HTML sin generar PDF para depuración
+    if request.args.get('view') == 'html':
+        return render_template('preview_collection_order.html', data=data)
+
+    if pdfkit is None:
+        return 'pdfkit no está instalado en el entorno de Python.', 500
+
+    config = get_pdfkit_config()
+    if not config:
+        return 'wkhtmltopdf no está configurado o no se encuentra el ejecutable.', 500
+
+    html = render_template('preview_collection_order.html', data=data)
+    options = {
+        'page-size': 'A4',
+        'encoding': 'UTF-8',
+        'margin-top': '10mm',
+        'margin-bottom': '10mm',
+        'margin-left': '10mm',
+        'margin-right': '10mm',
+    }
+    try:
+        pdf = pdfkit.from_string(html, False, configuration=config, options=options)
+    except Exception as e:
+        return f'Error generando PDF: {e}', 500
+
+    from flask import make_response
+    resp = make_response(pdf)
+    resp.headers['Content-Type'] = 'application/pdf'
+    # Inline para previsualizar en el navegador
+    resp.headers['Content-Disposition'] = 'inline; filename="orden_recoleccion_preview.pdf"'
+    return resp
 
 
 @app.route('/process_collection_products', methods=['POST'])

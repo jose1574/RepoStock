@@ -35,6 +35,7 @@
          <div id="action-bar" class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
             <button id="select-all" type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
             <button id="clear-selection" type="button" class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
+            <button id="open-preview" type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>
             <button id="send-selection" type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
          </div>
 
@@ -99,6 +100,7 @@
             const clearBtn = document.getElementById('clear-selection');
             const form = document.getElementById('collection-form');
             const sendBtn = document.getElementById('send-selection');
+            const openPreviewBtn = document.getElementById('open-preview');
 
             function getCheckboxes(){
                return Array.from(document.querySelectorAll('.product-checkbox'));
@@ -274,6 +276,92 @@
                filterRows();
 
             // Si
+               // ---- PREVIEW MODAL ----
+               const previewModal = document.getElementById('preview-modal');
+               const previewBody = document.getElementById('preview-table-body');
+               const previewAddMore = document.getElementById('preview-add-more');
+               const previewSubmit = document.getElementById('preview-submit');
+               const previewPdfBtn = document.getElementById('preview-pdf');
+
+               function openPreview(){
+                  const rows = Array.from(document.querySelectorAll('tbody tr'));
+                  const selected = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+                  if(selected.length === 0){
+                     alert('Selecciona al menos un producto para previsualizar.');
+                     return;
+                  }
+
+                  // Construir lista de items seleccionados
+                  const items = [];
+                  previewBody.innerHTML = '';
+                  for(const cb of selected){
+                     const code = cb.value;
+                     const row = cb.closest('tr');
+                     const descCell = row.querySelector('td:nth-child(3)');
+                     const unitCell = row.querySelector('td:nth-child(4)');
+                     const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
+                     const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
+                     const qtyInput = document.querySelector(`input[name="to_transfer_${code}"]`);
+                     const raw = qtyInput ? qtyInput.value : '0';
+                     const value = parseFloat(String(raw).replace(',', '.'));
+                     if(!value || value <= 0) continue;
+
+                     items.push({ product_code: code, description: desc, unit: unit, quantity: value });
+                     const tr = document.createElement('tr');
+                     tr.innerHTML = `
+                        <td class="px-3 py-2 text-sm">${code}</td>
+                        <td class="px-3 py-2 text-sm">${desc || ''}</td>
+                        <td class="px-3 py-2 text-sm">${unit || ''}</td>
+                        <td class="px-3 py-2 text-sm text-right">${value.toFixed(3)}</td>
+                     `;
+                     previewBody.appendChild(tr);
+                  }
+
+                  if(items.length === 0){
+                     alert('Los productos seleccionados deben tener una cantidad válida (> 0).');
+                     return;
+                  }
+
+                  // Guardar datos en sesión para PDF a través del backend
+                  const meta = {
+                     store_origin_code: "{{ store_origin.code if store_origin else '' }}",
+                     store_destination_code: "{{ store_destination.code if store_destination else '' }}",
+                     department: "{{ selected_department or '' }}"
+                  };
+
+                  // Deshabilitar PDF mientras se prepara sesión
+                  if(previewPdfBtn){ previewPdfBtn.disabled = true; previewPdfBtn.classList.add('opacity-60'); }
+
+                  fetch("{{ url_for('collection_preview') }}", {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ items, meta })
+                  }).then(r => r.json()).then(j => {
+                     if(!j || j.ok !== true){
+                        console.error(j);
+                     }
+                     if(previewPdfBtn){ previewPdfBtn.disabled = false; previewPdfBtn.classList.remove('opacity-60'); }
+                  }).catch(err => console.error('Error preparando previsualización:', err));
+
+                  // Mostrar modal
+                  previewModal.classList.remove('hidden');
+                  previewModal.classList.add('flex');
+               }
+
+               function closePreview(){
+                  previewModal.classList.add('hidden');
+                  previewModal.classList.remove('flex');
+               }
+
+               openPreviewBtn && openPreviewBtn.addEventListener('click', openPreview);
+               previewAddMore && previewAddMore.addEventListener('click', closePreview);
+               previewSubmit && previewSubmit.addEventListener('click', function(){
+                  // Enviar el formulario original
+                  form.requestSubmit ? form.requestSubmit() : form.submit();
+               });
+               previewPdfBtn && previewPdfBtn.addEventListener('click', function(){
+                  window.open("{{ url_for('collection_preview_pdf') }}", '_blank');
+               });
          })();
       </script>
       <!-- Modal de previsualización antes de enviar -->
@@ -296,6 +384,7 @@
             </div>
             <div class="flex justify-end gap-2">
                <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
+               <button id="preview-pdf" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Ver PDF</button>
                <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Enviar selección ahora</button>
             </div>
          </div>
