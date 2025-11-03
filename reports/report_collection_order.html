@@ -88,7 +88,7 @@
             <tr>
                 <td>{{ it.code_product or '' }}</td>
                 <td>{{ it.description_product or '' }}</td>
-                <td>{{ it.unit or '' }}</td>
+                <td>{{ it.unit_description or '' }}</td>
                 <td>{{ it.location or '' }}</td>
                 <td class="right">{{ '%.3f'|format(it.amount or 0) }}</td>
             </tr>
@@ -96,7 +96,7 @@
         </tbody>
     </table>
     <footer>
-        <div class="cell"><strong>Documento No.:</strong> {{ document_no or '' }}</div>
+        <div class="cell"><strong>Documento No.:</strong> {{ header.description or '' }}</div>
     </footer>
 </body>
 </html>

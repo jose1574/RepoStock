@@ -328,6 +328,7 @@ def get_products_by_codes(codes):
     finally:
         close_db_connection(conn)
 
+
 def update_description_inventory_operations(correlative: int, description: str):
     sql_update = """
     UPDATE inventory_operation
@@ -346,6 +347,7 @@ def update_description_inventory_operations(correlative: int, description: str):
     finally:
         close_db_connection(conn)
 
+
 def get_document_no_inventory_operation(correlative: int):
     sql = """
     SELECT 
@@ -363,6 +365,7 @@ def get_document_no_inventory_operation(correlative: int):
             return None
     finally:
         close_db_connection(conn)
+
 
 def save_transfer_order_in_wait(data):
     print("datos de la orden de traslado: ", data)
@@ -429,7 +432,6 @@ def get_correlative_product_unit(product_code):
 
 
 def save_transfer_order_items(order_id, items):
-    print("items a guardar en la orden de traslado: ", order_id, items)
     # """
     # Guarda los ítems de una orden de transferencia llamando a la función
     # set_inventory_operation_details en la base de datos. Usa los campos
@@ -646,11 +648,21 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
     conn = get_db_connection()
 
     sql = """
-            select 
-            * 
-            from inventory_operation_details as iod
-            left join products_failures as pf on iod.code_product = pf.product_code
-            where iod.main_correlative = %s
+                select 
+                iod.code_product,
+                iod.description_product,
+                u.description as unit_description, 
+                pf.location,
+                iod.amount
+                from inventory_operation_details as iod
+                /* Evitar duplicados: ubicar por producto y deposito destino */
+                left join products_failures as pf 
+                    on iod.code_product = pf.product_code
+                   and pf.store_code = iod.destination_store
+                left join products_units as pu on iod.unit = pu.correlative
+                left join units as u on (u.code = pu.unit)
+                where iod.main_correlative = %s
+                and pu.main_unit = true
         """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -671,6 +683,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
                     )
                     for k, v in r.items()
                 }
+
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)
@@ -696,5 +709,5 @@ __all__ = [
     "get_inventory_operations_by_correlative",
     "get_inventory_operations_details_by_correlative",
     "get_document_no_inventory_operation",
-    "update_description_inventory_operations"
+    "update_description_inventory_operations",
 ]
