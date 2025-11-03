@@ -328,9 +328,43 @@ def get_products_by_codes(codes):
     finally:
         close_db_connection(conn)
 
+def update_description_inventory_operations(correlative: int, description: str):
+    sql_update = """
+    UPDATE inventory_operation
+    SET 
+        description = %s
+    WHERE correlative = %s;
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql_update, (description, correlative))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar la descripción de la orden de transferencia: {e}")
+        conn.rollback()
+    finally:
+        close_db_connection(conn)
 
+def get_document_no_inventory_operation(correlative: int):
+    sql = """
+    SELECT 
+    document_no
+    FROM inventory_operation AS io
+    WHERE io.correlative = %s;
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (correlative,))
+            row = cur.fetchone()
+            if row:
+                return row[0]
+            return None
+    finally:
+        close_db_connection(conn)
 
-def save_transfer_order_in_wait(data, document_no: str = ""):
+def save_transfer_order_in_wait(data):
     print("datos de la orden de traslado: ", data)
     sql_insert_order = """
      SELECT set_inventory_operation(
@@ -339,7 +373,7 @@ def save_transfer_order_in_wait(data, document_no: str = ""):
         '',  -- p_document_no
         %s::date,  -- p_emission_date
         true,  -- p_wait
-        'ESTA ES LA DESCRIPCION DEL TRASLADO PARA SER UBICADO',  -- p_description
+        'SIN DESCRIPCION',  -- p_description
         '01',  -- p_user_code
         '00',  -- p_station
         '00',  -- p_store
@@ -612,8 +646,11 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
     conn = get_db_connection()
 
     sql = """
-            select * from inventory_operation_details 
-            where main_correlative = %s      
+            select 
+            * 
+            from inventory_operation_details as iod
+            left join products_failures as pf on iod.code_product = pf.product_code
+            where iod.main_correlative = %s
         """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -657,5 +694,7 @@ __all__ = [
     "get_departments",
     "search_product_failure",
     "get_inventory_operations_by_correlative",
-    "get_inventory_operations_details_by_correlative"
+    "get_inventory_operations_details_by_correlative",
+    "get_document_no_inventory_operation",
+    "update_description_inventory_operations"
 ]

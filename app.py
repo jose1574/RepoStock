@@ -35,6 +35,8 @@ from db import (
     search_product_failure,
     get_inventory_operations_by_correlative,
     get_inventory_operations_details_by_correlative,
+    update_description_inventory_operations,
+    get_document_no_inventory_operation
 )
 
 
@@ -422,20 +424,22 @@ def process_collection_products():
         transfer_data = {
             "emission_date": datetime.date.today(),
             "wait": True,
-            "description": "CREACION DE ORDEN DE TRASLADO DESDE APP REPOSTOCK",
             "user_code": session.get(
-                "user_id", "01"
+            "user_id", "01"
             ),  # usar usuario en sesión si existe
             "station": "00",
             "store": stock_store_origin,
             "locations": "00",
             "destination_store": session.get("store_code_destination", None),
-            "operation_comments": "Orden creada desde interface Repostock",
+            "operation_comments": "Orden creada desde interfaz Repostock",
             "total": sum([it["quantity"] for it in items]),
         }
 
         try:
             order_id = save_transfer_order_in_wait(transfer_data)
+            document_no = get_document_no_inventory_operation(order_id)
+            update_description_inventory_operations(order_id, f"Orden de traslado automatico No: {document_no}")
+
             if not order_id:
                 print("No se pudo crear la orden de transferencia")
                 return redirect(url_for("create_collection_order"))

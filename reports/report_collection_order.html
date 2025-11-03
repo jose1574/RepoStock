@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Orden de Recolección {{ header.correlative or '' }}</title>
+    <title>Orden de Recolección No. {{ header.correlative or '' }}</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -62,23 +62,14 @@
 
     <div class="meta">
         <div class="row">
-            <div class="cell"><strong>Correlativo:</strong> {{ header.correlative or '' }}</div>
             <div class="cell"><strong>Fecha emisión:</strong> {{ header.emission_date or '' }}</div>
-            <div class="cell"><strong>Usuario:</strong> {{ header.user_code or '' }}</div>
-            <div class="cell"><strong>Estado (wait):</strong> {{ header.wait }}</div>
         </div>
         <div class="row">
-            <div class="cell"><strong>Origen:</strong> {{ header.store or '' }}</div>
-            <div class="cell"><strong>Destino:</strong> {{ header.destination_store or '' }}</div>
-            <div class="cell"><strong>Estación:</strong> {{ header.station or '' }}</div>
+            <div class="cell"><strong>Deposito Origen:</strong> {{ header.store or '' }}</div>
+            <div class="cell"><strong>Deposito Destino:</strong> {{ header.destination_store or '' }}</div>
         </div>
         <div class="row">
             <div class="cell"><strong>Descripción:</strong> {{ header.description or '' }}</div>
-            <div class="cell"><strong>Comentarios:</strong> {{ header.operation_comments or '' }}</div>
-            <div class="cell"><strong>Tipo operación:</strong> {{ header.operation_type or '' }}</div>
-        </div>
-        <div class="row">
-            <div class="cell"><strong>Generado:</strong> {{ generated_at }}</div>
         </div>
     </div>
 
@@ -88,6 +79,7 @@
                 <th>Código</th>
                 <th>Descripción</th>
                 <th>Unidad</th>
+                <th>Ubicación</th>
                 <th class="right">Cantidad</th>
             </tr>
         </thead>
@@ -97,10 +89,14 @@
                 <td>{{ it.code_product or '' }}</td>
                 <td>{{ it.description_product or '' }}</td>
                 <td>{{ it.unit or '' }}</td>
+                <td>{{ it.location or '' }}</td>
                 <td class="right">{{ '%.3f'|format(it.amount or 0) }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <footer>
+        <div class="cell"><strong>Documento No.:</strong> {{ document_no or '' }}</div>
+    </footer>
 </body>
 </html>
