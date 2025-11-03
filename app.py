@@ -1,10 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import (
+    Flask,
+    render_template,
+    render_template_string,
+    request,
+    redirect,
+    url_for,
+    session,
+)
 from flask import jsonify
 from dotenv import load_dotenv
 import os, sys
 import datetime
 import json
 from typing import List, Dict, Any
+import pdfkit
 
 try:
     import pdfkit
@@ -93,14 +102,13 @@ def destination_store_selection_param_product():
     )
 
 
-# seleccion de deposito para configurar productos
 @app.route("/config_param_product_store")
 def config_param_product_store():
     stores = get_stores()
     return render_template("config_param_product_store.html", stores=stores)
 
 
-@app.route("/config_param_product", methods=["POST", "GET"])
+@app.route("/config_param_product", methods=["POST"])
 def config_param_product():
     # Inicializar valores por defecto
     product = None
@@ -121,9 +129,6 @@ def config_param_product():
         if store_code:
             session["store"] = store_code
             session_store_code = store_code
-
-        print("esto es lo que tengo que la session de store ", session.get("store"))
-
         # Buscar la tienda y el producto usando el código de store actual
         search_store = (
             get_store_by_code(session_store_code) if session_store_code else None
@@ -203,7 +208,8 @@ def save_config_param_product():
             return redirect(url_for("config_param_product"))
 
 
-@app.route("/select_store_destination_collection_order", methods=["POST", "GET"])
+
+@app.route("/select_store_destinatSion_collection_order", methods=["POST", "GET"])
 def select_store_destination_collection_order():
     stores = get_stores()
     return render_template("form_destination_store.html", stores=stores)
@@ -264,107 +270,59 @@ def create_collection_order():
     )
 
 
-@app.route("/collection/preview.pdf", methods=["GET", "POST"])
+
+
+@app.route("/collection/preview.pdf", methods=["POST", "GET"])
 def collection_preview_pdf():
-    # Permitir ver HTML rápido en GET para depuración (sin datos no mostrará nada útil)
-    if request.method == "GET" and request.args.get("view") == "html":
-        return "<html><body><p>Usa POST con los items para generar el PDF.</p></body></html>"
+    # Aceptar parámetros por POST (form) o GET (querystring)
+    correlative = None
+    operation_type = "TRANSFER"
+    wait = True
 
-    # Leer datos de POST: JSON directo o campo form 'payload'
-    payload = None
     if request.method == "POST":
-        payload = request.get_json(silent=True)
-        if not payload and "payload" in request.form:
-            try:
-                payload = json.loads(request.form.get("payload") or "{}")
-            except Exception:
-                payload = None
+        correlative = request.form.get("correlative", default=None, type=int)
+        operation_type = request.form.get("operation_type", default="TRANSFER", type=str)
+        wait_param = request.form.get("wait", default="true", type=str)
+        wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
+    else:
+        correlative = request.args.get("correlative", default=None, type=int)
+        operation_type = request.args.get("operation_type", default="TRANSFER", type=str)
+        wait_param = request.args.get("wait", default="true", type=str)
+        wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
 
-    if not payload:
-        return "No se recibieron datos para generar PDF.", 400
+    if not correlative:
+        return "Falta el parámetro correlative", 400
 
-    items: List[Dict[str, Any]] = payload.get("items", []) or []
-    meta: Dict[str, Any] = payload.get("meta", {}) or {}
-
-    # Normalizar items y totales
-    normalized = []
-    total_qty = 0.0
-    for it in items:
-        code = (it.get("product_code") or it.get("code") or "").strip()
-        if not code:
-            continue
-        raw_qty = it.get("quantity", it.get("qty", 0))
-        if isinstance(raw_qty, str):
-            raw_qty = raw_qty.replace(",", ".")
-        try:
-            qty = float(raw_qty)
-        except Exception:
-            qty = 0.0
-        if qty <= 0:
-            continue
-        desc = it.get("description") or ""
-        unit = it.get("unit") or ""
-        normalized.append(
-            {"code": code, "description": desc, "unit": unit, "quantity": qty}
+    # Consultar encabezado y detalle
+    try:
+        header_rows = get_inventory_operations_by_correlative(
+            correlative, operation_type, wait
         )
-        total_qty += qty
+        header = header_rows[0] if header_rows else {}
+        details = get_inventory_operations_details_by_correlative(correlative)
+    except Exception as e:
+        return f"Error consultando datos de la orden: {e}", 500
 
-    origin_desc = meta.get("store_origin_desc") or ""
-    origin_code = meta.get("store_origin_code") or ""
-    dest_desc = meta.get("store_destination_desc") or ""
-    dest_code = meta.get("store_destination_code") or ""
-    generated_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Cargar reporte desde carpeta reports/ y renderizar con Jinja
+    report_path = os.path.join(base_path, "reports", "report_collection_order.html")
+    if not os.path.exists(report_path):
+        return (
+            "No se encontró el reporte report_collection_order.html en la carpeta reports.",
+            500,
+        )
+    try:
+        with open(report_path, "r", encoding="utf-8") as f:
+            report_template = f.read()
+    except Exception as e:
+        return f"No se pudo leer el reporte: {e}", 500
 
-    # Construir HTML simple inline (sin plantilla)
-    rows_html = "".join(
-        [
-            f"<tr><td>{i['code']}</td><td>{i['description']}</td><td>{i['unit']}</td><td style='text-align:right'>{i['quantity']:.3f}</td></tr>"
-            for i in normalized
-        ]
-    )
-    html = f"""
-    <html>
-      <head>
-        <meta charset='utf-8'>
-        <style>
-          body {{ font-family: Arial, sans-serif; font-size: 12px; }}
-          h1 {{ font-size: 18px; margin-bottom: 6px; }}
-          .meta {{ margin-bottom: 12px; }}
-          table {{ width: 100%; border-collapse: collapse; }}
-          th, td {{ border: 1px solid #ddd; padding: 6px; }}
-          th {{ background: #f5f5f5; text-transform: uppercase; font-size: 11px; }}
-          tfoot td {{ font-weight: bold; }}
-        </style>
-      </head>
-      <body>
-        <h1>Previsualización de Orden de Recolección</h1>
-        <div class='meta'>
-          <div><strong>Generada:</strong> {generated_at}</div>
-          <div><strong>Origen:</strong> {origin_code} - {origin_desc}</div>
-          <div><strong>Destino:</strong> {dest_code} - {dest_desc}</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Descripción</th>
-              <th>Unidad</th>
-              <th style='text-align:right'>Cantidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows_html}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan='3'>Total</td>
-              <td style='text-align:right'>{total_qty:.3f}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </body>
-    </html>
-    """
+    # Contexto para el reporte
+    context = {
+        "header": header,
+        "details": details,
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    html = render_template_string(report_template, **context)
 
     if pdfkit is None:
         return "pdfkit no está instalado en el entorno de Python.", 500
@@ -394,6 +352,8 @@ def collection_preview_pdf():
         'inline; filename="orden_recoleccion_preview.pdf"'
     )
     return resp
+
+
 
 
 @app.route("/process_collection_products", methods=["POST"])
@@ -482,13 +442,20 @@ def process_collection_products():
 
             # Guardar los items
             save_transfer_order_items(order_id, items)
-            print("Orden creada id=", order_id)
+            # abre una ventana con el pdf de la orden creada usando la ruta collection_preview_pdf()
+            print(
+                "Orden de traslado creada con éxito. Correlativo:",
+                order_id,
+            )
+           
         except Exception as e:
             print("Error procesando la orden de traslado:", e)
             # aquí podrías usar flash() para mostrar el error al usuario
             return redirect(url_for("create_collection_order"))
 
-        return redirect(url_for("index"))
+        return redirect(
+                url_for("collection_preview_pdf", correlative=order_id, wait="true", operation_type="TRANSFER")
+            )
 
 
 if __name__ == "__main__":

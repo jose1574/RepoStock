@@ -191,8 +191,6 @@ def search_product_failure(code_product, store_code):
 
 def save_product_failure(data):
 
-    print("datos recibidos aqui: ", data)
-
     # 1. Sentencia SQL de ACTUALIZACIÓN (UPDATE)
     # NOTA: Solo actualizamos los stocks, ya que product_code y store_code
     # son las claves de coincidencia (WHERE) y no deben cambiar.
@@ -331,7 +329,8 @@ def get_products_by_codes(codes):
         close_db_connection(conn)
 
 
-def save_transfer_order_in_wait(data):
+
+def save_transfer_order_in_wait(data, document_no: str = ""):
     print("datos de la orden de traslado: ", data)
     sql_insert_order = """
      SELECT set_inventory_operation(
@@ -365,7 +364,7 @@ def save_transfer_order_in_wait(data):
     try:
         with conn.cursor() as cur:
             cur.execute(sql_insert_order, params)
-            order_id = cur.fetchone()[0]
+            order_id = cur.fetchone()
         conn.commit()
         return order_id
     except Exception as e:
@@ -516,7 +515,6 @@ def save_transfer_order_items(order_id, items):
 
 def get_store_by_code(store_code):
     """Obtiene la información de un deposito por su código."""
-    print("Obteniendo información del depósito con código:", store_code)
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -573,7 +571,7 @@ def get_departments():
 
 
 def get_inventory_operations_by_correlative(
-    correlative: str, operation_type: str, wait: bool = True
+    correlative: int, operation_type: str, wait: bool = True
 ):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
     conn = get_db_connection()
@@ -609,17 +607,17 @@ def get_inventory_operations_by_correlative(
         close_db_connection(conn)
 
 
-def get_inventory_operations_details_by_correlative(correlative: str):
+def get_inventory_operations_details_by_correlative(main_correlative: int):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
     conn = get_db_connection()
 
     sql = """
             select * from inventory_operation_details 
-            where main_correlative = %s            
+            where main_correlative = %s      
         """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (correlative,))
+            cur.execute(sql, (main_correlative,))
             rows = cur.fetchall()
 
             # serializar tipos no nativos de JSON (Decimal, datetime)
@@ -636,7 +634,6 @@ def get_inventory_operations_details_by_correlative(correlative: str):
                     )
                     for k, v in r.items()
                 }
-
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)

@@ -3,434 +3,466 @@
 {% block title %}Seleccionar tienda de destino - Repostock{% endblock %}
 
 {% block content %}
-   <div class="container mx-auto px-4 pt-6 pb-12">
-      <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
-      <div class="mb-4 flex items-center gap-3">
-         <label for="department-filter" class="text-sm font-medium text-gray-700">Departamento:</label>
-         <select id="department-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por departamento">
-            <option value="">-- Todos --</option>
-            {% if departments %}
-               {% for d in departments %}
-               <option value="{{ d }}">{{ d }}</option>
-               {% endfor %}
-            {% endif %}
+<div class="container mx-auto px-4 pt-6 pb-12">
+   <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
+   <div class="mb-4 flex items-center gap-3">
+      <label for="department-filter" class="text-sm font-medium text-gray-700">Departamento:</label>
+      <select id="department-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por departamento">
+         <option value="">-- Todos --</option>
+         {% if departments %}
+         {% for d in departments %}
+         <option value="{{ d }}">{{ d }}</option>
+         {% endfor %}
+         {% endif %}
+      </select>
+
+      <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
+      <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
+         class="border rounded px-2 py-1 text-sm w-64" />
+
+      <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
+      <form id="server-filter-form" method="post" action="{{ url_for('create_collection_order') }}">
+         <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
+         <input type="hidden" name="store_stock_destination"
+            value="{{ store_destination.code if store_destination else '' }}">
+         <select name="department" id="server-department" class="hidden">
+            <option value=""></option>
          </select>
+      </form>
+   </div>
 
-         <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
-         <input id="product-search" type="search" placeholder="Buscar por código o descripción..." class="border rounded px-2 py-1 text-sm w-64" />
-
-         <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
-         <form id="server-filter-form" method="post" action="{{ url_for('create_collection_order') }}">
-            <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
-            <input type="hidden" name="store_stock_destination" value="{{ store_destination.code if store_destination else '' }}">
-            <select name="department" id="server-department" class="hidden">
-               <option value=""></option>
-            </select>
-         </form>
+   <!-- Form que envía la selección de productos -->
+   <form id="collection-form" action="{{ url_for('process_collection_products')}}" method="post">
+      <!-- Barra flotante de acciones -->
+      <div id="action-bar"
+         class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
+         <button id="select-all" type="button"
+            class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
+         <button id="clear-selection" type="button"
+            class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
+         <button id="open-preview" type="button"
+            class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>
+         <button id="send-selection" type="submit"
+            class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
       </div>
 
-      <!-- Form que envía la selección de productos -->
-      <form id="collection-form" action="{{ url_for('process_collection_products')}}" method="post">
-         <!-- Barra flotante de acciones -->
-         <div id="action-bar" class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
-            <button id="select-all" type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
-            <button id="clear-selection" type="button" class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
-            <button id="open-preview" type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>            
-            <button id="send-selection" type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
-         </div>
-
-         <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
-            <table class="min-w-full divide-y divide-gray-800">
+      <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
+         <table class="min-w-full divide-y divide-gray-800">
             <caption class="sr-only">Lista de productos para traslado</caption>
             <thead class="bg-gray-800">
                <tr>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">&nbsp;</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Código</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Descripción</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Unidad</th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Departamento</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock Depósito origen: <b>{{store_origin.description }}</b></th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Min</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Max.</th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock destino: <b>{{ store_destination.description }}</b></th>
-                  <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Por trasladar</th>
-            </tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     &nbsp;</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Código</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Descripción</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Unidad</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Departamento</th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
+                     Depósito origen: <b>{{store_origin.description }}</b></th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Min
+                  </th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Max.
+                  </th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
+                     destino: <b>{{ store_destination.description }}</b></th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Por
+                     trasladar</th>
+               </tr>
             </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                     {% if products %}
-                        {% for p in products %}
-                        <tr class="hover:bg-gray-50" data-department="{{ p.department_description | e }}">
-                           <!-- Checkbox para seleccionar el producto -->
-                           <td class="px-4 py-3 text-sm text-gray-900">
-                              <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
-                           </td>
-                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
-                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.product_description }}</td>
-                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
-                           <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
-                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_origin }}</td>
-                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.minimal_stock }}</td>
-                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.maximum_stock }}</td>
-                           <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_destination }}</td>
-                           <!-- Input editable para por trasladar. Nombre único por producto para recuperarlo en el servidor -->
-                           <td class="px-4 py-3 text-sm text-right text-gray-900">
-                              <div class="relative inline-block">
-                                 <!-- Mensaje de error que aparece debajo del input (no debe sobreponer) -->
-                                 <div class="input-error hidden text-red-700 text-xs mt-1"></div>
-                                 <input type="number" name="to_transfer_{{ p.code }}" value="{{ p.to_transfer }}" min="0.0000001" max="{{ p.stock_store_origin }}" step="any" class="w-24 text-right border rounded px-2 py-1 to-transfer-input">
-                              </div>
-                           </td>
-                        </tr>
-                        {% endfor %}
-                     {% else %}
-                        <tr>
-                           <td class="px-4 py-6 text-center text-sm text-gray-500" colspan="10">No hay productos para mostrar. Usa el formulario para seleccionar depósitos y departamento.</td>
-                        </tr>
-                     {% endif %}
-                  </tbody>
+            <tbody class="bg-white divide-y divide-gray-200">
+               {% if products %}
+               {% for p in products %}
+               <tr class="hover:bg-gray-50" data-department="{{ p.department_description | e }}">
+                  <!-- Checkbox para seleccionar el producto -->
+                  <td class="px-4 py-3 text-sm text-gray-900">
+                     <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.product_description }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_origin }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.minimal_stock }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.maximum_stock }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_destination }}</td>
+                  <!-- Input editable para por trasladar. Nombre único por producto para recuperarlo en el servidor -->
+                  <td class="px-4 py-3 text-sm text-right text-gray-900">
+                     <div class="relative inline-block">
+                        <!-- Mensaje de error que aparece debajo del input (no debe sobreponer) -->
+                        <div class="input-error hidden text-red-700 text-xs mt-1"></div>
+                        <input type="number" name="to_transfer_{{ p.code }}" value="{{ p.to_transfer }}" min="0.0000001"
+                           max="{{ p.stock_store_origin }}" step="any"
+                           class="w-24 text-right border rounded px-2 py-1 to-transfer-input">
+                     </div>
+                  </td>
+               </tr>
+               {% endfor %}
+               {% else %}
+               <tr>
+                  <td class="px-4 py-6 text-center text-sm text-gray-500" colspan="10">No hay productos para mostrar.
+                     Usa el formulario para seleccionar depósitos y departamento.</td>
+               </tr>
+               {% endif %}
+            </tbody>
          </table>
-         </div>
-         </div>
-         </form>
+      </div>
+</div>
+</form>
 
-      <!-- Scripts para manejar selección y envío -->
-      <script>
-         document.addEventListener('DOMContentLoaded', function(){
-            const selectAllBtn = document.getElementById('select-all');
-            const clearBtn = document.getElementById('clear-selection');
-            const form = document.getElementById('collection-form');
-            const sendBtn = document.getElementById('send-selection');
-            const openPreviewBtn = document.getElementById('open-preview');
-            let currentPreviewItems = [];
-            let currentPreviewMeta = {};
+<!-- Scripts para manejar selección y envío -->
+<script>
+   document.addEventListener('DOMContentLoaded', function () {
+      const selectAllBtn = document.getElementById('select-all');
+      const clearBtn = document.getElementById('clear-selection');
+      const form = document.getElementById('collection-form');
+      const sendBtn = document.getElementById('send-selection');
+      const openPreviewBtn = document.getElementById('open-preview');
+      let currentPreviewItems = [];
+      let currentPreviewMeta = {};
 
-            function getCheckboxes(){
-               return Array.from(document.querySelectorAll('.product-checkbox'));
-            }
+      function getCheckboxes() {
+         return Array.from(document.querySelectorAll('.product-checkbox'));
+      }
 
-            selectAllBtn && selectAllBtn.addEventListener('click', function(){
-               getCheckboxes().forEach(cb => cb.checked = true);
-            });
+      selectAllBtn && selectAllBtn.addEventListener('click', function () {
+         getCheckboxes().forEach(cb => cb.checked = true);
+      });
 
-            clearBtn && clearBtn.addEventListener('click', function(){
-               getCheckboxes().forEach(cb => cb.checked = false);
-            });
+      clearBtn && clearBtn.addEventListener('click', function () {
+         getCheckboxes().forEach(cb => cb.checked = false);
+      });
 
-            // Validación simple antes de enviar: debe haber al menos un producto seleccionado
-            form && form.addEventListener('submit', function(e){
-               const anyChecked = getCheckboxes().some(cb => cb.checked);
-               if(!anyChecked){
+      // Validación simple antes de enviar: debe haber al menos un producto seleccionado
+      form && form.addEventListener('submit', function (e) {
+         const anyChecked = getCheckboxes().some(cb => cb.checked);
+         if (!anyChecked) {
+            e.preventDefault();
+            alert('Selecciona al menos un producto antes de enviar.');
+            return false;
+         }
+
+         // Opcional: compactar los inputs to_transfer solo para productos seleccionados
+         // Para esto no necesitamos hacer nada extra ahora; en el servidor se leerá por código
+         return true;
+      });
+
+      // Manejo de Enter en inputs "to-transfer-input": evitar submit y mover foco al siguiente input
+      function getToTransferInputs() {
+         return Array.from(document.querySelectorAll('.to-transfer-input'));
+      }
+
+      function setInvalid(input, message) {
+         input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+         const err = input.parentElement.querySelector('.input-error');
+         if (err) {
+            err.textContent = message;
+            err.classList.remove('hidden');
+         }
+      }
+
+      function clearInvalid(input) {
+         input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+         const err = input.parentElement.querySelector('.input-error');
+         if (err) {
+            err.textContent = '';
+            err.classList.add('hidden');
+         }
+      }
+
+      // Helpers para validar solo productos seleccionados
+      function getProductCodeFromInput(input) {
+         const name = input && input.name ? input.name : '';
+         const m = name.match(/^to_transfer_(.+)$/);
+         return m ? m[1] : null;
+      }
+
+      function isInputSelected(input) {
+         const code = getProductCodeFromInput(input);
+         if (!code) return false;
+         const cb = Array.from(document.querySelectorAll('.product-checkbox')).find(c => c.value === code);
+         return !!(cb && cb.checked);
+      }
+
+      function validateInput(input) {
+         // Si el producto NO está seleccionado, no validar ni marcar error
+         if (!isInputSelected(input)) {
+            clearInvalid(input);
+            return true;
+         }
+
+         const raw = input.value;
+         const val = Number(raw);
+         const maxAttr = input.getAttribute('max');
+         const max = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : Infinity;
+
+         // Requerimos número > 0 y <= stock origen
+         if (!raw || isNaN(val) || val <= 0) {
+            setInvalid(input, 'El valor debe ser un número mayor que 0');
+            return false;
+         }
+         if (!(val <= max)) {
+            setInvalid(input, `El valor debe ser menor que el stock de origen (${max})`);
+            return false;
+         }
+
+         clearInvalid(input);
+         return true;
+      }
+
+      function focusNextInput(current, offset = 1) {
+         const inputs = getToTransferInputs();
+         const idx = inputs.indexOf(current);
+         if (idx === -1) return;
+         const next = inputs[idx + offset];
+         if (next) {
+            next.focus();
+            try { next.select(); } catch (e) { }
+         }
+      }
+
+      // Atachamos listeners a todos los inputs actuales
+      function attachEnterHandlers() {
+         getToTransferInputs().forEach(input => {
+            // validar en cada cambio
+            input.addEventListener('input', function () { validateInput(this); });
+            input.addEventListener('blur', function () { validateInput(this); });
+
+            input.addEventListener('keydown', function (e) {
+               // Enter o NumpadEnter
+               if (e.key === 'Enter') {
                   e.preventDefault();
-                  alert('Selecciona al menos un producto antes de enviar.');
+                  // validar antes de pasar al siguiente
+                  if (validateInput(this)) {
+                     focusNextInput(this, 1);
+                  } else {
+                     // si inválido, mantener foco aquí
+                     this.focus();
+                  }
                   return false;
                }
-
-               // Opcional: compactar los inputs to_transfer solo para productos seleccionados
-               // Para esto no necesitamos hacer nada extra ahora; en el servidor se leerá por código
-               return true;
+               // Flechas para navegar rápidamente
+               if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  focusNextInput(this, 1);
+                  return false;
+               }
+               if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  focusNextInput(this, -1);
+                  return false;
+               }
             });
-            
-               // Manejo de Enter en inputs "to-transfer-input": evitar submit y mover foco al siguiente input
-               function getToTransferInputs(){
-                  return Array.from(document.querySelectorAll('.to-transfer-input'));
-               }
+         });
+      }
 
-               function setInvalid(input, message){
-                  input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
-                  const err = input.parentElement.querySelector('.input-error');
-                  if(err){
-                     err.textContent = message;
-                     err.classList.remove('hidden');
-                  }
-               }
+      // Ejecutar al cargar
+      attachEnterHandlers();
 
-               function clearInvalid(input){
-                  input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
-                  const err = input.parentElement.querySelector('.input-error');
-                  if(err){
-                     err.textContent = '';
-                     err.classList.add('hidden');
-                  }
-               }
+      // Al marcar/desmarcar un producto, limpiar errores si se desmarca
+      getCheckboxes().forEach(cb => {
+         cb.addEventListener('change', function () {
+            const code = this.value;
+            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            if (inp && !this.checked) {
+               clearInvalid(inp);
+            }
+         });
+      });
 
-               // Helpers para validar solo productos seleccionados
-               function getProductCodeFromInput(input){
-                  const name = input && input.name ? input.name : '';
-                  const m = name.match(/^to_transfer_(.+)$/);
-                  return m ? m[1] : null;
-               }
+      // Validación de formulario al enviar: revisar solo los productos seleccionados
+      form && form.addEventListener('submit', function (e) {
+         const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         let firstInvalid = null;
+         for (const cb of checked) {
+            const code = cb.value;
+            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            if (inp) {
+               const ok = validateInput(inp);
+               if (!ok && !firstInvalid) firstInvalid = inp;
+            }
+         }
+         if (firstInvalid) {
+            e.preventDefault();
+            firstInvalid.focus();
+            alert('Corrige los valores marcados en rojo antes de enviar.');
+            return false;
+         }
+         return true;
+      });
 
-               function isInputSelected(input){
-                  const code = getProductCodeFromInput(input);
-                  if(!code) return false;
-                  const cb = Array.from(document.querySelectorAll('.product-checkbox')).find(c => c.value === code);
-                  return !!(cb && cb.checked);
-               }
+      // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
 
-               function validateInput(input){
-                  // Si el producto NO está seleccionado, no validar ni marcar error
-                  if(!isInputSelected(input)){
-                     clearInvalid(input);
-                     return true;
-                  }
+      // BUSCADOR CLIENTE y filtro por departamento
+      const searchInput = document.getElementById('product-search');
+      const deptSelect = document.getElementById('department-filter');
 
-                  const raw = input.value;
-                  const val = Number(raw);
-                  const maxAttr = input.getAttribute('max');
-                  const max = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : Infinity;
+      function normalizeText(s) { return (s || '').toString().toLowerCase(); }
 
-                  // Requerimos número > 0 y <= stock origen
-                  if(!raw || isNaN(val) || val <= 0){
-                     setInvalid(input, 'El valor debe ser un número mayor que 0');
-                     return false;
-                  }
-                  if(!(val <= max)){
-                     setInvalid(input, `El valor debe ser menor que el stock de origen (${max})`);
-                     return false;
-                  }
+      function filterRows() {
+         const q = normalizeText(searchInput && searchInput.value);
+         const dept = normalizeText(deptSelect && deptSelect.value);
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         rows.forEach(row => {
+            const codeCell = row.querySelector('td:nth-child(2)');
+            const descCell = row.querySelector('td:nth-child(3)');
+            const rowDept = normalizeText(row.getAttribute('data-department'));
 
-                  clearInvalid(input);
-                  return true;
-               }
+            const matchesDept = !dept || rowDept === dept;
+            const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).indexOf(q) !== -1) || (normalizeText(descCell && descCell.textContent).indexOf(q) !== -1);
 
-               function focusNextInput(current, offset = 1){
-                  const inputs = getToTransferInputs();
-                  const idx = inputs.indexOf(current);
-                  if(idx === -1) return;
-                  const next = inputs[idx + offset];
-                  if(next){
-                     next.focus();
-                     try { next.select(); } catch(e) { }
-                  }
-               }
+            if (matchesDept && matchesQuery) {
+               row.style.display = '';
+            } else {
+               row.style.display = 'none';
+            }
+         });
+      }
 
-               // Atachamos listeners a todos los inputs actuales
-               function attachEnterHandlers(){
-                  getToTransferInputs().forEach(input => {
-                     // validar en cada cambio
-                     input.addEventListener('input', function(){ validateInput(this); });
-                     input.addEventListener('blur', function(){ validateInput(this); });
+      if (searchInput) searchInput.addEventListener('input', filterRows);
+      if (deptSelect) deptSelect.addEventListener('change', filterRows);
 
-                     input.addEventListener('keydown', function(e){
-                        // Enter o NumpadEnter
-                        if(e.key === 'Enter'){
-                           e.preventDefault();
-                           // validar antes de pasar al siguiente
-                           if(validateInput(this)){
-                              focusNextInput(this, 1);
-                           } else {
-                              // si inválido, mantener foco aquí
-                              this.focus();
-                           }
-                           return false;
-                        }
-                        // Flechas para navegar rápidamente
-                        if(e.key === 'ArrowDown'){
-                           e.preventDefault();
-                           focusNextInput(this, 1);
-                           return false;
-                        }
-                        if(e.key === 'ArrowUp'){
-                           e.preventDefault();
-                           focusNextInput(this, -1);
-                           return false;
-                        }
-                     });
-                  });
-               }
+      // iniciar filtro en load
+      filterRows();
 
-               // Ejecutar al cargar
-               attachEnterHandlers();
+      // Si
+      // ---- PREVIEW MODAL ----
+      const previewModal = document.getElementById('preview-modal');
+      const previewBody = document.getElementById('preview-table-body');
+      const previewAddMore = document.getElementById('preview-add-more');
+      const previewSubmit = document.getElementById('preview-submit');
+      const previewPdfBtn = document.getElementById('preview-pdf');
 
-               // Al marcar/desmarcar un producto, limpiar errores si se desmarca
-               getCheckboxes().forEach(cb => {
-                  cb.addEventListener('change', function(){
-                     const code = this.value;
-                     const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
-                     if(inp && !this.checked){
-                        clearInvalid(inp);
-                     }
-                  });
-               });
+      function openPreview() {
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         const selected = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         if (selected.length === 0) {
+            alert('Selecciona al menos un producto para previsualizar.');
+            return;
+         }
 
-               // Validación de formulario al enviar: revisar solo los productos seleccionados
-               form && form.addEventListener('submit', function(e){
-                  const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
-                  let firstInvalid = null;
-                  for(const cb of checked){
-                     const code = cb.value;
-                     const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
-                     if(inp){
-                        const ok = validateInput(inp);
-                        if(!ok && !firstInvalid) firstInvalid = inp;
-                     }
-                  }
-                  if(firstInvalid){
-                     e.preventDefault();
-                     firstInvalid.focus();
-                     alert('Corrige los valores marcados en rojo antes de enviar.');
-                     return false;
-                  }
-                  return true;
-               });
+         // Construir lista de items seleccionados
+         const items = [];
+         previewBody.innerHTML = '';
+         for (const cb of selected) {
+            const code = cb.value;
+            const row = cb.closest('tr');
+            const descCell = row.querySelector('td:nth-child(3)');
+            const unitCell = row.querySelector('td:nth-child(4)');
+            const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
+            const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
+            const qtyInput = document.querySelector(`input[name="to_transfer_${code}"]`);
+            const raw = qtyInput ? qtyInput.value : '0';
+            const value = parseFloat(String(raw).replace(',', '.'));
+            if (!value || value <= 0) continue;
 
-               // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
-
-               // BUSCADOR CLIENTE y filtro por departamento
-               const searchInput = document.getElementById('product-search');
-               const deptSelect = document.getElementById('department-filter');
-
-               function normalizeText(s){ return (s||'').toString().toLowerCase(); }
-
-               function filterRows(){
-                  const q = normalizeText(searchInput && searchInput.value);
-                  const dept = normalizeText(deptSelect && deptSelect.value);
-                  const rows = Array.from(document.querySelectorAll('tbody tr'));
-                  rows.forEach(row => {
-                     const codeCell = row.querySelector('td:nth-child(2)');
-                     const descCell = row.querySelector('td:nth-child(3)');
-                     const rowDept = normalizeText(row.getAttribute('data-department'));
-
-                     const matchesDept = !dept || rowDept === dept;
-                     const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).indexOf(q) !== -1) || (normalizeText(descCell && descCell.textContent).indexOf(q) !== -1);
-
-                     if(matchesDept && matchesQuery){
-                        row.style.display = '';
-                     } else {
-                        row.style.display = 'none';
-                     }
-                  });
-               }
-
-               if(searchInput) searchInput.addEventListener('input', filterRows);
-               if(deptSelect) deptSelect.addEventListener('change', filterRows);
-
-               // iniciar filtro en load
-               filterRows();
-
-            // Si
-               // ---- PREVIEW MODAL ----
-               const previewModal = document.getElementById('preview-modal');
-               const previewBody = document.getElementById('preview-table-body');
-               const previewAddMore = document.getElementById('preview-add-more');
-               const previewSubmit = document.getElementById('preview-submit');
-               const previewPdfBtn = document.getElementById('preview-pdf');
-
-               function openPreview(){
-                  const rows = Array.from(document.querySelectorAll('tbody tr'));
-                  const selected = Array.from(document.querySelectorAll('.product-checkbox:checked'));
-                  if(selected.length === 0){
-                     alert('Selecciona al menos un producto para previsualizar.');
-                     return;
-                  }
-
-                  // Construir lista de items seleccionados
-                  const items = [];
-                  previewBody.innerHTML = '';
-                  for(const cb of selected){
-                     const code = cb.value;
-                     const row = cb.closest('tr');
-                     const descCell = row.querySelector('td:nth-child(3)');
-                     const unitCell = row.querySelector('td:nth-child(4)');
-                     const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
-                     const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
-                     const qtyInput = document.querySelector(`input[name="to_transfer_${code}"]`);
-                     const raw = qtyInput ? qtyInput.value : '0';
-                     const value = parseFloat(String(raw).replace(',', '.'));
-                     if(!value || value <= 0) continue;
-
-                     items.push({ product_code: code, description: desc, unit: unit, quantity: value });
-                     const tr = document.createElement('tr');
-                     tr.innerHTML = `
+            items.push({ product_code: code, description: desc, unit: unit, quantity: value });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
                         <td class="px-3 py-2 text-sm">${code}</td>
                         <td class="px-3 py-2 text-sm">${desc || ''}</td>
                         <td class="px-3 py-2 text-sm">${unit || ''}</td>
                         <td class="px-3 py-2 text-sm text-right">${value.toFixed(3)}</td>
                      `;
-                     previewBody.appendChild(tr);
-                  }
+            previewBody.appendChild(tr);
+         }
 
-                  if(items.length === 0){
-                     alert('Los productos seleccionados deben tener una cantidad válida (> 0).');
-                     return;
-                  }
+         if (items.length === 0) {
+            alert('Los productos seleccionados deben tener una cantidad válida (> 0).');
+            return;
+         }
 
-                  // Metadatos básicos para PDF
-                  const meta = {
-                     store_origin_code: "{{ store_origin.code if store_origin else '' }}",
-                     store_origin_desc: "{{ store_origin.description if store_origin else '' }}",
-                     store_destination_code: "{{ store_destination.code if store_destination else '' }}",
-                     store_destination_desc: "{{ store_destination.description if store_destination else '' }}",
-                     department: "{{ selected_department or '' }}"
-                  };
+         // Metadatos básicos para PDF
+         const meta = {
+            store_origin_code: "{{ store_origin.code if store_origin else '' }}",
+            store_origin_desc: "{{ store_origin.description if store_origin else '' }}",
+            store_destination_code: "{{ store_destination.code if store_destination else '' }}",
+            store_destination_desc: "{{ store_destination.description if store_destination else '' }}",
+            department: "{{ selected_department or '' }}"
+         };
 
-                  // Guardar en variables para usar en botón PDF
-                  currentPreviewItems = items;
-                  currentPreviewMeta = meta;
+         // Guardar en variables para usar en botón PDF
+         currentPreviewItems = items;
+         currentPreviewMeta = meta;
 
-                  // Mostrar modal
-                  previewModal.classList.remove('hidden');
-                  previewModal.classList.add('flex');
-               }
+         // Mostrar modal
+         previewModal.classList.remove('hidden');
+         previewModal.classList.add('flex');
+      }
 
-               function closePreview(){
-                  previewModal.classList.add('hidden');
-                  previewModal.classList.remove('flex');
-               }
+      function closePreview() {
+         previewModal.classList.add('hidden');
+         previewModal.classList.remove('flex');
+      }
 
-               openPreviewBtn && openPreviewBtn.addEventListener('click', openPreview);
-               previewAddMore && previewAddMore.addEventListener('click', closePreview);
-               previewSubmit && previewSubmit.addEventListener('click', function(){
-                  // Enviar el formulario original
-                  form.requestSubmit ? form.requestSubmit() : form.submit();
-               });
-               previewPdfBtn && previewPdfBtn.addEventListener('click', function(){
-                  if(!currentPreviewItems || currentPreviewItems.length === 0){
-                     alert('No hay elementos válidos para imprimir.');
-                     return;
-                  }
-                  // Construir un formulario POST a /collection/preview.pdf para abrir en nueva pestaña
-                  const formPdf = document.createElement('form');
-                  formPdf.method = 'POST';
-                  formPdf.action = "{{ url_for('collection_preview_pdf') }}";
-                  formPdf.target = '_blank';
-                  const input = document.createElement('input');
-                  input.type = 'hidden';
-                  input.name = 'payload';
-                  input.value = JSON.stringify({ items: currentPreviewItems, meta: currentPreviewMeta });
-                  formPdf.appendChild(input);
-                  document.body.appendChild(formPdf);
-                  formPdf.submit();
-                  // Limpieza opcional
-                  setTimeout(() => { try { document.body.removeChild(formPdf); } catch(e){} }, 1000);
-               });
-         });
-      </script>
-      <!-- Modal de previsualización antes de enviar -->
-      <div id="preview-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
-         <div class="absolute inset-0 bg-black opacity-40"></div>
-         <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-3xl p-4">
-            <h3 class="text-lg font-medium mb-3">Previsualización de productos seleccionados</h3>
-            <div class="overflow-x-auto">
-               <table class="min-w-full divide-y divide-gray-200 mb-4">
-                  <thead class="bg-gray-50">
-                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Por trasladar</th>
-                     </tr>
-                  </thead>
-                  <tbody id="preview-table-body" class="bg-white divide-y divide-gray-200">
-                  </tbody>
-               </table>
-            </div>
-            <div class="flex justify-end gap-2">
-               <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
-               <button id="preview-pdf" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Ver PDF</button>
-               <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Enviar selección ahora</button>
-            </div>
+      openPreviewBtn && openPreviewBtn.addEventListener('click', openPreview);
+      previewAddMore && previewAddMore.addEventListener('click', closePreview);
+      previewSubmit && previewSubmit.addEventListener('click', function () {
+         // Enviar el formulario original
+         form.requestSubmit ? form.requestSubmit() : form.submit();
+      });
+      previewPdfBtn && previewPdfBtn.addEventListener('click', function () {
+         if (!currentPreviewItems || currentPreviewItems.length === 0) {
+            alert('No hay elementos válidos para imprimir.');
+            return;
+         }
+         // Construir un formulario POST a /collection/preview.pdf para abrir en nueva pestaña
+         const formPdf = document.createElement('form');
+         formPdf.method = 'POST';
+         formPdf.action = "{{ url_for('collection_preview_pdf') }}";
+         formPdf.target = '_blank';
+         const input = document.createElement('input');
+         input.type = 'hidden';
+         input.name = 'payload';
+         input.value = JSON.stringify({ items: currentPreviewItems, meta: currentPreviewMeta });
+         formPdf.appendChild(input);
+         document.body.appendChild(formPdf);
+         formPdf.submit();
+         // Limpieza opcional
+         setTimeout(() => { try { document.body.removeChild(formPdf); } catch (e) { } }, 1000);
+      });
+   });
+</script>
+<!-- Modal de previsualización antes de enviar -->
+<div id="preview-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+
+   
+      <div class="absolute inset-0 bg-black opacity-40"></div>
+      <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-3xl p-4">
+         <h3 class="text-lg font-medium mb-3">Previsualización de productos seleccionados</h3>
+         <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 mb-4">
+               <thead class="bg-gray-50">
+                  <tr>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Por trasladar</th>
+                  </tr>
+               </thead>
+               <tbody id="preview-table-body" class="bg-white divide-y divide-gray-200">
+               </tbody>
+            </table>
+         </div>
+         <div class="flex justify-end gap-2">
+            <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
+            <form action="{{ url_for('collection_preview_pdf') }}" method="post" target="_blank">
+               <input type="number" name="correlative" value="5011" class="hidden">
+               <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Ver PDF</button>
+            </form>
+            <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Enviar selección
+               ahora</button>
          </div>
       </div>
-   </div>
+
+</div>
+</div>
 {% endblock %}
