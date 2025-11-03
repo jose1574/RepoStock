@@ -5,10 +5,10 @@ import psycopg2.extras
 import decimal
 import datetime
 from dotenv import load_dotenv
+
 base_path = os.path.abspath(os.path.dirname(__file__))
 env_path = os.path.join(base_path, ".env")
 load_dotenv(env_path)
-
 
 
 DB_CONFIG = {
@@ -16,8 +16,9 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME", "mi_base"),
     "user": os.getenv("DB_USER", "usuario"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "port": int(os.getenv("DB_PORT", 5432))
+    "port": int(os.getenv("DB_PORT", 5432)),
 }
+
 
 def get_db_connection():
     """Establece y retorna una conexión a la base de datos PostgreSQL."""
@@ -26,66 +27,112 @@ def get_db_connection():
         raise Exception("No se pudo conectar a la base de datos.")
     return conn
 
+
 def close_db_connection(conn):
     """Cierra la conexión a la base de datos."""
     if conn:
         conn.close()
 
+
 def login_user(username, password):
     """Verifica las credenciales del usuario y retorna su información si son válidas."""
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM users WHERE username = %s AND password = %s', (username, password))
+    cur.execute(
+        "SELECT * FROM users WHERE username = %s AND password = %s",
+        (username, password),
+    )
     user = cur.fetchone()
     cur.close()
     close_db_connection(conn)
     return user
+
 
 def get_stores():
     """Obtiene la lista de depositos de la base de datos."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM store')
+            cur.execute("SELECT * FROM store")
             rows = cur.fetchall()
+
             # serializar tipos no nativos de JSON (Decimal, datetime)
             def _serialize_row(r):
-                return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)
 
-def get_store_by_code(store_code):
-    """Obtiene la información de un deposito por su código."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM store WHERE code = %s', (store_code,))
-            row = cur.fetchone()
-            if row:
-                # serializar tipos no nativos de JSON (Decimal, datetime)
-                def _serialize_row(r):
-                    return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
-                return _serialize_row(row)
-            return None
-    finally:
-        close_db_connection(conn)   
 
 def get_store_by_code(store_code):
     """Obtiene la información de un deposito por su código."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM store WHERE code = %s', (store_code,))
+            cur.execute("SELECT * FROM store WHERE code = %s", (store_code,))
             row = cur.fetchone()
             if row:
                 # serializar tipos no nativos de JSON (Decimal, datetime)
                 def _serialize_row(r):
-                    return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                    return {
+                        k: (
+                            float(v)
+                            if isinstance(v, decimal.Decimal)
+                            else (
+                                v.isoformat()
+                                if isinstance(v, (datetime.date, datetime.datetime))
+                                else v
+                            )
+                        )
+                        for k, v in r.items()
+                    }
+
                 return _serialize_row(row)
             return None
     finally:
         close_db_connection(conn)
+
+
+def get_store_by_code(store_code):
+    """Obtiene la información de un deposito por su código."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM store WHERE code = %s", (store_code,))
+            row = cur.fetchone()
+            if row:
+                # serializar tipos no nativos de JSON (Decimal, datetime)
+                def _serialize_row(r):
+                    return {
+                        k: (
+                            float(v)
+                            if isinstance(v, decimal.Decimal)
+                            else (
+                                v.isoformat()
+                                if isinstance(v, (datetime.date, datetime.datetime))
+                                else v
+                            )
+                        )
+                        for k, v in r.items()
+                    }
+
+                return _serialize_row(row)
+            return None
+    finally:
+        close_db_connection(conn)
+
 
 def search_product(code_product):
     """Busca productos relacionados con un código alterno (other_code).
@@ -141,12 +188,13 @@ def search_product_failure(code_product, store_code):
     finally:
         close_db_connection(conn)
 
+
 def save_product_failure(data):
 
-    print('datos recibidos aqui: ', data)
+    print("datos recibidos aqui: ", data)
 
     # 1. Sentencia SQL de ACTUALIZACIÓN (UPDATE)
-    # NOTA: Solo actualizamos los stocks, ya que product_code y store_code 
+    # NOTA: Solo actualizamos los stocks, ya que product_code y store_code
     # son las claves de coincidencia (WHERE) y no deben cambiar.
     sql_update = """
     UPDATE products_failures
@@ -156,39 +204,39 @@ def save_product_failure(data):
         location = %s
     WHERE product_code = %s AND store_code = %s;
     """
-    
+
     # 2. Sentencia SQL de INSERCIÓN (INSERT)
     sql_insert = """
     INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
     VALUES (%s, %s, %s, %s, %s);
     """
-    
+
     # Prepara los datos para la ejecución
     update_data = (
-        data['minimal_stock'], # -> SET minimal_stock = %s
-        data['maximum_stock'], # -> SET maximum_stock = %s
-        data['location'],   # -> AND store_code = %s
-        data['product_code'],  # -> WHERE product_code = %s
-        data['store_code']
+        data["minimal_stock"],  # -> SET minimal_stock = %s
+        data["maximum_stock"],  # -> SET maximum_stock = %s
+        data["location"],  # -> AND store_code = %s
+        data["product_code"],  # -> WHERE product_code = %s
+        data["store_code"],
     )
 
     insert_data = (
-        data['product_code'],
-        data['store_code'],
-        data['minimal_stock'],
-        data['maximum_stock'],
-        data['location']
+        data["product_code"],
+        data["store_code"],
+        data["minimal_stock"],
+        data["maximum_stock"],
+        data["location"],
     )
-    
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             # 1. Intenta actualizar la fila
             cur.execute(sql_update, update_data)
-            
+
             # Obtiene el número de filas actualizadas
-            rows_affected = cur.rowcount 
-            
+            rows_affected = cur.rowcount
+
             if rows_affected == 0:
                 # 2. Si no se actualizó ninguna fila, inserta una nueva
                 cur.execute(sql_insert, insert_data)
@@ -196,13 +244,17 @@ def save_product_failure(data):
         conn.commit()
     except Exception as e:
         print(f"Error al guardar product_failure en PG 9.1: {e}")
-        conn.rollback() 
+        conn.rollback()
     finally:
         close_db_connection(conn)
 
+
 # consulta sql para devolver los productos para visualizar la recoleccion de products
 
-def get_collection_products(stock_store_origin=None, store_code_destination=None, department=None):
+
+def get_collection_products(
+    stock_store_origin=None, store_code_destination=None, department=None
+):
     # Calcula to_transfer = min(stock_store_origin.stock, max(pf.maximum_stock - stock_store_destination.stock, 0))
     sql = """
         SELECT 
@@ -260,7 +312,8 @@ def get_collection_products(stock_store_origin=None, store_code_destination=None
     finally:
         close_db_connection(conn)
 
-#esta funcion optione un lote de codigos, y devuele todos los productos, correspondientes a una orden de traslado
+
+# esta funcion optione un lote de codigos, y devuele todos los productos, correspondientes a una orden de traslado
 def get_products_by_codes(codes):
     sql = """
     SELECT 
@@ -277,8 +330,9 @@ def get_products_by_codes(codes):
     finally:
         close_db_connection(conn)
 
+
 def save_transfer_order_in_wait(data):
-    print('datos de la orden de traslado: ', data)
+    print("datos de la orden de traslado: ", data)
     sql_insert_order = """
      SELECT set_inventory_operation(
         null,  -- p_correlative (NULL para que la función genere)
@@ -303,9 +357,8 @@ def save_transfer_order_in_wait(data):
     );
     """
     params = (
-        data.get('emission_date', datetime.date.today()),
-        data.get('destination_store', None)
-    
+        data.get("emission_date", datetime.date.today()),
+        data.get("destination_store", None),
     )
 
     conn = get_db_connection()
@@ -321,6 +374,7 @@ def save_transfer_order_in_wait(data):
         return None
     finally:
         close_db_connection(conn)
+
 
 def get_correlative_product_unit(product_code):
     sql = """
@@ -340,8 +394,9 @@ def get_correlative_product_unit(product_code):
     finally:
         close_db_connection(conn)
 
+
 def save_transfer_order_items(order_id, items):
-    print('items a guardar en la orden de traslado: ', order_id, items)
+    print("items a guardar en la orden de traslado: ", order_id, items)
     # """
     # Guarda los ítems de una orden de transferencia llamando a la función
     # set_inventory_operation_details en la base de datos. Usa los campos
@@ -380,32 +435,50 @@ def save_transfer_order_items(order_id, items):
         with conn.cursor() as cur:
             for item in items:
                 # Normalizar y mapear keys esperadas por app.py
-                product_code = item.get('product_code') or item.get('code')
-                description = item.get('description', '')
-                referenc = item.get('reference') or item.get('referenc') or None
-                mark = item.get('mark') or None
-                model = item.get('model') or None
+                product_code = item.get("product_code") or item.get("code")
+                description = item.get("description", "")
+                referenc = item.get("reference") or item.get("referenc") or None
+                mark = item.get("mark") or None
+                model = item.get("model") or None
                 try:
-                    amount = float(item.get('quantity', 0))
+                    amount = float(item.get("quantity", 0))
                 except Exception:
                     amount = 0.0
 
-                store_from = item.get('from_store') or item.get('store_from') or item.get('store') or '01'
-                location_from = item.get('from_location') or item.get('location_from') or '00'
-                store_to = item.get('to_store') or item.get('store_to') or item.get('destination_store') or '02'
-                location_to = item.get('to_location') or item.get('location_to') or '00'
+                store_from = (
+                    item.get("from_store")
+                    or item.get("store_from")
+                    or item.get("store")
+                    or "01"
+                )
+                location_from = (
+                    item.get("from_location") or item.get("location_from") or "00"
+                )
+                store_to = (
+                    item.get("to_store")
+                    or item.get("store_to")
+                    or item.get("destination_store")
+                    or "02"
+                )
+                location_to = item.get("to_location") or item.get("location_to") or "00"
 
-                unit = int(item.get('unit', 1))
-                conversion_factor = float(item.get('conversion_factor', 1.0))
-                unit_type = int(item.get('unit_type', 1))
-                unit_price = float(item.get('unit_price', 0.0))
-                buy_tax = item.get('buy_tax', None)
-                aliquot = (None if item.get('aliquot') is None else float(item.get('aliquot')))
-                total_cost = float(item.get('total_cost', item.get('total_price', 0.0)))
-                total_tax = (None if item.get('total_tax') is None else float(item.get('total_tax')))
-                total_price = float(item.get('total_price', item.get('total', 0.0)))
-                coin_code = item.get('coin_code', 'USD')
-                change_price = bool(item.get('change_price', False))
+                unit = int(item.get("unit", 1))
+                conversion_factor = float(item.get("conversion_factor", 1.0))
+                unit_type = int(item.get("unit_type", 1))
+                unit_price = float(item.get("unit_price", 0.0))
+                buy_tax = item.get("buy_tax", None)
+                aliquot = (
+                    None if item.get("aliquot") is None else float(item.get("aliquot"))
+                )
+                total_cost = float(item.get("total_cost", item.get("total_price", 0.0)))
+                total_tax = (
+                    None
+                    if item.get("total_tax") is None
+                    else float(item.get("total_tax"))
+                )
+                total_price = float(item.get("total_price", item.get("total", 0.0)))
+                coin_code = item.get("coin_code", "USD")
+                change_price = bool(item.get("change_price", False))
 
                 params = (
                     order_id,
@@ -429,7 +502,7 @@ def save_transfer_order_items(order_id, items):
                     total_tax,
                     total_price,
                     coin_code,
-                    change_price
+                    change_price,
                 )
                 cur.execute(sql_insert_item, params)
         conn.commit()
@@ -440,51 +513,152 @@ def save_transfer_order_items(order_id, items):
     finally:
         close_db_connection(conn)
 
+
 def get_store_by_code(store_code):
     """Obtiene la información de un deposito por su código."""
-    print('Obteniendo información del depósito con código:', store_code)
+    print("Obteniendo información del depósito con código:", store_code)
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM store WHERE code = %s', (store_code,))
+            cur.execute("SELECT * FROM store WHERE code = %s", (store_code,))
             row = cur.fetchone()
             if row:
                 # serializar tipos no nativos de JSON (Decimal, datetime)
                 def _serialize_row(r):
-                    return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                    return {
+                        k: (
+                            float(v)
+                            if isinstance(v, decimal.Decimal)
+                            else (
+                                v.isoformat()
+                                if isinstance(v, (datetime.date, datetime.datetime))
+                                else v
+                            )
+                        )
+                        for k, v in r.items()
+                    }
+
                 return _serialize_row(row)
             return None
     finally:
-        close_db_connection(conn)   
+        close_db_connection(conn)
+
 
 def get_departments():
     """Obtiene la lista de departamentos de la base de datos."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT * FROM department')
+            cur.execute("SELECT * FROM department")
             rows = cur.fetchall()
+
             # serializar tipos no nativos de JSON (Decimal, datetime)
             def _serialize_row(r):
-                return {k: (float(v) if isinstance(v, decimal.Decimal) else (v.isoformat() if isinstance(v, (datetime.date, datetime.datetime)) else v)) for k, v in r.items()}
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)
 
-#export functions
+
+def get_inventory_operations_by_correlative(
+    correlative: str, operation_type: str, wait: bool = True
+):
+    """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
+    conn = get_db_connection()
+
+    sql = """
+                select * from inventory_operation as io
+                where io.correlative = %s
+                and io.operation_type = %s
+                and io.wait = %s
+                """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (correlative, operation_type, wait))
+            rows = cur.fetchall()
+
+            # serializar tipos no nativos de JSON (Decimal, datetime)
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            return [_serialize_row(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
+def get_inventory_operations_details_by_correlative(correlative: str):
+    """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
+    conn = get_db_connection()
+
+    sql = """
+            select * from inventory_operation_details 
+            where main_correlative = %s            
+        """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (correlative,))
+            rows = cur.fetchall()
+
+            # serializar tipos no nativos de JSON (Decimal, datetime)
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            return [_serialize_row(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
+# export functions
 __all__ = [
-    'get_db_connection',
-     'close_db_connection', 
-     'login_user', 'get_stores', 
-     'search_product', 
-     'get_store_by_code', 
-     'save_product_failure', 
-     'get_collection_products',
-    'save_transfer_order_in_wait',
-    'save_transfer_order_items',
-    'get_products_by_codes',
-    'get_correlative_product_unit',
-    'get_store_by_code', 
-    'get_departments',
-    'search_product_failure'
-     ]
+    "get_db_connection",
+    "close_db_connection",
+    "login_user",
+    "get_stores",
+    "search_product",
+    "get_store_by_code",
+    "save_product_failure",
+    "get_collection_products",
+    "save_transfer_order_in_wait",
+    "save_transfer_order_items",
+    "get_products_by_codes",
+    "get_correlative_product_unit",
+    "get_store_by_code",
+    "get_departments",
+    "search_product_failure",
+    "get_inventory_operations_by_correlative",
+    "get_inventory_operations_details_by_correlative"
+]

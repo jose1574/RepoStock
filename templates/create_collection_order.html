@@ -35,7 +35,7 @@
          <div id="action-bar" class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
             <button id="select-all" type="button" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
             <button id="clear-selection" type="button" class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
-            <button id="open-preview" type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>
+            <button id="open-preview" type="button" class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>            
             <button id="send-selection" type="submit" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Enviar selección</button>
          </div>
 
@@ -95,12 +95,14 @@
 
       <!-- Scripts para manejar selección y envío -->
       <script>
-         (function(){
+         document.addEventListener('DOMContentLoaded', function(){
             const selectAllBtn = document.getElementById('select-all');
             const clearBtn = document.getElementById('clear-selection');
             const form = document.getElementById('collection-form');
             const sendBtn = document.getElementById('send-selection');
             const openPreviewBtn = document.getElementById('open-preview');
+            let currentPreviewItems = [];
+            let currentPreviewMeta = {};
 
             function getCheckboxes(){
                return Array.from(document.querySelectorAll('.product-checkbox'));
@@ -151,13 +153,33 @@
                   }
                }
 
+               // Helpers para validar solo productos seleccionados
+               function getProductCodeFromInput(input){
+                  const name = input && input.name ? input.name : '';
+                  const m = name.match(/^to_transfer_(.+)$/);
+                  return m ? m[1] : null;
+               }
+
+               function isInputSelected(input){
+                  const code = getProductCodeFromInput(input);
+                  if(!code) return false;
+                  const cb = Array.from(document.querySelectorAll('.product-checkbox')).find(c => c.value === code);
+                  return !!(cb && cb.checked);
+               }
+
                function validateInput(input){
+                  // Si el producto NO está seleccionado, no validar ni marcar error
+                  if(!isInputSelected(input)){
+                     clearInvalid(input);
+                     return true;
+                  }
+
                   const raw = input.value;
                   const val = Number(raw);
                   const maxAttr = input.getAttribute('max');
                   const max = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : Infinity;
 
-                  // Requerimos entero positivo (>0) y menor que stock origen (strictamente menor)
+                  // Requerimos número > 0 y <= stock origen
                   if(!raw || isNaN(val) || val <= 0){
                      setInvalid(input, 'El valor debe ser un número mayor que 0');
                      return false;
@@ -219,6 +241,17 @@
 
                // Ejecutar al cargar
                attachEnterHandlers();
+
+               // Al marcar/desmarcar un producto, limpiar errores si se desmarca
+               getCheckboxes().forEach(cb => {
+                  cb.addEventListener('change', function(){
+                     const code = this.value;
+                     const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+                     if(inp && !this.checked){
+                        clearInvalid(inp);
+                     }
+                  });
+               });
 
                // Validación de formulario al enviar: revisar solo los productos seleccionados
                form && form.addEventListener('submit', function(e){
@@ -322,26 +355,18 @@
                      return;
                   }
 
-                  // Guardar datos en sesión para PDF a través del backend
+                  // Metadatos básicos para PDF
                   const meta = {
                      store_origin_code: "{{ store_origin.code if store_origin else '' }}",
+                     store_origin_desc: "{{ store_origin.description if store_origin else '' }}",
                      store_destination_code: "{{ store_destination.code if store_destination else '' }}",
+                     store_destination_desc: "{{ store_destination.description if store_destination else '' }}",
                      department: "{{ selected_department or '' }}"
                   };
 
-                  // Deshabilitar PDF mientras se prepara sesión
-                  if(previewPdfBtn){ previewPdfBtn.disabled = true; previewPdfBtn.classList.add('opacity-60'); }
-
-                  fetch("{{ url_for('collection_preview') }}", {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ items, meta })
-                  }).then(r => r.json()).then(j => {
-                     if(!j || j.ok !== true){
-                        console.error(j);
-                     }
-                     if(previewPdfBtn){ previewPdfBtn.disabled = false; previewPdfBtn.classList.remove('opacity-60'); }
-                  }).catch(err => console.error('Error preparando previsualización:', err));
+                  // Guardar en variables para usar en botón PDF
+                  currentPreviewItems = items;
+                  currentPreviewMeta = meta;
 
                   // Mostrar modal
                   previewModal.classList.remove('hidden');
@@ -360,9 +385,26 @@
                   form.requestSubmit ? form.requestSubmit() : form.submit();
                });
                previewPdfBtn && previewPdfBtn.addEventListener('click', function(){
-                  window.open("{{ url_for('collection_preview_pdf') }}", '_blank');
+                  if(!currentPreviewItems || currentPreviewItems.length === 0){
+                     alert('No hay elementos válidos para imprimir.');
+                     return;
+                  }
+                  // Construir un formulario POST a /collection/preview.pdf para abrir en nueva pestaña
+                  const formPdf = document.createElement('form');
+                  formPdf.method = 'POST';
+                  formPdf.action = "{{ url_for('collection_preview_pdf') }}";
+                  formPdf.target = '_blank';
+                  const input = document.createElement('input');
+                  input.type = 'hidden';
+                  input.name = 'payload';
+                  input.value = JSON.stringify({ items: currentPreviewItems, meta: currentPreviewMeta });
+                  formPdf.appendChild(input);
+                  document.body.appendChild(formPdf);
+                  formPdf.submit();
+                  // Limpieza opcional
+                  setTimeout(() => { try { document.body.removeChild(formPdf); } catch(e){} }, 1000);
                });
-         })();
+         });
       </script>
       <!-- Modal de previsualización antes de enviar -->
       <div id="preview-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
@@ -375,6 +417,7 @@
                      <tr>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
                         <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Por trasladar</th>
                      </tr>
                   </thead>
