@@ -36,7 +36,9 @@ from db import (
     get_inventory_operations_by_correlative,
     get_inventory_operations_details_by_correlative,
     update_description_inventory_operations,
-    get_document_no_inventory_operation
+    get_document_no_inventory_operation,
+    update_minmax_product_failure,
+    update_location_products_failures as db_update_location_products_failures,
 )
 
 
@@ -159,6 +161,53 @@ def config_param_product():
     )
 
 
+@app.route("/api/product_failure/minmax", methods=["POST"])
+def api_update_minmax_product_failure():
+    """Actualiza mínimo y máximo para un producto/depósito. Devuelve JSON.
+    Usa el depósito desde sesión (session['store']) si no se envía store_code explícito.
+    """
+    product_code = request.form.get("product_code")
+    store_code = request.form.get("store_code") or session.get("store")
+    minimal_stock = request.form.get("minimal_stock")
+    maximum_stock = request.form.get("maximum_stock")
+
+    # Validaciones básicas
+    if not product_code or not store_code:
+        return jsonify({"ok": False, "error": "Faltan product_code o store_code."}), 400
+    try:
+        ms = int(minimal_stock) if minimal_stock not in (None, "") else None
+        mx = int(maximum_stock) if maximum_stock not in (None, "") else None
+    except ValueError:
+        return (
+            jsonify({"ok": False, "error": "Valores inválidos para mínimos/máximos."}),
+            400,
+        )
+    if ms is not None and mx is not None and mx < ms:
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "El stock máximo no puede ser menor al stock mínimo.",
+                }
+            ),
+            400,
+        )
+
+    try:
+        update_minmax_product_failure(store_code, product_code, ms, mx)
+        return jsonify(
+            {
+                "ok": True,
+                "product_code": product_code,
+                "store_code": store_code,
+                "minimal_stock": ms,
+                "maximum_stock": mx,
+            }
+        )
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/save_config_param_product", methods=["POST"])
 def save_config_param_product():
     if request.method == "POST":
@@ -213,7 +262,6 @@ def save_config_param_product():
             # En no-AJAX redirigir mostrando el error en logs; podrías usar flash para mostrar al usuario
             print("Error guardando parámetros:", e)
             return redirect(url_for("config_param_product"))
-
 
 
 @app.route("/select_store_destinatSion_collection_order", methods=["POST", "GET"])
@@ -286,8 +334,6 @@ def create_collection_order():
     )
 
 
-
-
 @app.route("/collection/preview.pdf", methods=["POST", "GET"])
 def collection_preview_pdf():
     # Aceptar parámetros por POST (form) o GET (querystring)
@@ -297,12 +343,16 @@ def collection_preview_pdf():
 
     if request.method == "POST":
         correlative = request.form.get("correlative", default=None, type=int)
-        operation_type = request.form.get("operation_type", default="TRANSFER", type=str)
+        operation_type = request.form.get(
+            "operation_type", default="TRANSFER", type=str
+        )
         wait_param = request.form.get("wait", default="true", type=str)
         wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
     else:
         correlative = request.args.get("correlative", default=None, type=int)
-        operation_type = request.args.get("operation_type", default="TRANSFER", type=str)
+        operation_type = request.args.get(
+            "operation_type", default="TRANSFER", type=str
+        )
         wait_param = request.args.get("wait", default="true", type=str)
         wait = True if (str(wait_param).lower() in ("true")) else False
 
@@ -371,8 +421,6 @@ def collection_preview_pdf():
     return resp
 
 
-
-
 @app.route("/process_collection_products", methods=["POST"])
 def process_collection_products():
     if request.method == "POST":
@@ -439,7 +487,7 @@ def process_collection_products():
             "emission_date": datetime.date.today(),
             "wait": True,
             "user_code": session.get(
-            "user_id", "01"
+                "user_id", "01"
             ),  # usar usuario en sesión si existe
             "station": "00",
             "store": stock_store_origin,
@@ -452,7 +500,9 @@ def process_collection_products():
         try:
             order_id = save_transfer_order_in_wait(transfer_data)
             document_no = get_document_no_inventory_operation(order_id)
-            update_description_inventory_operations(order_id, f"Orden de traslado automatico No: {document_no}")
+            update_description_inventory_operations(
+                order_id, f"Orden de traslado automatico No: {document_no}"
+            )
 
             if not order_id:
                 print("No se pudo crear la orden de transferencia")
@@ -465,15 +515,167 @@ def process_collection_products():
                 "Orden de traslado creada con éxito. Correlativo:",
                 order_id,
             )
-           
+
         except Exception as e:
             print("Error procesando la orden de traslado:", e)
             # aquí podrías usar flash() para mostrar el error al usuario
             return redirect(url_for("create_collection_order"))
 
         return redirect(
-                url_for("collection_preview_pdf", correlative=order_id, wait="true", operation_type="TRANSFER")
+            url_for(
+                "collection_preview_pdf",
+                correlative=order_id,
+                wait="true",
+                operation_type="TRANSFER",
             )
+        )
+
+
+@app.route("/delete_product/<code>", methods=["POST"])
+def delete_product(code):
+    delete_item_product_session(code)
+    return redirect(url_for("update_location_products_failures"))
+
+
+@app.route("/location_products", methods=["GET", "POST"])
+@app.route("/location_products/<store_code>", methods=["GET", "POST"])
+def form_location_products(store_code=None):
+    # Resolver depósito de destino desde: ruta > querystring > sesión
+    if not store_code:
+        store_code = request.args.get("store_code") or session.get("store_location")
+    store = get_store_by_code(store_code) if store_code else None
+
+    if request.method == "POST":
+        location = (request.form.get("location") or "").strip()
+        if location:
+            session["location"] = location
+        # Permitir actualizar el store por POST si se envía explícito
+        form_store = request.form.get("store_code_location")
+        if form_store:
+            session["store_location"] = form_store
+        return redirect(url_for("update_location_products_failures"))
+
+    # GET: mostrar siempre el depósito y la ubicación actual (si existe)
+    return render_template(
+        "form_location.html",
+        store=store,
+        location=session.get("location", ""),
+    )
+
+
+@app.route("/clear", methods=["POST"])
+def clear():
+    store_code = session.get("store_location")
+    session.pop("products", None)
+    session.pop("location", None)
+    return redirect(url_for("form_location_products", store_code=store_code))
+
+
+def delete_item_product_session(code):
+    session_products = session.get("products", [])
+    session_products = [p for p in session_products if p.get("code") != code]
+    session["products"] = session_products
+
+
+#para procesar la ruta de seleccion del deposito de destino y la ubicacion de los productos
+@app.route("/select_store_destination_for_location", methods=["POST", "GET"])
+def select_store_destination_for_location():
+    stores = get_stores()
+    return render_template("form_destination_store_for_location.html", stores=stores )
+
+
+@app.route("/save_session_select_store_destination_for_location", methods=["POST", "GET"])
+def save_session_select_store_destination_for_location():
+    store_code = session.get("store_location")
+    store = get_store_by_code(store_code)
+    print("store_code ->", store)
+    store_location = request.form.get("store_code_location")
+
+    session['store_location'] = store_location
+    return redirect(url_for("form_location_products", store_code=store_location))
+
+
+@app.route("/update_location_products", methods=["POST"])
+def update_location_products():
+    if request.method == "POST":
+        # Preferir datos del formulario si vienen; fallback a sesión
+        location = request.form.get("location") or session.get("location", "")
+        store_code = session.get("store_location", "")
+        store = get_store_by_code(store_code)
+
+        codes_from_form = request.form.getlist("product_code")
+        if codes_from_form:
+            products = [{"code": c} for c in codes_from_form]
+        else:
+            products = session.get("products", [])
+
+        print(
+            "update_location_products -> location:", location,
+            "store:", store_code,
+            "products_count:", len(products) if isinstance(products, list) else 0,
+        )
+        if location and products and store_code:
+            # Actualiza location en products_failures por cada producto y depósito actual
+            for p in products:
+                product_code = p.get("code") if isinstance(p, dict) else None
+                if product_code:
+                    try:
+                        db_update_location_products_failures(
+                            store_code, product_code, location
+                        )
+                    except Exception as e:
+                        # Loguea y continúa con el siguiente
+                        print(
+                            f"Error actualizando ubicación para {product_code} en {store_code}: {e}"
+                        )
+            # Siempre limpiar la lista de productos de la sesión tras guardar
+            session.pop("products", None)
+    return redirect(url_for("form_location_products", store_code=store_code))
+
+
+@app.route("/update_location_products_failures", methods=["GET", "POST"])
+def update_location_products_failures():
+    session_products = session.get("products", [])
+    # Mantener la ubicación en sesión, sólo actualizar si viene una no vacía en el POST
+    location = session.get("location", "")
+    if request.method == "POST":
+        form_location = request.form.get("location")
+        if form_location is not None:
+            form_location = form_location.strip()
+            if form_location:
+                session["location"] = form_location
+                location = form_location
+    print("update_location_products_failures: location ->", location)
+    last_search_empty = False
+    last_search_code = ""
+    if request.method == "POST":
+        code_product = request.form.get("code_product", "")
+        code_product = (code_product or "").strip()
+        last_search_code = code_product
+        print("index: recibido code_product -> '{}'".format(code_product))
+        if code_product:
+            try:
+                new_products = search_product(code_product)
+                print("index: new_products ->", new_products)
+                last_search_empty = len(new_products) == 0
+                # Evitar duplicados por 'code'
+                existing_codes = {p.get("code") for p in session_products}
+                for p in new_products:
+                    if p.get("code") not in existing_codes:
+                        session_products.append(p)
+                        existing_codes.add(p.get("code"))
+                # Guardar la lista actualizada en la sesión
+                session["products"] = session_products
+            except Exception as e:
+                print("Error buscando productos:", e)
+                last_search_empty = True
+    return render_template(
+        "products_locations.html",
+        products=session_products,
+        location=location,
+        last_search_empty=last_search_empty,
+        last_search_code=last_search_code,
+    )
 
 
 if __name__ == "__main__":

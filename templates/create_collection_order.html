@@ -15,7 +15,7 @@
          {% endfor %}
          {% endif %}
       </select>
-      
+
       <label for="brand-filter" class="text-sm font-medium text-gray-700">Marca:</label>
       <select id="brand-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por marca">
          <option value="">-- Todas --</option>
@@ -99,13 +99,16 @@
                      <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.product_description }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-900">
+                     <button type="button" class="text-indigo-600 hover:underline open-edit-minmax"
+                        data-code="{{ p.code }}">{{ p.product_description }}</button>
+                  </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.mark }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
                   <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_origin }}</td>
-                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.minimal_stock }}</td>
-                  <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.maximum_stock }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900 min-stock-cell">{{ p.minimal_stock }}</td>
+                  <td class="px-4 py-3 text-sm text-right text-gray-900 max-stock-cell">{{ p.maximum_stock }}</td>
                   <td class="px-4 py-3 text-sm text-right text-gray-900">{{ p.stock_store_destination }}</td>
                   <!-- Input editable para por trasladar. Nombre único por producto para recuperarlo en el servidor -->
                   <td class="px-4 py-3 text-sm text-right text-gray-900">
@@ -139,8 +142,10 @@
       const form = document.getElementById('collection-form');
       const sendBtn = document.getElementById('send-selection');
       const openPreviewBtn = document.getElementById('open-preview');
+      const recalcBtn = document.getElementById('recalculate-to-transfer');
       let currentPreviewItems = [];
       let currentPreviewMeta = {};
+      const editStoreCode = "{{ session.get('store', '') }}";
 
       function getCheckboxes() {
          return Array.from(document.querySelectorAll('.product-checkbox'));
@@ -196,6 +201,32 @@
          const name = input && input.name ? input.name : '';
          const m = name.match(/^to_transfer_(.+)$/);
          return m ? m[1] : null;
+      }
+
+      function parseNum(val) {
+         if (val === null || val === undefined) return 0;
+         if (typeof val === 'number') return isNaN(val) ? 0 : val;
+         const s = String(val).trim().replace(/\./g, '.').replace(/,/g, '.');
+         const n = parseFloat(s);
+         return isNaN(n) ? 0 : n;
+      }
+
+      function recomputeToTransferForRow(row) {
+         if (!row) return;
+         const originCell = row.querySelector('td:nth-child(7)');
+         const minCell = row.querySelector('.min-stock-cell');
+         const maxCell = row.querySelector('.max-stock-cell');
+         const destCell = row.querySelector('td:nth-child(10)');
+         const input = row.querySelector('.to-transfer-input');
+         const origin = parseNum(originCell ? originCell.textContent : 0);
+         const dest = parseNum(destCell ? destCell.textContent : 0);
+         const maxStock = parseNum(maxCell ? maxCell.textContent : 0);
+         // Fórmula de backend: min(stock_origen, max(maximo - stock_destino, 0))
+         const suggested = Math.min(origin, Math.max(maxStock - dest, 0));
+         if (input) {
+            input.value = (suggested || 0).toFixed(2);
+            clearInvalid(input);
+         }
       }
 
       function isInputSelected(input) {
@@ -351,6 +382,103 @@
       // iniciar filtro en load
       filterRows();
 
+      // ---- MODAL EDITAR MIN/MAX ----
+      const editModal = document.getElementById('edit-minmax-modal');
+      const editMinInput = document.getElementById('edit-min');
+      const editMaxInput = document.getElementById('edit-max');
+      const editSaveBtn = document.getElementById('edit-save');
+      const editCancelBtn = document.getElementById('edit-cancel');
+      const editProductDescEl = document.getElementById('edit-product-desc');
+      let editCurrentRow = null;
+      let editCurrentCode = null;
+
+      function openEditMinMax(row, code) {
+         editCurrentRow = row;
+         editCurrentCode = code;
+         // Obtener descripción desde la celda 3 (botón con texto)
+         let desc = '';
+         const descCell = row.querySelector('td:nth-child(3)');
+         if (descCell) {
+            const btn = descCell.querySelector('.open-edit-minmax');
+            desc = (btn ? btn.textContent : descCell.textContent || '').trim();
+         }
+         if (editProductDescEl) {
+            editProductDescEl.textContent = `${code} — ${desc}`;
+         }
+         const minCell = row.querySelector('.min-stock-cell');
+         const maxCell = row.querySelector('.max-stock-cell');
+         const minVal = minCell ? (minCell.textContent.trim() || '0') : '0';
+         const maxVal = maxCell ? (maxCell.textContent.trim() || '0') : '0';
+         editMinInput.value = minVal;
+         editMaxInput.value = maxVal;
+         editModal.classList.remove('hidden');
+         editModal.classList.add('flex');
+         editMinInput.focus();
+         try { editMinInput.select(); } catch (e) { }
+      }
+      function closeEditMinMax() {
+         editModal.classList.add('hidden');
+         editModal.classList.remove('flex');
+         editCurrentRow = null;
+         editCurrentCode = null;
+      }
+
+      document.querySelectorAll('.open-edit-minmax').forEach(btn => {
+         btn.addEventListener('click', function () {
+            const row = this.closest('tr');
+            const code = this.getAttribute('data-code');
+            openEditMinMax(row, code);
+         });
+      });
+
+      editCancelBtn && editCancelBtn.addEventListener('click', closeEditMinMax);
+      editSaveBtn && editSaveBtn.addEventListener('click', async function () {
+         if (!editCurrentRow || !editCurrentCode) { closeEditMinMax(); return; }
+         const ms = editMinInput.value;
+         const mx = editMaxInput.value;
+         // Validación simple
+         const nms = ms === '' ? '' : Number(ms);
+         const nmx = mx === '' ? '' : Number(mx);
+         if ((nms !== '' && (isNaN(nms) || nms < 0)) || (nmx !== '' && (isNaN(nmx) || nmx < 0))) {
+            alert('Valores inválidos. Deben ser números >= 0');
+            return;
+         }
+         if (nms !== '' && nmx !== '' && Number(nmx) < Number(nms)) {
+            alert('El stock máximo no puede ser menor que el mínimo');
+            return;
+         }
+         try {
+            const formData = new URLSearchParams();
+            formData.set('product_code', editCurrentCode);
+            if (editStoreCode) formData.set('store_code', editStoreCode);
+            formData.set('minimal_stock', ms);
+            formData.set('maximum_stock', mx);
+            const res = await fetch("{{ url_for('api_update_minmax_product_failure') }}", {
+               method: 'POST',
+               headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+               body: formData.toString()
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'Error al guardar');
+            // Actualizar celdas en la fila
+            const minCell = editCurrentRow.querySelector('.min-stock-cell');
+            const maxCell = editCurrentRow.querySelector('.max-stock-cell');
+            if (minCell) minCell.textContent = (data.minimal_stock ?? '').toString();
+            if (maxCell) maxCell.textContent = (data.maximum_stock ?? '').toString();
+            // Recalcular sugerido para esta fila
+            recomputeToTransferForRow(editCurrentRow);
+            closeEditMinMax();
+         } catch (e) {
+            alert('No se pudo guardar: ' + e.message);
+         }
+      });
+
+      // Recalcular sugeridos para todas las filas visibles
+      recalcBtn && recalcBtn.addEventListener('click', function () {
+         const rows = Array.from(document.querySelectorAll('tbody tr')).filter(r => r.style.display !== 'none');
+         rows.forEach(recomputeToTransferForRow);
+      });
+
       // Si
       // ---- PREVIEW MODAL ----
       const previewModal = document.getElementById('preview-modal');
@@ -488,5 +616,33 @@
    </div>
 
 </div>
+</div>
+<!-- Modal Editar Min/Max -->
+<div id="edit-minmax-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+   <div class="absolute inset-0 bg-black opacity-40"></div>
+   <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-md p-4 flex flex-col gap-3">
+      <h3 class="text-lg font-medium">Editar existencias mínima y máxima</h3>
+      <div class="text-sm text-gray-600">
+         <span class="font-medium">Producto:</span>
+         <span id="edit-product-desc"></span>
+      </div>
+      <div class="text-sm text-gray-600">
+         <span class="font-medium">Depósito:</span>
+         <span>{{ store_destination.description if store_destination else '' }} ({{ store_destination.code if
+            store_destination else '' }})</span>
+      </div>
+      <div class="flex items-center gap-3">
+         <label for="edit-min" class="w-32 text-sm text-gray-700">Existencia mínima</label>
+         <input id="edit-min" type="number" step="1" min="0" class="border rounded px-2 py-1 w-40 text-right">
+      </div>
+      <div class="flex items-center gap-3">
+         <label for="edit-max" class="w-32 text-sm text-gray-700">Existencia máxima</label>
+         <input id="edit-max" type="number" step="1" min="0" class="border rounded px-2 py-1 w-40 text-right">
+      </div>
+      <div class="flex justify-end gap-2 mt-2">
+         <button id="edit-cancel" type="button" class="px-3 py-1 bg-gray-200 rounded">Cancelar</button>
+         <button id="edit-save" type="button" class="px-3 py-1 bg-indigo-600 text-white rounded">Guardar</button>
+      </div>
+   </div>
 </div>
 {% endblock %}

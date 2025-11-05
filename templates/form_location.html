@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Asignar ubicación a productos {% endblock %}
+
+{% block content %}
+<body class="bg-gray-50 min-h-screen text-gray-800">
+  <main class="max-w-4xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 id="pageTitle" class="text-2xl font-semibold text-gray-900">
+        Seleccionar ubicación
+      </h1>
+      <p class="text-sm text-gray-600 mt-1">Ingrese el ubicación que se asignará a los productos en el deposito {{ store.description }}</p>
+    </header>
+
+    <section id="locationPanel" class="bg-white rounded-lg shadow-sm p-6">
+      <form id="location-form" action="{{ url_for('update_location_products_failures') }}" method="post" class="flex flex-col gap-4">
+        <label for="locationInput" class="text-sm font-medium text-gray-700">Ubicación</label>
+        <input
+          id="locationInput"
+          name="location"
+          type="text"
+          value=""
+          placeholder="Ej. ABC-123"
+          autocomplete="off"
+          required
+          class="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        />
+
+        <div class="flex items-center gap-3">
+          <button
+            type="submit"
+            id="btnSaveLocation"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            Guardar ubicación
+          </button>
+        </div>
+      </form>
+    </section>
+
+   
+  </main>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const input = document.getElementById('locationInput');
+  if (input) {
+    input.focus();
+    const val = input.value || '';
+    if (input.setSelectionRange) {
+      const len = val.length;
+      input.setSelectionRange(len, len);
+    }
+  }
+});
+</script>
+</body>
+{% endblock %}

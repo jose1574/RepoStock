@@ -325,6 +325,35 @@ def get_collection_products(
         close_db_connection(conn)
 
 
+def update_minmax_product_failure(store_code: str, product_code: str, minimal_stock: int | None, maximum_stock: int | None):
+    """Actualiza únicamente los campos minimal_stock y maximum_stock en products_failures.
+    Si no existe el registro, lo inserta (location queda NULL por defecto).
+    """
+    sql_update = """
+    UPDATE products_failures
+    SET minimal_stock = %s,
+        maximum_stock = %s
+    WHERE product_code = %s AND store_code = %s
+    """
+    sql_insert = """
+    INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
+    VALUES (%s, %s, %s, %s, NULL)
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql_update, (minimal_stock, maximum_stock, product_code, store_code))
+            if cur.rowcount == 0:
+                cur.execute(sql_insert, (product_code, store_code, minimal_stock, maximum_stock))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar min/max en products_failures: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+
+
 # esta funcion optione un lote de codigos, y devuele todos los productos, correspondientes a una orden de traslado
 def get_products_by_codes(codes):
     sql = """
@@ -688,6 +717,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
                 left join units as u on (u.code = pu.unit)
                 where iod.main_correlative = %s
                 and pu.main_unit = true
+                order by pf.location;
         """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -713,6 +743,32 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
     finally:
         close_db_connection(conn)
 
+def update_location_products_failures(store_code: str, product_code: str, location: str):
+    """Actualiza únicamente el campo location en products_failures.
+    Si no existe el registro, lo inserta (minimal_stock y maximum_stock quedan NULL por defecto).
+    """
+    sql_update = """
+    UPDATE products_failures
+    SET location = %s
+    WHERE product_code = %s AND store_code = %s
+    """
+    sql_insert = """
+    INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
+    VALUES (%s, %s, NULL, NULL, %s)
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql_update, (location, product_code, store_code))
+            if cur.rowcount == 0:
+                cur.execute(sql_insert, (product_code, store_code, location))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar la ubicación en products_failures: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
 
 # export functions
 __all__ = [
@@ -735,4 +791,6 @@ __all__ = [
     "get_inventory_operations_details_by_correlative",
     "get_document_no_inventory_operation",
     "update_description_inventory_operations",
+    "update_minmax_product_failure",
+    "update_location_products_failures",
 ]

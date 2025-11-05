@@ -3,12 +3,12 @@
 {% from 'macros/store_select_form.html' import store_select_form %}
 
 {% block content %}
-  {{ store_select_form(
-    stores, url_for('create_collection_order'), 
-    title='Seleccionar Depósito de destino', 
-    description='Por favor, selecciona el depósito hacia donde vas a enviar los productos', 
-    select_label='Tienda de destino', 
-    submit_label='Seleccionar deposito',
-    select_name='store_code_destination'
-    ) }}
+{{ store_select_form(
+stores, url_for('create_collection_order'),
+title='Seleccionar Depósito de destino',
+description='Por favor, selecciona el depósito hacia donde vas a enviar los productos',
+select_label='Tienda de destino',
+submit_label='Seleccionar deposito',
+select_name='store_code_destination'
+) }}
 {% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Asignar modelo a productos {% endblock %}
+
+{% block content %}
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <main class="max-w-4xl mx-auto p-6">
+        <header class="mb-6">
+            <h1 id="pageTitle" class="text-2xl font-semibold text-gray-900">
+                Se le asignara la ubicación <b style="color: green ;">"{{ location }}"</b> a los productos agregados
+            </h1>
+        </header>
+
+        <section id="searchPanel" class="mb-4">
+            <form action="{{ url_for('update_location_products_failures') }}" method="post" id="search-form" class="flex gap-2">
+                <input type="text" id="code_product" name="code_product" placeholder="Código de producto"
+                    autocomplete="off" autofocus
+                    class="flex-1 border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    required />
+                <button type="submit" id="search_button"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    Buscar
+                </button>
+
+            </form>
+       <section id="actionsPanel" class="mt-4 flex gap-3 items-center">
+            <!-- Un único form visual, pero cada botón usa formaction/formmethod -->
+            <form id="actionsForm" class="flex gap-3">
+                <!-- Contexto necesario para el backend: ubicación, depósito y productos -->
+                <input type="hidden" name="location" value="{{ location or '' }}">
+                <input type="hidden" name="store_code" value="{{ session.get('store', '') }}">
+                {% if products %}
+                {% for product in products %}
+                <input type="hidden" name="product_code" value="{{ product.code }}">
+                {% endfor %}
+                {% endif %}
+                <button type="submit" id="btnClear" name="clear" formaction="{{ url_for('clear') }}" formmethod="post"
+                    onclick="return confirm('¿Seguro que desea quitar todos los productos de la lista?');"
+                    class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-300">
+                    Quitar todo
+                </button>
+
+                <button type="submit" id="btnUpdateLocation" name="update"
+                    formaction="{{ url_for('update_location_products') }}" formmethod="post"
+                    class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                    onclick="return confirm('¿Seguro que desea actualizar el campo ubicación en los productos listados?');">
+                    Actualizar ubicaciones
+                </button>
+
+                <span class="text-sm text-gray-600 ml-2">Acciones sobre la lista de productos</span>
+            </form>
+        </section>
+
+
+        <section id="resultsPanel" class="bg-white rounded-lg shadow-sm p-4">
+            <div class="overflow-x-auto">
+                <table id="products-table" class="min-w-full table-auto">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Código</th>
+                            <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Descripción</th>
+                            <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Ubicacion</th>
+                            <th id="options" class="text-left px-4 py-2 text-sm font-medium text-gray-700">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="divide-y divide-gray-100">
+                        {% for product in products | reverse %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.code }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.description }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-800">nada</td>
+                            <td class="px-4 py-2 text-sm text-gray-800">
+                                <form action="{{ url_for('delete_product', code=product.code) }}" method="post">
+                                     <button type="submit"
+                                        class="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm"
+                                        aria-label="Eliminar {{ product.code }}">
+                                        Quitar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="serverSearchResult" data-empty="{{ 1 if last_search_empty else 0 }}" data-code="{{ last_search_code }}"
+        class="hidden" aria-hidden="true"></div>
+    {# incluir footer reutilizable #}
+    {% include 'footer.html' %}
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            const input = document.getElementById('code_product');
+            if (input) {
+                input.focus();
+                const val = input.value;
+                if (val && input.setSelectionRange) {
+                    const len = val.length;
+                    input.setSelectionRange(len, len);
+                }
+            }
+
+            // 1) Primero, si el servidor indicó que la última búsqueda no devolvió resultados, mostrar alert.
+            const serverIndicator = document.getElementById('serverSearchResult');
+            if (serverIndicator && serverIndicator.dataset) {
+                const isEmpty = serverIndicator.dataset.empty === '1';
+                const code = (serverIndicator.dataset.code || '').trim();
+                if (isEmpty) {
+                    alert('No se encontraron productos para el código buscado: ' + (code || ''));
+                    if (input) input.focus();
+                    return;
+                }
+            }
+
+            // 2) Fallback: si usamos el mecanismo localStorage (marca y código), comprobar tabla robustamente.
+            if (localStorage.getItem('lastSearch')) {
+                const lastCode = (localStorage.getItem('lastSearchCode') || '').trim().toLowerCase();
+                const tbody = document.getElementById('products-table-body');
+                let found = false;
+                if (tbody && lastCode) {
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const firstCell = row.querySelector('td');
+                        if (firstCell) {
+                            const cellText = (firstCell.textContent || '').trim().toLowerCase();
+                            if (cellText === lastCode) found = true;
+                        }
+                    });
+                }
+                if (!found) {
+                    alert('No se encontraron productos para el código buscado: ' + (lastCode || ''));
+                }
+                localStorage.removeItem('lastSearch');
+                localStorage.removeItem('lastSearchCode');
+                if (input) input.focus();
+            }
+
+            // resto del script...
+        });
+    </script>
+</body>
+ {% endblock %}

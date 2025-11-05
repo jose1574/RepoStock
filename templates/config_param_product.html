@@ -12,7 +12,7 @@
 
                 <form id="product-config-form" action="{{ url_for('config_param_product') }}" method="POST" class="mt-6">
                     <label for="product_code" class="block text-sm font-medium text-gray-700">Código del Producto</label>
-                    <input type="text" id="product_code" value="MOR001" name="product_code" required
+                    <input type="text" id="product_code" value="" name="product_code" required
                         class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                         style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase();"
                         placeholder="Ingresa el código del producto">
@@ -23,7 +23,7 @@
                     </button>
                 </form>
             </div>
-        </div>
+        </div>  
     </section>
     {% if products %}
         {% set product = products[0] %}
