@@ -48,7 +48,12 @@ else:
 template_folder = os.path.join(base_path, "templates")
 
 env_path = os.path.join(base_path, ".env")
-load_dotenv(env_path)
+# Carga el .env forzando UTF-8 para evitar problemas de codificación en Windows
+try:
+    load_dotenv(env_path, encoding="utf-8")
+except TypeError:
+    # Para compatibilidad con versiones antiguas de python-dotenv sin parámetro encoding
+    load_dotenv(env_path)
 
 app = Flask(__name__, template_folder=template_folder)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "root1574**")
@@ -253,7 +258,7 @@ def create_collection_order():
             selected_department,
         )
 
-    # Construir lista única de departamentos presentes en los productos para el filtro
+    # Construir listas únicas para filtros: departamentos y marcas presentes en los productos
     departments = []
     seen = set()
     for p in products:
@@ -262,6 +267,14 @@ def create_collection_order():
             seen.add(d)
             departments.append(d)
 
+    brands = []
+    seen_b = set()
+    for p in products:
+        b = p.get("mark") or p.get("brand")
+        if b and b not in seen_b:
+            seen_b.add(b)
+            brands.append(b)
+
     return render_template(
         "create_collection_order.html",
         products=products,
@@ -269,6 +282,7 @@ def create_collection_order():
         store_origin=search_store_origin,
         store_destination=store_destination,
         selected_department=selected_department,
+        brands=brands,
     )
 
 
@@ -290,7 +304,7 @@ def collection_preview_pdf():
         correlative = request.args.get("correlative", default=None, type=int)
         operation_type = request.args.get("operation_type", default="TRANSFER", type=str)
         wait_param = request.args.get("wait", default="true", type=str)
-        wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
+        wait = True if (str(wait_param).lower() in ("true")) else False
 
     if not correlative:
         return "Falta el parámetro correlative", 400
@@ -324,6 +338,7 @@ def collection_preview_pdf():
         "details": details,
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
+    print("estos son los datos del Header del reporte: ", header)
     html = render_template_string(report_template, **context)
 
     if pdfkit is None:
@@ -414,7 +429,6 @@ def process_collection_products():
                 "to_store": session.get("store_code_destination", None),
             }
             items.append(item)
-
         if not items:
             # nada que procesar
             print("No hay items válidos para procesar")
@@ -463,4 +477,25 @@ def process_collection_products():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5001)
+    app.run(debug=True, host="0.0.0.0", port=5002)
+    # Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("REPOSTOCK_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
+
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)

@@ -396,6 +396,10 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click\\utils.py',
    'PYMODULE'),
+  ('cmd',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\cmd.py',
+   'PYMODULE'),
   ('code',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\code.py',
@@ -1153,6 +1157,10 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\opcode.py',
    'PYMODULE'),
+  ('optparse',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\optparse.py',
+   'PYMODULE'),
   ('packaging',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\packaging\\__init__.py',
@@ -1260,6 +1268,14 @@
   ('pprint',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pprint.py',
+   'PYMODULE'),
+  ('profile',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\profile.py',
+   'PYMODULE'),
+  ('pstats',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pstats.py',
    'PYMODULE'),
   ('psycopg2',
    'C:\\Users\\Jose '
@@ -2116,6 +2132,62 @@
   ('uuid',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\uuid.py',
+   'PYMODULE'),
+  ('waitress',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\__init__.py',
+   'PYMODULE'),
+  ('waitress.adjustments',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\adjustments.py',
+   'PYMODULE'),
+  ('waitress.buffers',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\buffers.py',
+   'PYMODULE'),
+  ('waitress.channel',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\channel.py',
+   'PYMODULE'),
+  ('waitress.compat',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\compat.py',
+   'PYMODULE'),
+  ('waitress.parser',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\parser.py',
+   'PYMODULE'),
+  ('waitress.proxy_headers',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\proxy_headers.py',
+   'PYMODULE'),
+  ('waitress.receiver',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\receiver.py',
+   'PYMODULE'),
+  ('waitress.rfc7230',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\rfc7230.py',
+   'PYMODULE'),
+  ('waitress.server',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\server.py',
+   'PYMODULE'),
+  ('waitress.task',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\task.py',
+   'PYMODULE'),
+  ('waitress.trigger',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\trigger.py',
+   'PYMODULE'),
+  ('waitress.utilities',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\utilities.py',
+   'PYMODULE'),
+  ('waitress.wasyncore',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\wasyncore.py',
    'PYMODULE'),
   ('webbrowser',
    'C:\\Users\\Jose '

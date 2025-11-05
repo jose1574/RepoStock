@@ -50,5 +50,14 @@ echo Nota:
 echo - Se incluye la carpeta install\ con el instalador de wkhtmltopdf.
 echo - Si al generar PDF aparece error de wkhtmltopdf, ejecuta ese instalador una vez.
 echo.
+echo Para compilar el servicio de Windows, ejecuta:
+echo   %PYTHON_EXE% -m PyInstaller --noconfirm --clean service.spec
+echo Luego instala el servicio con privilegios de administrador:
+echo   dist\RepoStockService\RepoStockService.exe install
+echo   dist\RepoStockService\RepoStockService.exe start
+echo Para detener y quitar:
+echo   dist\RepoStockService\RepoStockService.exe stop
+echo   dist\RepoStockService\RepoStockService.exe remove
+echo.
 echo Listo.
 exit /b 0

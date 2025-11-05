@@ -10,19 +10,31 @@ base_path = os.path.abspath(os.path.dirname(__file__))
 env_path = os.path.join(base_path, ".env")
 load_dotenv(env_path)
 
+# Fuerza codificación UTF-8 para el cliente de PostgreSQL (libpq)
+os.environ.setdefault("PGCLIENTENCODING", "UTF8")
+
 
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "database": os.getenv("DB_NAME", "mi_base"),
-    "user": os.getenv("DB_USER", "usuario"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "port": int(os.getenv("DB_PORT", 5432)),
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "database": os.environ.get("DB_NAME", "cadm_prueba"),
+    "user": os.environ.get("DB_USER", "postgres"),
+    "password": os.environ.get("DB_PASSWORD", "root"),
+    "port": os.environ.get("DB_PORT", "5432"),
 }
 
 
 def get_db_connection():
     """Establece y retorna una conexión a la base de datos PostgreSQL."""
-    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        # Asegura codificación del lado del cliente
+        conn = psycopg2.connect(**DB_CONFIG, options="-c client_encoding=UTF8")
+    except UnicodeDecodeError as e:
+        # Mensaje guía: .env o variables con caracteres no-UTF8
+        raise Exception(
+            "Error de codificación al conectar a PostgreSQL. Revisa que el archivo .env y las variables de entorno "
+            "(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD) estén en UTF-8 sin caracteres especiales fuera de rango. "
+            "También puedes guardar .env en UTF-8 (sin BOM). Detalle: " + str(e)
+        )
     if conn is None:
         raise Exception("No se pudo conectar a la base de datos.")
     return conn
@@ -257,7 +269,8 @@ def get_collection_products(
     sql = """
         SELECT 
         p.code,
-        p.description AS product_description,
+    p.description AS product_description,
+    p.mark,
         u.description AS unit_description,
         d.description AS department_description,
         COALESCE(stock_store_origin.stock, 0) AS stock_store_origin,
@@ -292,13 +305,14 @@ def get_collection_products(
     GROUP BY
         p.code,
         p.description,
+        p.mark,
         u.description,
         d.description,
         stock_store_origin.stock,
         stock_store_destination.stock,
         pf.minimal_stock,
         pf.maximum_stock
-    ORDER BY p.code;
+    ORDER BY stock_store_destination ASC;
     """
 
     conn = get_db_connection()
@@ -379,7 +393,7 @@ def save_transfer_order_in_wait(data):
         'SIN DESCRIPCION',  -- p_description
         '01',  -- p_user_code
         '00',  -- p_station
-        '00',  -- p_store
+        %s,  -- p_store
         '00',  -- p_locations
         %s,  -- p_destination_store
         '00',  -- p_destination_location
@@ -394,6 +408,7 @@ def save_transfer_order_in_wait(data):
     """
     params = (
         data.get("emission_date", datetime.date.today()),
+        data.get("store", None),
         data.get("destination_store", None),
     )
 
@@ -613,10 +628,20 @@ def get_inventory_operations_by_correlative(
     conn = get_db_connection()
 
     sql = """
-                select * from inventory_operation as io
-                where io.correlative = %s
-                and io.operation_type = %s
-                and io.wait = %s
+        SELECT
+            io.*,
+            s_origin.description AS origin_store_description,
+            s_destination.description AS destination_store_description
+        FROM
+            inventory_operation AS io
+        LEFT JOIN
+            store AS s_origin ON io.store = s_origin.code
+        LEFT JOIN
+            store AS s_destination ON io.destination_Store = s_destination.code
+        WHERE
+            io.correlative = %s
+            AND io.operation_type = %s
+            AND io.wait = %s;
                 """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
