@@ -15,8 +15,8 @@ os.environ.setdefault("PGCLIENTENCODING", "UTF8")
 
 
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "database": os.environ.get("DB_NAME", "cadm_prueba"),
+    "host":  os.environ.get("DB_HOST", "localhost"),
+    "database": os.environ.get("DB_NAME", "cadm_v1029_misop"),
     "user": os.environ.get("DB_USER", "postgres"),
     "password": os.environ.get("DB_PASSWORD", "root"),
     "port": os.environ.get("DB_PORT", "5432"),
@@ -146,27 +146,7 @@ def get_store_by_code(store_code):
         close_db_connection(conn)
 
 
-def search_product(code_product):
-    """Busca productos relacionados con un código alterno (other_code).
 
-    Devuelve una lista de dicts con campos del producto.
-    """
-    sql = """
-    SELECT 
-    p.code, 
-    p.description
-    FROM products_codes AS pc
-    INNER JOIN products AS p ON pc.main_code = p.code
-    WHERE pc.other_code = %s;
-    """
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (code_product,))
-            rows = cur.fetchall()
-            return [dict(r) for r in rows]
-    finally:
-        close_db_connection(conn)
 
 
 def search_product_failure(code_product, store_code):
@@ -622,34 +602,6 @@ def get_store_by_code(store_code):
         close_db_connection(conn)
 
 
-def get_departments():
-    """Obtiene la lista de departamentos de la base de datos."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM department")
-            rows = cur.fetchall()
-
-            # serializar tipos no nativos de JSON (Decimal, datetime)
-            def _serialize_row(r):
-                return {
-                    k: (
-                        float(v)
-                        if isinstance(v, decimal.Decimal)
-                        else (
-                            v.isoformat()
-                            if isinstance(v, (datetime.date, datetime.datetime))
-                            else v
-                        )
-                    )
-                    for k, v in r.items()
-                }
-
-            return [_serialize_row(r) for r in rows]
-    finally:
-        close_db_connection(conn)
-
-
 def get_inventory_operations_by_correlative(
     correlative: int, operation_type: str, wait: bool = True
 ):
@@ -743,7 +695,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
     finally:
         close_db_connection(conn)
 
-def update_location_products_failures(store_code: str, product_code: str, location: str):
+def update_locations_products_failures(store_code: str, product_code: str, location: str):
     """Actualiza únicamente el campo location en products_failures.
     Si no existe el registro, lo inserta (minimal_stock y maximum_stock quedan NULL por defecto).
     """
@@ -792,5 +744,5 @@ __all__ = [
     "get_document_no_inventory_operation",
     "update_description_inventory_operations",
     "update_minmax_product_failure",
-    "update_location_products_failures",
+    "update_locations_products_failures",
 ]

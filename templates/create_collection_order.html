@@ -152,7 +152,17 @@
       }
 
       selectAllBtn && selectAllBtn.addEventListener('click', function () {
-         getCheckboxes().forEach(cb => cb.checked = true);
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         rows.forEach(row => {
+            const cb = row.querySelector('.product-checkbox');
+            if (!cb) return;
+            // Seleccionar solo los visibles por el filtro; deseleccionar los ocultos
+            if (row.style.display === 'none') {
+               cb.checked = false;
+            } else {
+               cb.checked = true;
+            }
+         });
       });
 
       clearBtn && clearBtn.addEventListener('click', function () {

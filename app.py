@@ -22,7 +22,6 @@ except Exception:
 # importar funciones de la base de datos
 from db import (
     get_stores,
-    search_product,
     save_product_failure,
     get_store_by_code,
     get_collection_products,
@@ -31,14 +30,13 @@ from db import (
     get_products_by_codes,
     get_correlative_product_unit,
     get_store_by_code,
-    get_departments,
     search_product_failure,
     get_inventory_operations_by_correlative,
     get_inventory_operations_details_by_correlative,
     update_description_inventory_operations,
     get_document_no_inventory_operation,
     update_minmax_product_failure,
-    update_location_products_failures as db_update_location_products_failures,
+    update_locations_products_failures as db_update_locations_products_failures,
 )
 
 
@@ -534,12 +532,12 @@ def process_collection_products():
 @app.route("/delete_product/<code>", methods=["POST"])
 def delete_product(code):
     delete_item_product_session(code)
-    return redirect(url_for("update_location_products_failures"))
+    return redirect(url_for("update_locations_products_failures"))
 
-
-@app.route("/location_products", methods=["GET", "POST"])
-@app.route("/location_products/<store_code>", methods=["GET", "POST"])
-def form_location_products(store_code=None):
+#para procesar la ruta de actualizacion de ubicacion de los productos con fallas
+@app.route("/update_location_products_failures", methods=["GET", "POST"])
+@app.route("/<store_code>/update_location_products_failures", methods=["GET", "POST"])
+def update_locations_products_failures_products(store_code=None):
     # Resolver depósito de destino desde: ruta > querystring > sesión
     if not store_code:
         store_code = request.args.get("store_code") or session.get("store_location")
@@ -553,7 +551,7 @@ def form_location_products(store_code=None):
         form_store = request.form.get("store_code_location")
         if form_store:
             session["store_location"] = form_store
-        return redirect(url_for("update_location_products_failures"))
+        return redirect(url_for("update_locations_products_failures"))
 
     # GET: mostrar siempre el depósito y la ubicación actual (si existe)
     return render_template(
@@ -562,15 +560,16 @@ def form_location_products(store_code=None):
         location=session.get("location", ""),
     )
 
-
+# Limpiar sesión
 @app.route("/clear", methods=["POST"])
 def clear():
     store_code = session.get("store_location")
     session.pop("products", None)
     session.pop("location", None)
-    return redirect(url_for("form_location_products", store_code=store_code))
+    return redirect(url_for("update_locations_products_failures_products", store_code=store_code))
 
 
+# Eliminar ítem de la sesión por código
 def delete_item_product_session(code):
     session_products = session.get("products", [])
     session_products = [p for p in session_products if p.get("code") != code]
@@ -578,12 +577,13 @@ def delete_item_product_session(code):
 
 
 #para procesar la ruta de seleccion del deposito de destino y la ubicacion de los productos
-@app.route("/select_store_destination_for_location", methods=["POST", "GET"])
-def select_store_destination_for_location():
+@app.route("/form_destination_store_for_location", methods=["POST", "GET"])
+def form_destination_store_for_location():
     stores = get_stores()
     return render_template("form_destination_store_for_location.html", stores=stores )
 
 
+#ruta para guardar en sesion el deposito de destino seleccionado para la actualizacion de ubicacion de los productos con fallas
 @app.route("/save_session_select_store_destination_for_location", methods=["POST", "GET"])
 def save_session_select_store_destination_for_location():
     store_code = session.get("store_location")
@@ -592,7 +592,7 @@ def save_session_select_store_destination_for_location():
     store_location = request.form.get("store_code_location")
 
     session['store_location'] = store_location
-    return redirect(url_for("form_location_products", store_code=store_location))
+    return redirect(url_for("update_locations_products_failures_products", store_code=store_location))
 
 
 @app.route("/update_location_products", methods=["POST"])
@@ -620,7 +620,7 @@ def update_location_products():
                 product_code = p.get("code") if isinstance(p, dict) else None
                 if product_code:
                     try:
-                        db_update_location_products_failures(
+                        db_update_locations_products_failures(
                             store_code, product_code, location
                         )
                     except Exception as e:
@@ -630,22 +630,22 @@ def update_location_products():
                         )
             # Siempre limpiar la lista de productos de la sesión tras guardar
             session.pop("products", None)
-    return redirect(url_for("form_location_products", store_code=store_code))
+    return redirect(url_for("update_locations_products_failures_products", store_code=store_code))
 
 
-@app.route("/update_location_products_failures", methods=["GET", "POST"])
-def update_location_products_failures():
+@app.route("/update_locations_products_failures", methods=["GET", "POST"])
+def update_locations_products_failures():
     session_products = session.get("products", [])
     # Mantener la ubicación en sesión, sólo actualizar si viene una no vacía en el POST
     location = session.get("location", "")
     if request.method == "POST":
-        form_location = request.form.get("location")
-        if form_location is not None:
-            form_location = form_location.strip()
-            if form_location:
-                session["location"] = form_location
-                location = form_location
-    print("update_location_products_failures: location ->", location)
+        update_locations_products_failures = request.form.get("location")
+        if update_locations_products_failures is not None:
+            update_locations_products_failures = update_locations_products_failures.strip()
+            if update_locations_products_failures:
+                session["location"] = update_locations_products_failures
+                location = update_locations_products_failures
+    print("update_locations_products_failures: location ->", location)
     last_search_empty = False
     last_search_code = ""
     if request.method == "POST":
@@ -655,7 +655,7 @@ def update_location_products_failures():
         print("index: recibido code_product -> '{}'".format(code_product))
         if code_product:
             try:
-                new_products = search_product(code_product)
+                new_products = search_product_failure(code_product, session.get("store_location"))
                 print("index: new_products ->", new_products)
                 last_search_empty = len(new_products) == 0
                 # Evitar duplicados por 'code'
@@ -670,7 +670,7 @@ def update_location_products_failures():
                 print("Error buscando productos:", e)
                 last_search_empty = True
     return render_template(
-        "products_locations.html",
+        "update_locations_products_failures.html",
         products=session_products,
         location=location,
         last_search_empty=last_search_empty,
@@ -679,8 +679,8 @@ def update_location_products_failures():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5002)
-    # Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+   #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
     # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
     # try:
     #     port = int(os.environ.get("REPOSTOCK_PORT", "5001"))

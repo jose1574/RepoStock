@@ -12,7 +12,7 @@
         </header>
 
         <section id="searchPanel" class="mb-4">
-            <form action="{{ url_for('update_location_products_failures') }}" method="post" id="search-form" class="flex gap-2">
+            <form action="{{ url_for('update_locations_products_failures') }}" method="post" id="search-form" class="flex gap-2">
                 <input type="text" id="code_product" name="code_product" placeholder="Código de producto"
                     autocomplete="off" autofocus
                     class="flex-1 border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -68,7 +68,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 text-sm text-gray-800">{{ product.code }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800">{{ product.description }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-800">nada</td>
+                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.location }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800">
                                 <form action="{{ url_for('delete_product', code=product.code) }}" method="post">
                                      <button type="submit"
@@ -88,8 +88,6 @@
 
     <div id="serverSearchResult" data-empty="{{ 1 if last_search_empty else 0 }}" data-code="{{ last_search_code }}"
         class="hidden" aria-hidden="true"></div>
-    {# incluir footer reutilizable #}
-    {% include 'footer.html' %}
     <script>
         window.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById('code_product');
