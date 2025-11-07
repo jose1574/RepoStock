@@ -19,7 +19,39 @@ try:
     import pdfkit
 except Exception:
     pdfkit = None
-# importar funciones de la base de datos
+"""
+Cargar variables de entorno ANTES de importar db.py para que DB_CONFIG lea .env correctamente
+en entornos empaquetados (PyInstaller) y desarrollo.
+"""
+if getattr(sys, "frozen", False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+template_folder = os.path.join(base_path, "templates")
+
+env_path = os.path.join(base_path, ".env")
+# En modo congelado, permite un .env externo junto al ejecutable que tenga prioridad
+if getattr(sys, "frozen", False):
+    try:
+        exe_dir = os.path.dirname(sys.executable)
+        external_env = os.path.join(exe_dir, ".env")
+        if os.path.exists(external_env):
+            try:
+                load_dotenv(external_env, encoding="utf-8", override=True)
+            except TypeError:
+                load_dotenv(external_env, override=True)
+    except Exception:
+        pass
+
+# Carga el .env embebido (no sobrescribe claves ya definidas por el externo)
+try:
+    load_dotenv(env_path, encoding="utf-8", override=False)
+except TypeError:
+    # Para compatibilidad con versiones antiguas de python-dotenv sin parámetro encoding
+    load_dotenv(env_path, override=False)
+
+# importar funciones de la base de datos (después de cargar .env)
 from db import (
     get_stores,
     save_product_failure,
@@ -38,24 +70,8 @@ from db import (
     update_minmax_product_failure,
     update_locations_products_failures as db_update_locations_products_failures,
     get_inventory_operations,
-    delete_inventory_operation_by_correlative
+    delete_inventory_operation_by_correlative,
 )
-
-
-if getattr(sys, "frozen", False):
-    base_path = sys._MEIPASS
-else:
-    base_path = os.path.dirname(os.path.abspath(__file__))
-
-template_folder = os.path.join(base_path, "templates")
-
-env_path = os.path.join(base_path, ".env")
-# Carga el .env forzando UTF-8 para evitar problemas de codificación en Windows
-try:
-    load_dotenv(env_path, encoding="utf-8")
-except TypeError:
-    # Para compatibilidad con versiones antiguas de python-dotenv sin parámetro encoding
-    load_dotenv(env_path)
 
 app = Flask(__name__, template_folder=template_folder)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "root1574**")
@@ -703,25 +719,25 @@ def delete_inventory_operation():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("REPOSTOCK_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("REPOSTOCK_PORT", "5001"))
+    except Exception:
+        port = 5001
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)

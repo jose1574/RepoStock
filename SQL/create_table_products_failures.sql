@@ -61,3 +61,10 @@ LEFT JOIN
     products_failures pf ON p.code = pf.product_code AND s.code = pf.store_code
 WHERE
     pf.product_code IS NULL; -- Inserta solo donde la combinación no exista
+
+-- consutla para rellenar los campos de location con el valor de modelo de productos
+UPDATE products_failures AS pf
+SET location = p.model
+FROM products AS p
+WHERE pf.product_code = p.code
+  AND pf.store_code = '01';

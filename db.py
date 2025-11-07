@@ -16,7 +16,7 @@ os.environ.setdefault("PGCLIENTENCODING", "UTF8")
 
 DB_CONFIG = {
     "host":  os.environ.get("DB_HOST", "localhost"),
-    "database": os.environ.get("DB_NAME", "cadm_v1029_misop"),
+    "database": os.environ.get("DB_NAME"),
     "user": os.environ.get("DB_USER", "postgres"),
     "password": os.environ.get("DB_PASSWORD", "root"),
     "port": os.environ.get("DB_PORT", "5432"),
