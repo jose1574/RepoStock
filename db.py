@@ -180,6 +180,56 @@ def search_product_failure(code_product, store_code):
     finally:
         close_db_connection(conn)
 
+def search_product(code_product):
+    """Busca un producto por código alterno (other_code) y devuelve datos principales.
+
+    Retorna una lista de dicts con las claves:
+      - code (código principal)
+      - description
+      - unit_description (si existe unidad principal)
+      - unit_correlative (correlativo de la unidad principal, si existe)
+    """
+
+    sql = """
+    SELECT 
+        p.code, 
+        p.description,
+        u.description AS unit_description,
+        pu.correlative AS unit_correlative
+    FROM products_codes AS pc
+    INNER JOIN products AS p ON pc.main_code = p.code
+    LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
+    LEFT JOIN units AS u ON u.code = pu.unit
+    WHERE UPPER(pc.other_code) = UPPER(%s)
+    ;
+    """
+    conn = get_db_connection()
+
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code_product,))
+            rows = cur.fetchall()
+            if rows:
+                return [dict(r) for r in rows]
+            # Fallback: buscar por código principal directamente en products
+            sql_fallback = """
+            SELECT 
+                p.code,
+                p.description,
+                u.description AS unit_description,
+                pu.correlative AS unit_correlative
+            FROM products AS p
+            LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
+            LEFT JOIN units AS u ON u.code = pu.unit
+            WHERE UPPER(p.code) = UPPER(%s)
+            ;
+            """
+            cur.execute(sql_fallback, (code_product,))
+            rows2 = cur.fetchall()
+            return [dict(r) for r in rows2]
+    finally:
+        close_db_connection(conn)
+
 
 def save_product_failure(data):
 
@@ -374,6 +424,7 @@ def update_description_inventory_operations(correlative: int, description: str):
 def get_document_no_inventory_operation(correlative: int):
     sql = """
     SELECT 
+    correlative, 
     document_no
     FROM inventory_operation AS io
     WHERE io.correlative = %s;
@@ -384,22 +435,23 @@ def get_document_no_inventory_operation(correlative: int):
             cur.execute(sql, (correlative,))
             row = cur.fetchone()
             if row:
-                return row[0]
+                # row[1] corresponde a document_no
+                return row[1]
             return None
     finally:
         close_db_connection(conn)
 
 
-def save_transfer_order_in_wait(data):
-    print("datos de la orden de traslado: ", data)
+def save_transfer_order_in_wait(data, operation_type: str = "TRANSFER"):
+    print("datos de la orden de traslado: ", operation_type)
     sql_insert_order = """
      SELECT set_inventory_operation(
         null,  -- p_correlative (NULL para que la función genere)
-        'TRANSFER',  -- p_operation_type
+        %s,  -- p_operation_type
         '',  -- p_document_no
         %s::date,  -- p_emission_date
         true,  -- p_wait
-        'SIN DESCRIPCION',  -- p_description
+        '',  -- p_description
         '01',  -- p_user_code
         '00',  -- p_station
         %s,  -- p_store
@@ -416,6 +468,7 @@ def save_transfer_order_in_wait(data):
     );
     """
     params = (
+        operation_type,
         data.get("emission_date", datetime.date.today()),
         data.get("store", None),
         data.get("destination_store", None),
@@ -425,7 +478,8 @@ def save_transfer_order_in_wait(data):
     try:
         with conn.cursor() as cur:
             cur.execute(sql_insert_order, params)
-            order_id = cur.fetchone()
+            row = cur.fetchone()
+            order_id = row[0] if row else None
         conn.commit()
         return order_id
     except Exception as e:
@@ -434,6 +488,11 @@ def save_transfer_order_in_wait(data):
         return None
     finally:
         close_db_connection(conn)
+
+
+def save_collection_order(data):
+    """Guarda una orden de recolección (operation_type = 'ORDER_COLLECTION') y retorna el correlativo."""
+    return save_transfer_order_in_wait(data, operation_type="ORDER_COLLECTION")
 
 
 def get_correlative_product_unit(product_code):
@@ -766,6 +825,28 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
     finally:
         close_db_connection(conn)
 
+
+def update_inventory_operation_detail_amount(main_correlative: int, code_product: str, amount: float):
+    """Actualiza la cantidad (amount) de una línea de detalle por correlativo y código de producto.
+    Si hay múltiples líneas con el mismo producto en la misma operación, actualiza todas.
+    """
+    conn = get_db_connection()
+    sql = """
+        UPDATE inventory_operation_details
+        SET amount = %s
+        WHERE main_correlative = %s AND code_product = %s;
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (amount, main_correlative, code_product))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar cantidad en detalle: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+
 def update_locations_products_failures(store_code: str, product_code: str, location: str):
     """Actualiza únicamente el campo location en products_failures.
     Si no existe el registro, lo inserta (minimal_stock y maximum_stock quedan NULL por defecto).
@@ -796,13 +877,32 @@ def update_locations_products_failures(store_code: str, product_code: str, locat
 #para devolver operaciones de inventario 
 
 
+def delete_inventory_operation_detail(main_correlative: int, code_product: str):
+    """Elimina líneas de detalle de una operación por correlativo y código de producto.
+    Si hay varias líneas con el mismo producto, elimina todas (comportamiento consistente con update)."""
+    conn = get_db_connection()
+    sql = """
+        DELETE FROM inventory_operation_details
+        WHERE main_correlative = %s AND code_product = %s;
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (main_correlative, code_product))
+        conn.commit()
+    except Exception as e:
+        print(f"Error eliminando detalle: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+
+
 # export functions
 __all__ = [
     "get_db_connection",
     "close_db_connection",
     "login_user",
     "get_stores",
-    "search_product",
     "get_store_by_code",
     "save_product_failure",
     "get_collection_products",
@@ -820,5 +920,9 @@ __all__ = [
     "update_minmax_product_failure",
     "update_locations_products_failures",
     "get_inventory_operations",
-    "delete_inventory_operation_by_correlative"
+    "delete_inventory_operation_by_correlative",
+    "save_collection_order",
+    "update_inventory_operation_detail_amount",
+    "delete_inventory_operation_detail",
+    "search_product",
 ]
