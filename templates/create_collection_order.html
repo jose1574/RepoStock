@@ -564,8 +564,39 @@
       previewAddMore && previewAddMore.addEventListener('click', closePreview);
       previewClose && previewClose.addEventListener('click', closePreview);
       previewSubmit && previewSubmit.addEventListener('click', function () {
-         // Enviar el formulario original
-         form.requestSubmit ? form.requestSubmit() : form.submit();
+         // Validar que haya selección y cantidades válidas para los seleccionados
+         const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         if (checked.length === 0) {
+            alert('Selecciona al menos un producto para crear la orden.');
+            return;
+         }
+         let firstInvalid = null;
+         for (const cb of checked) {
+            const code = cb.value;
+            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            if (inp && !validateInput(inp)) {
+               if (!firstInvalid) firstInvalid = inp;
+            }
+         }
+         if (firstInvalid) {
+            firstInvalid.focus();
+            alert('Corrige los valores marcados en rojo antes de crear la orden.');
+            return;
+         }
+
+         // 1) Crear la orden y abrir el PDF en una nueva pestaña usando target="_blank"
+         const prevTarget = form.getAttribute('target');
+         form.setAttribute('target', '_blank');
+         if (form.requestSubmit) {
+            form.requestSubmit();
+         } else {
+            form.submit();
+         }
+         // Restaurar target original (por limpieza)
+         if (prevTarget !== null) form.setAttribute('target', prevTarget); else form.removeAttribute('target');
+
+         // 2) Redirigir la pestaña actual a la selección de depósito de destino
+         window.location.href = "{{ url_for('select_store_destination_collection_order') }}";
       });
       previewPdfBtn && previewPdfBtn.addEventListener('click', function () {
          if (!currentPreviewItems || currentPreviewItems.length === 0) {

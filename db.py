@@ -647,7 +647,78 @@ def get_inventory_operations_by_correlative(
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)
+#funcion que devuelve todas las operaciones de inventario
+def get_inventory_operations(wait: bool = True, operation_type: str = 'TRANSFER'):
+    """Obtiene todas las operaciones de inventario que están en espera."""
+    conn = get_db_connection()
 
+    sql = """
+        SELECT
+            io.*,
+            s_origin.description AS origin_store_description,
+            s_destination.description AS destination_store_description
+        FROM
+            inventory_operation AS io
+        LEFT JOIN
+            store AS s_origin ON io.store = s_origin.code
+        LEFT JOIN
+            store AS s_destination ON io.destination_Store = s_destination.code
+        WHERE
+            io.wait = %s
+            AND io.operation_type = %s
+        ORDER BY io.document_no DESC;
+                """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (wait, operation_type))
+            rows = cur.fetchall()
+
+            # serializar tipos no nativos de JSON (Decimal, datetime)
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            return [_serialize_row(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
+#para eliminar operaciones de inventario por su codigo correlativo
+def delete_inventory_operation_by_correlative(correlative: int):
+    """Elimina una operación de inventario y sus detalles por correlativo.
+    Primero elimina los detalles para evitar violaciones de FK y luego el encabezado.
+    Tablas involucradas: inventory_operation_details (detalle) e inventory_operation (encabezado).
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # Eliminar detalles asociados
+            cur.execute(
+                "DELETE FROM inventory_operation_details WHERE main_correlative = %s",
+                (correlative,),
+            )
+            # Eliminar encabezado
+            cur.execute(
+                "DELETE FROM inventory_operation WHERE correlative = %s",
+                (correlative,),
+            )
+        conn.commit()
+    except Exception as e:
+        print(f"Error al eliminar la operación de inventario: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
 
 def get_inventory_operations_details_by_correlative(main_correlative: int):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
@@ -722,6 +793,9 @@ def update_locations_products_failures(store_code: str, product_code: str, locat
     finally:
         close_db_connection(conn)
 
+#para devolver operaciones de inventario 
+
+
 # export functions
 __all__ = [
     "get_db_connection",
@@ -745,4 +819,6 @@ __all__ = [
     "update_description_inventory_operations",
     "update_minmax_product_failure",
     "update_locations_products_failures",
+    "get_inventory_operations",
+    "delete_inventory_operation_by_correlative"
 ]

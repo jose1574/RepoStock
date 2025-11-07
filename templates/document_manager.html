@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes de Operaciones de Inventario{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold mb-4">Reportes de Operaciones de Inventario</h1>
+
+<!-- Buscador: filtra por Documento o Descripción -->
+<div class="mb-4">
+    <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+    <input
+        id="searchInput"
+        type="text"
+        placeholder="Buscar por documento o descripción..."
+        class="w-full md:w-96 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    />
+    <p class="text-xs text-gray-500 mt-1">Escribe parte del número de documento o la descripción para filtrar.</p>
+    <hr class="mt-3" />
+    
+</div>
+
+<div class="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+    <table class="min-w-full table-auto">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Documento</th>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Fecha</th>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Descripción</th>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Origen</th>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Destino</th>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Opciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for operation in inventory_operations %}
+            <tr class="hover:bg-gray-50">
+                <td class="py-2 px-4 border-b border-gray-100">
+                    <form action="{{ url_for('collection_preview_pdf') }}" method="post" target="_blank">
+                        <input type="hidden" name="correlative" value="{{ operation.correlative }}">
+                        <input type="hidden" name="operation_type" value="{{ operation.operation_type or 'TRANSFER' }}">
+                        <input type="hidden" name="wait" value="true">
+                        <button type="submit" class="text-blue-600 hover:underline">
+                            {{ operation.document_no }}
+                        </button>
+                    </form>
+                </td>
+                <td class="py-2 px-4 border-b border-gray-100">{{ operation.emission_date }}</td>
+                <td class="py-2 px-4 border-b border-gray-100">{{ operation.description }}</td>
+                <td class="py-2 px-4 border-b border-gray-100">{{ operation.origin_store_description }}</td>
+                <td class="py-2 px-4 border-b border-gray-100">{{ operation.destination_store_description }}</td>
+                <td class="py-2 px-4 border-b border-gray-100">
+                    <form action="{{ url_for('delete_inventory_operation') }}" method="post" onsubmit="return confirm('¿Eliminar la orden {{ operation.document_no }} ({{ operation.correlative }})? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="correlative" value="{{ operation.correlative }}">
+                        <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="py-4 px-4 text-center text-gray-500">No se encontraron operaciones.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('searchInput');
+    const tbody = document.querySelector('table tbody');
+    if (!input || !tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    function normalize(str) {
+        return (str || '')
+            .toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+    }
+
+    function filterRows() {
+        const q = normalize(input.value.trim());
+        // Si no hay query, mostrar todo
+        if (!q) {
+            rows.forEach(r => r.style.display = '');
+            return;
+        }
+
+        rows.forEach(row => {
+            // Evitar tocar filas vacías del "else" de Jinja (cuando no hay datos)
+            const cells = row.querySelectorAll('td');
+            if (!cells || cells.length < 5) {
+                row.style.display = '';
+                return;
+            }
+
+            // Columna 1: Documento (tiene un botón dentro de un form)
+            const docText = normalize(cells[0].textContent);
+            // Columna 3: Descripción
+            const descText = normalize(cells[2].textContent);
+
+            const match = docText.includes(q) || descText.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    }
+
+    input.addEventListener('input', filterRows);
+});
+</script>
+
+{% endblock %}
+

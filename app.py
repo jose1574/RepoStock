@@ -37,6 +37,8 @@ from db import (
     get_document_no_inventory_operation,
     update_minmax_product_failure,
     update_locations_products_failures as db_update_locations_products_failures,
+    get_inventory_operations,
+    delete_inventory_operation_by_correlative
 )
 
 
@@ -676,6 +678,28 @@ def update_locations_products_failures():
         last_search_empty=last_search_empty,
         last_search_code=last_search_code,
     )
+
+## 
+
+@app.route("/document_manager")
+def document_manager():
+    inventory_operations = get_inventory_operations()
+    print("Inventory Operations:", inventory_operations[0])
+    return render_template("document_manager.html", inventory_operations=inventory_operations)
+
+
+@app.route("/document_manager/delete", methods=["POST"])
+def delete_inventory_operation():
+    """Elimina una orden de traslado por correlativo y vuelve a la lista de reportes."""
+    correlative = request.form.get("correlative", type=int)
+    if not correlative:
+        return redirect(url_for("document_manager"))
+    try:
+        delete_inventory_operation_by_correlative(correlative)
+    except Exception as e:
+        # Registra el error y regresa a la lista; opcionalmente usar flash para el usuario
+        print(f"No se pudo eliminar la operación {correlative}: {e}")
+    return redirect(url_for("document_manager"))
 
 
 if __name__ == "__main__":
