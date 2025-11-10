@@ -7,7 +7,7 @@ para que coincida con lo que se va a trasladar entre depositos. -->
 <div class="mx-auto px-4 py-6">
    <h1 class="text-xl font-semibold mb-4">Chequeo de Orden de Recolección</h1>
 
-   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
+   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and (header or validated) else '' }}">
       <div>
          <label for="correlative" class="block text-sm font-medium text-gray-700">Correlativo de ORDER_COLLECTION</label>
          <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48" placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
@@ -16,7 +16,7 @@ para que coincida con lo que se va a trasladar entre depositos. -->
    </form>
 
       <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}"></div>
-      {% if correlative and header %}
+   {% if correlative and header %}
       <div class="mb-4 text-sm text-gray-600 space-y-1">
          <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
          <p><span class="font-medium">Depósito origen:</span> {{ header.store }}</p>
@@ -111,8 +111,10 @@ para que coincida con lo que se va a trasladar entre depositos. -->
          </table>
       </div>
 
+   {% elif correlative and validated %}
+      <p class="text-green-700 font-medium">La ORDER_COLLECTION con correlativo {{ correlative }} ya fue validada. No es posible volver a chequearla.</p>
    {% elif correlative and not header %}
-      <p class="text-red-600">No se encontró una ORDER_COLLECTION con correlativo {{ correlative }}.</p>
+      <p class="text-red-600">No se encontró una ORDER_COLLECTION en espera con correlativo {{ correlative }}.</p>
    {% endif %}
 </div>
 

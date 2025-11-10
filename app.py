@@ -72,7 +72,8 @@ from db import (
     save_collection_order,
     update_inventory_operation_detail_amount,
     search_product_failure,
-    search_product
+    search_product,
+    update_inventory_operation_type,
 )
 
 app = Flask(__name__, template_folder=template_folder)
@@ -843,15 +844,24 @@ def check_order_collection():
     correlative = request.args.get("correlative", type=int)
     header = None
     details = []
+    validated = False
     if correlative:
         try:
             rows = get_inventory_operations_by_correlative(correlative, "ORDER_COLLECTION", True)
             if rows:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative)
+            else:
+                # Si no es ORDER_COLLECTION en espera, verificar si fue VALIDADA
+                val_rows = get_inventory_operations_by_correlative(correlative, "VALIDATE", True)
+                if not val_rows:
+                    # Intento adicional por si wait hubiese sido cambiado
+                    val_rows = get_inventory_operations_by_correlative(correlative, "VALIDATE", False)
+                if val_rows:
+                    validated = True
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
-    return render_template("check_order_collection.html", correlative=correlative, header=header, items=details)
+    return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
 
 
 @app.route("/api/collection_order/update_count", methods=["POST"])
@@ -959,6 +969,12 @@ def api_collection_order_confirm_transfer():
         transfer_document_no = get_document_no_inventory_operation(new_transfer_id)
         if transfer_document_no:
             update_description_inventory_operations(new_transfer_id, f"Orden de traslado automatico No: {transfer_document_no}")
+        # Marcar la ORDER_COLLECTION original como VALIDATE para no permitir re-chequeo
+        try:
+            update_inventory_operation_type(source_correlative, "VALIDATE")
+        except Exception as e:
+            # No romper flujo si falla esta marca, pero reportar
+            print(f"Advertencia: no se pudo marcar la ORDER_COLLECTION {source_correlative} como VALIDATE: {e}")
         return jsonify({"ok": True, "transfer_correlative": new_transfer_id, "document_no": transfer_document_no})
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error generando TRANSFER: {e}"}), 500
@@ -1094,25 +1110,25 @@ def api_collection_order_add_item():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("REPOSTOCK_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("APP_PORT", "5001"))
+    except Exception:
+        port = 5001
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)

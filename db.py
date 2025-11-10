@@ -149,32 +149,37 @@ def get_store_by_code(store_code):
 
 
 
-def search_product_failure(code_product, store_code):
-    """Busca productos relacionados con un código alterno (other_code).
 
-    Devuelve una lista de dicts con campos del producto.
+def search_product_failure(code_product, store_code):
+    """Busca un producto por código alterno (other_code) o por código principal,
+    devolviendo información desde products y, si existe, los datos de products_failures
+    para el depósito indicado. Si no hay registro en products_failures, igualmente
+    devuelve el producto con los campos de pf en NULL.
     """
 
-    # print('Buscando producto con código:', code_product, 'en deposito:', store_code)
     sql = """
-    SELECT 
-    p.code, 
-    p.description,
-    pf.minimal_stock,
-    pf.maximum_stock,
-    pf.location
-    FROM products_codes AS pc
-    INNER JOIN products AS p ON pc.main_code = p.code
-    INNER JOIN products_failures AS pf ON p.code = pf.product_code
-    WHERE pc.other_code = %s
-    AND pf.store_code = %s
-    ;
+    SELECT DISTINCT
+        p.code,
+        p.description,
+        pf.minimal_stock,
+        pf.maximum_stock,
+        pf.location
+    FROM products AS p
+    LEFT JOIN products_codes AS pc
+        ON pc.main_code = p.code
+    LEFT JOIN products_failures AS pf
+        ON pf.product_code = p.code
+       AND pf.store_code = %s
+    WHERE (
+        UPPER(pc.other_code) = UPPER(%s)
+        OR UPPER(p.code) = UPPER(%s)
+    );
     """
     conn = get_db_connection()
 
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (code_product, store_code))
+            cur.execute(sql, (store_code, code_product, code_product))
             rows = cur.fetchall()
             return [dict(r) for r in rows]
     finally:
@@ -897,6 +902,76 @@ def delete_inventory_operation_detail(main_correlative: int, code_product: str):
         close_db_connection(conn)
 
 
+def update_inventory_operation_type(correlative: int, new_operation_type: str):
+    """Actualiza el campo operation_type de inventory_operation para un correlativo dado."""
+    conn = get_db_connection()
+    sql = """
+        UPDATE inventory_operation
+        SET operation_type = %s
+        WHERE correlative = %s;
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (new_operation_type, correlative))
+        conn.commit()
+    except Exception as e:
+        print(f"Error actualizando operation_type: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+
+def search_product(code: str ):
+    """Busca un producto por código alterno (other_code) y devuelve datos principales.
+
+    Retorna una lista de dicts con las claves:
+      - code (código principal)
+      - description
+      - unit_description (si existe unidad principal)
+      - unit_correlative (correlativo de la unidad principal, si existe)
+    """
+
+    sql = """
+    SELECT 
+        p.code, 
+        p.description,
+        u.description AS unit_description,
+        pu.correlative AS unit_correlative
+    FROM products_codes AS pc
+    INNER JOIN products AS p ON pc.main_code = p.code
+    LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
+    LEFT JOIN units AS u ON u.code = pu.unit
+    WHERE UPPER(pc.other_code) = UPPER(%s)
+    ;
+    """
+    conn = get_db_connection()
+
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code,))
+            rows = cur.fetchall()
+            if rows:
+                return [dict(r) for r in rows]
+            # Fallback: buscar por código principal directamente en products
+            sql_fallback = """
+            SELECT 
+                p.code,
+                p.description,
+                u.description AS unit_description,
+                pu.correlative AS unit_correlative
+            FROM products AS p
+            LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
+            LEFT JOIN units AS u ON u.code = pu.unit
+            WHERE UPPER(p.code) = UPPER(%s)
+            ;
+            """
+            cur.execute(sql_fallback, (code,))
+            rows2 = cur.fetchall()
+            return [dict(r) for r in rows2]
+    finally:
+        close_db_connection(conn)
+
+
 # export functions
 __all__ = [
     "get_db_connection",
@@ -924,5 +999,7 @@ __all__ = [
     "save_collection_order",
     "update_inventory_operation_detail_amount",
     "delete_inventory_operation_detail",
+    "search_product",
+    "update_inventory_operation_type",
     "search_product",
 ]
