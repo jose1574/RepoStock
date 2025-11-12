@@ -787,7 +787,7 @@ def delete_inventory_operation_by_correlative(correlative: int):
     finally:
         close_db_connection(conn)
 
-def get_inventory_operations_details_by_correlative(main_correlative: int):
+def get_inventory_operations_details_by_correlative(main_correlative: int, product_failure_store: str = None):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
     conn = get_db_connection()
 
@@ -802,7 +802,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
                 /* Evitar duplicados: ubicar por producto y deposito destino */
                 left join products_failures as pf 
                     on iod.code_product = pf.product_code
-                   and pf.store_code = iod.destination_store
+                   and pf.store_code = COALESCE(%s, iod.destination_store)
                 left join products_units as pu on iod.unit = pu.correlative
                 left join units as u on (u.code = pu.unit)
                 where iod.main_correlative = %s
@@ -811,7 +811,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
         """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (main_correlative,))
+            cur.execute(sql, (product_failure_store, main_correlative))
             rows = cur.fetchall()
 
             # serializar tipos no nativos de JSON (Decimal, datetime)
@@ -834,20 +834,22 @@ def get_inventory_operations_details_by_correlative(main_correlative: int):
         close_db_connection(conn)
 
 
-def update_inventory_operation_detail_amount(main_correlative: int, code_product: str, amount: float):
-    """Actualiza la cantidad (amount) de una línea de detalle por correlativo y código de producto.
-    Si hay múltiples líneas con el mismo producto en la misma operación, actualiza todas.
+def update_inventory_operation_detail_amount(main_correlative: int, code_product: str, amount: float) -> int:
+    """Actualiza la cantidad (amount) de una o varias líneas de detalle por correlativo y código de producto.
+    Devuelve el número de filas afectadas. Normaliza el código a mayúsculas en la comparación.
     """
     conn = get_db_connection()
     sql = """
         UPDATE inventory_operation_details
         SET amount = %s
-        WHERE main_correlative = %s AND code_product = %s;
+        WHERE main_correlative = %s AND UPPER(code_product) = UPPER(%s);
     """
     try:
         with conn.cursor() as cur:
             cur.execute(sql, (amount, main_correlative, code_product))
+            affected = cur.rowcount
         conn.commit()
+        return affected
     except Exception as e:
         print(f"Error al actualizar cantidad en detalle: {e}")
         conn.rollback()

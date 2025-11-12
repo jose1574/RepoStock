@@ -409,7 +409,8 @@ def collection_preview_pdf():
             correlative, operation_type, wait
         )
         header = header_rows[0] if header_rows else {}
-        details = get_inventory_operations_details_by_correlative(correlative)
+        # Para el PDF queremos la ubicación del depósito de origen
+        details = get_inventory_operations_details_by_correlative(correlative, header.get("store") if header else None)
     except Exception as e:
         return f"Error consultando datos de la orden: {e}", 500
 
@@ -875,8 +876,10 @@ def api_collection_order_update_count():
     except ValueError:
         return jsonify({"ok": False, "error": "Cantidad inválida"}), 400
     try:
-        update_inventory_operation_detail_amount(correlative, product_code, counted_val)
-        return jsonify({"ok": True, "product_code": product_code, "counted": counted_val})
+        rows = update_inventory_operation_detail_amount(correlative, product_code, counted_val)
+        if rows == 0:
+            return jsonify({"ok": False, "error": "Producto no encontrado en la orden o código no coincide."}), 404
+        return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -1078,25 +1081,25 @@ def api_collection_order_add_item():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    try:
-        port = int(os.environ.get("APP_PORT", "5001"))
-    except Exception:
-        port = 5001
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("APP_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
 
-    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    if use_waitress:
-        try:
-            from waitress import serve
-            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-            serve(app, host=host, port=port, threads=threads)
-        except Exception as e:
-            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-            app.run(debug=False, host=host, port=port)
-    else:
-        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-        app.run(debug=debug, host=host, port=port)
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)
