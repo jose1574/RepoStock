@@ -69,11 +69,11 @@ from db import (
     update_locations_products_failures as db_update_locations_products_failures,
     get_inventory_operations,
     delete_inventory_operation_by_correlative,
-    save_collection_order,
+    # save_collection_order,  # no se usa; creación directa con save_transfer_order_in_wait
     update_inventory_operation_detail_amount,
     search_product_failure,
     search_product,
-    update_inventory_operation_type,
+    # update_inventory_operation_type,  # deprecado: ahora se usa description para validación
 )
 
 app = Flask(__name__, template_folder=template_folder)
@@ -236,6 +236,15 @@ def api_collection_order_delete_item():
     if not product_code:
         return jsonify({"ok": False, "error": "Falta product_code"}), 400
     try:
+        # Bloquear si ya fue validada
+        try:
+            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            if hdr_rows:
+                d = (hdr_rows[0].get("description") or "").strip().lower()
+                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
+                    return jsonify({"ok": False, "error": "Orden ya validada. No se puede eliminar."}), 400
+        except Exception:
+            pass
         from db import delete_inventory_operation_detail
         delete_inventory_operation_detail(correlative, product_code)
         return jsonify({"ok": True, "deleted": product_code})
@@ -461,7 +470,6 @@ def process_collection_products():
         # Leer productos seleccionados y cantidades (permitir decimales, aceptar coma o punto)
         selected = request.form.getlist("selected_products")
         product_codes = [code for code in selected if code]
-
         # obtener datos base de los productos (descripcion u otros campos si hacen falta)
         products_info = (
             {p["code"]: p for p in get_products_by_codes(product_codes)}
@@ -527,12 +535,7 @@ def process_collection_products():
         }
 
         try:
-            order_id = save_transfer_order_in_wait(transfer_data)
-            document_no = get_document_no_inventory_operation(order_id)
-            if document_no:
-                update_description_inventory_operations(
-                    order_id, f"Orden de traslado automatico No: {document_no}"
-                )
+            order_id = save_transfer_order_in_wait(transfer_data, "La operacion aun no ha sido validada")
 
             if not order_id:
                 print("No se pudo crear la orden de transferencia")
@@ -541,10 +544,7 @@ def process_collection_products():
             # Guardar los items
             save_transfer_order_items(order_id, items)
             # abre una ventana con el pdf de la orden creada usando la ruta collection_preview_pdf()
-            print(
-                "Orden de traslado creada con éxito. Correlativo:",
-                order_id,
-            )
+            print("Orden de recoleccion creada (process_collection_products) correlativo:", order_id)
 
         except Exception as e:
             print("Error procesando la orden de traslado:", e)
@@ -552,12 +552,7 @@ def process_collection_products():
             return redirect(url_for("create_collection_order"))
 
         return redirect(
-            url_for(
-                "collection_preview_pdf",
-                correlative=order_id,
-                wait="true",
-                operation_type="TRANSFER",
-            )
+            url_for("collection_preview_pdf", correlative=order_id, wait="true", operation_type="TRANSFER")
         )
 
 
@@ -804,12 +799,8 @@ def save_collection_order():
         }
 
         try:
-            order_id = save_transfer_order_in_wait(transfer_data, "ORDER_COLLECTION")
-            document_no = get_document_no_inventory_operation(order_id)
-            if document_no:
-                update_description_inventory_operations(
-                    order_id, f"Orden de traslado automatico No: {document_no}"
-                )
+            # Crear la ORDER_COLLECTION con descripción inicial de no validada
+            order_id = save_transfer_order_in_wait(transfer_data, "La operacion aun no ha sido validada")
 
             if not order_id:
                 print("No se pudo crear la orden de transferencia")
@@ -833,7 +824,7 @@ def save_collection_order():
                 "collection_preview_pdf",
                 correlative=order_id,
                 wait="true",
-                operation_type="ORDER_COLLECTION",
+                operation_type="TRANSFER",
             )
         )
     
@@ -844,21 +835,17 @@ def check_order_collection():
     correlative = request.args.get("correlative", type=int)
     header = None
     details = []
-    validated = False
+    validated = True
     if correlative:
         try:
-            rows = get_inventory_operations_by_correlative(correlative, "ORDER_COLLECTION", True)
+            rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
             if rows:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative)
-            else:
-                # Si no es ORDER_COLLECTION en espera, verificar si fue VALIDADA
-                val_rows = get_inventory_operations_by_correlative(correlative, "VALIDATE", True)
-                if not val_rows:
-                    # Intento adicional por si wait hubiese sido cambiado
-                    val_rows = get_inventory_operations_by_correlative(correlative, "VALIDATE", False)
-                if val_rows:
-                    validated = True
+                # Determinar validación por descripción
+                desc = (header.get("description") or "").strip().lower()
+                # Se considera validada si ya fue marcada con el formato nuevo o el anterior
+                validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
     return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
@@ -873,6 +860,15 @@ def api_collection_order_update_count():
     if not (correlative and product_code and counted is not None):
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
     try:
+        # Bloquear si la orden ya fue validada
+        try:
+            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            if hdr_rows:
+                d = (hdr_rows[0].get("description") or "").strip().lower()
+                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
+                    return jsonify({"ok": False, "error": "Orden ya validada. No se puede modificar."}), 400
+        except Exception:
+            pass
         counted_val = float(str(counted).replace(",", "."))
         if counted_val < 0:
             return jsonify({"ok": False, "error": "Cantidad negativa"}), 400
@@ -887,18 +883,22 @@ def api_collection_order_update_count():
 
 @app.route("/api/collection_order/confirm_transfer", methods=["POST"])
 def api_collection_order_confirm_transfer():
-    """Genera una nueva operación TRANSFER basada en una ORDER_COLLECTION ya ajustada."""
+    """Marca la operación existente como chequeada y en espera (NO crea nueva operación)."""
     source_correlative = request.form.get("correlative", type=int)
     if not source_correlative:
         return jsonify({"ok": False, "error": "Falta correlative"}), 400
 
     # Obtener header y detalles de la orden de recolección
     try:
-        header_rows = get_inventory_operations_by_correlative(source_correlative, "ORDER_COLLECTION", True)
+        header_rows = get_inventory_operations_by_correlative(source_correlative, "TRANSFER", True)
         if not header_rows:
             return jsonify({"ok": False, "error": "Orden de recolección no encontrada"}), 404
         header = header_rows[0]
         details = get_inventory_operations_details_by_correlative(source_correlative)
+        # Si ya fue validada, bloquear doble confirmación
+        desc_hdr = (header.get("description") or "").strip().lower()
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
+            return jsonify({"ok": False, "error": "La orden ya fue validada previamente."}), 400
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error consultando orden origen: {e}"}), 500
 
@@ -927,70 +927,33 @@ def api_collection_order_confirm_transfer():
     except Exception as e:
         return jsonify({"ok": False, "error": f"Validación de conteo falló: {e}"}), 400
 
-    # Preparar datos para nueva operación TRANSFER (reusa campos del header original)
-    transfer_data = {
-        "emission_date": datetime.date.today(),
-        "description": f"Orden de recoleccion No: {source_correlative}",
-        "wait": True,
-        "user_code": header.get("user_code", session.get("user_id", "01")),
-        "station": header.get("station", "00"),
-        "store": header.get("store"),
-        "locations": header.get("locations", "00"),
-        "destination_store": header.get("destination_store"),
-        "operation_comments": f"Generado desde ORDER_COLLECTION {source_correlative}",
-        "total": sum([(d.get("amount") or 0) for d in details]),
-    }
-
+    # Nuevo flujo: NO crear nueva operación; sólo actualizar descripción de la existente.
     try:
-        new_transfer_id = save_transfer_order_in_wait(transfer_data, operation_type="TRANSFER")
-        if not new_transfer_id:
-            return jsonify({"ok": False, "error": "No se pudo crear la operación TRANSFER"}), 500
-        # Mapear detalles para inserción
-        items = []
-        for d in details:
-            items.append(
-                {
-                    "product_code": d.get("code_product"),
-                    "description": d.get("description_product"),
-                    "quantity": d.get("amount", 0) or 0,
-                    "from_store": header.get("store"),
-                    "to_store": header.get("destination_store"),
-                    "unit": get_correlative_product_unit(d.get("code_product")),
-                    "conversion_factor": 1.0,
-                    "unit_type": 1,
-                    "unit_price": 0.0,
-                    "total_price": 0.0,
-                    "total_cost": 0.0,
-                    "coin_code": "02",
-                }
-            )
-        save_transfer_order_items(new_transfer_id, items)
-        # actualizar descripción con document_no real
-        transfer_document_no = get_document_no_inventory_operation(new_transfer_id)
-        if transfer_document_no:
-            update_description_inventory_operations(new_transfer_id, f"Orden de traslado automatico No: {transfer_document_no}")
-        # Marcar la ORDER_COLLECTION original como VALIDATE para no permitir re-chequeo
-        try:
-            update_inventory_operation_type(source_correlative, "VALIDATE")
-        except Exception as e:
-            # No romper flujo si falla esta marca, pero reportar
-            print(f"Advertencia: no se pudo marcar la ORDER_COLLECTION {source_correlative} como VALIDATE: {e}")
-        return jsonify({"ok": True, "transfer_correlative": new_transfer_id, "document_no": transfer_document_no})
+        existing_document_no = get_document_no_inventory_operation(source_correlative)
+        nueva_descripcion = (
+            f"Documento chequeado, Traslado en espera automatico {existing_document_no}" if existing_document_no else "Documento chequeado, Traslado en espera automatico"
+        )
+        update_description_inventory_operations(source_correlative, nueva_descripcion)
+        return jsonify({
+            "ok": True,
+            "transfer_correlative": source_correlative,
+            "document_no": existing_document_no,
+        })
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Error generando TRANSFER: {e}"}), 500
+        return jsonify({"ok": False, "error": f"Error actualizando descripción: {e}"}), 500
 
-
+# API para resolver código alterno en TRANSFER
 @app.route("/api/collection_order/resolve_code", methods=["GET"])
 def api_collection_order_resolve_code():
     """Resuelve un código ingresado (posible other_code) al código principal del producto usando search_product_failure.
-    Intenta con el depósito destino de la ORDER_COLLECTION y, si no existe, con el depósito origen.
+    Intenta con el depósito destino de la TRANSFER y, si no existe, con el depósito origen.
     """
     correlative = request.args.get("correlative", type=int)
     query = (request.args.get("query") or "").strip()
     if not correlative or not query:
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
     try:
-        headers = get_inventory_operations_by_correlative(correlative, "ORDER_COLLECTION", True)
+        headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
         if not headers:
             return jsonify({"ok": False, "error": "Orden no encontrada"}), 404
         header = headers[0]
@@ -1014,6 +977,7 @@ def api_collection_order_resolve_code():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+# API para obtener info de producto por código alterno
 @app.route("/api/collection_order/product_info", methods=["GET"])
 def api_collection_order_product_info():
     """Obtiene información del producto por código alterno (other_code): code, description y unidad.
@@ -1063,10 +1027,14 @@ def api_collection_order_add_item():
 
     # Obtener header para validar que existe y extraer stores
     try:
-        header_rows = get_inventory_operations_by_correlative(correlative, "ORDER_COLLECTION", True)
+        header_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
         if not header_rows:
-            return jsonify({"ok": False, "error": "ORDER_COLLECTION no encontrada"}), 404
+            return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = header_rows[0]
+        # Bloquear si ya fue validada
+        desc_hdr = (header.get("description") or "").strip().lower()
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
+            return jsonify({"ok": False, "error": "Orden ya validada. No se puede agregar."}), 400
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error verificando orden: {e}"}), 500
 

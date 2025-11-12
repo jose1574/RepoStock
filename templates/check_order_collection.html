@@ -7,16 +7,16 @@ para que coincida con lo que se va a trasladar entre depositos. -->
 <div class="mx-auto px-4 py-6">
    <h1 class="text-xl font-semibold mb-4">Chequeo de Orden de Recolección</h1>
 
-   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and (header or validated) else '' }}">
+   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
       <div>
-         <label for="correlative" class="block text-sm font-medium text-gray-700">Correlativo de ORDER_COLLECTION</label>
+         <label for="correlative" class="block text-sm font-medium text-gray-700">Ingrese el numero de <b>Correlativo</b> del documento</label>
          <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48" placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
       </div>
       <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Cargar</button>
    </form>
 
-      <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}"></div>
-   {% if correlative and header %}
+   <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}" data-not-found="{{ '1' if correlative and not header else '0' }}"></div>
+   {% if correlative and header and not validated %}
       <div class="mb-4 text-sm text-gray-600 space-y-1">
          <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
          <p><span class="font-medium">Depósito origen:</span> {{ header.store }}</p>
@@ -112,16 +112,25 @@ para que coincida con lo que se va a trasladar entre depositos. -->
       </div>
 
    {% elif correlative and validated %}
-      <p class="text-green-700 font-medium">La ORDER_COLLECTION con correlativo {{ correlative }} ya fue validada. No es posible volver a chequearla.</p>
-   {% elif correlative and not header %}
-      <p class="text-red-600">No se encontró una ORDER_COLLECTION en espera con correlativo {{ correlative }}.</p>
+      <p class="text-red-700 font-medium">No existe una orden con  {{ correlative }} por validar</p>
+      <div class="mt-4 p-4 border rounded bg-green-50 text-sm text-green-800">
+         <p>Descripción actual: {{ header.description }}</p>
+         <p>Depósito origen: {{ header.store }} | Depósito destino: {{ header.destination_store }}</p>
+         <p>Fecha emisión: {{ header.emission_date }}</p>
+      </div>
    {% endif %}
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-            // Obtener correlativo desde data attribute para evitar conflictos de lint
+            // Alertar si no se encontró la orden pero mantener el input visible/habilitado
             const metaDiv = document.getElementById('check-meta');
+            const NOT_FOUND = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
+            if (NOT_FOUND) {
+               alert('No se encontró una ORDER_COLLECTION en espera con correlativo {{ correlative }}.');
+               try { document.getElementById('correlative').focus(); } catch (e) {}
+            }
+            // Obtener correlativo desde data attribute para evitar conflictos de lint
             const rawCorr = metaDiv ? metaDiv.dataset.correlative : '';
             const correlative = rawCorr ? parseInt(rawCorr, 10) : null;
    const searchInput = document.getElementById('product-search');

@@ -407,6 +407,7 @@ def get_products_by_codes(codes):
         close_db_connection(conn)
 
 
+
 def update_description_inventory_operations(correlative: int, description: str):
     sql_update = """
     UPDATE inventory_operation
@@ -447,16 +448,16 @@ def get_document_no_inventory_operation(correlative: int):
         close_db_connection(conn)
 
 
-def save_transfer_order_in_wait(data, operation_type: str = "TRANSFER"):
-    print("datos de la orden de traslado: ", operation_type)
+def save_transfer_order_in_wait(data, description: str):
+    print("datos de la orden de traslado: ", description)
     sql_insert_order = """
      SELECT set_inventory_operation(
         null,  -- p_correlative (NULL para que la función genere)
-        %s,  -- p_operation_type
+        'TRANSFER',  -- p_operation_type (literal de texto)
         '',  -- p_document_no
         %s::date,  -- p_emission_date
         true,  -- p_wait
-        '',  -- p_description
+        %s,  -- p_description
         '01',  -- p_user_code
         '00',  -- p_station
         %s,  -- p_store
@@ -473,8 +474,8 @@ def save_transfer_order_in_wait(data, operation_type: str = "TRANSFER"):
     );
     """
     params = (
-        operation_type,
         data.get("emission_date", datetime.date.today()),
+        description,
         data.get("store", None),
         data.get("destination_store", None),
     )
@@ -496,8 +497,10 @@ def save_transfer_order_in_wait(data, operation_type: str = "TRANSFER"):
 
 
 def save_collection_order(data):
-    """Guarda una orden de recolección (operation_type = 'ORDER_COLLECTION') y retorna el correlativo."""
-    return save_transfer_order_in_wait(data, operation_type="ORDER_COLLECTION")
+    """Guarda una orden de recolección y retorna el correlativo.
+    Nota: El tipo de operación es 'TRANSFER' y la descripción inicial marca que no ha sido validada.
+    """
+    return save_transfer_order_in_wait(data, "La operacion aun no ha sido validada")
 
 
 def get_correlative_product_unit(product_code):
@@ -902,17 +905,18 @@ def delete_inventory_operation_detail(main_correlative: int, code_product: str):
         close_db_connection(conn)
 
 
-def update_inventory_operation_type(correlative: int, new_operation_type: str):
+def update_inventory_operation_type(correlative: int, new_operation_type: str, description: str = ""):
     """Actualiza el campo operation_type de inventory_operation para un correlativo dado."""
     conn = get_db_connection()
     sql = """
         UPDATE inventory_operation
-        SET operation_type = %s
+        SET operation_type = %s,
+            description = %s
         WHERE correlative = %s;
     """
     try:
         with conn.cursor() as cur:
-            cur.execute(sql, (new_operation_type, correlative))
+            cur.execute(sql, (new_operation_type, description, correlative))
         conn.commit()
     except Exception as e:
         print(f"Error actualizando operation_type: {e}")
