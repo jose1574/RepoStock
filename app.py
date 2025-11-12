@@ -882,6 +882,220 @@ def api_collection_order_update_count():
         return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+@app.route("/check_transfer_reception", methods=["GET"])
+def check_transfer_reception():
+    """Pantalla para chequear la recepción de una TRANSFER procesada (wait=false)."""
+    correlative = request.args.get("correlative", type=int)
+    header = None
+    details = []
+    validated = True
+    if correlative:
+        try:
+            rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+            if rows:
+                header = rows[0]
+                details = get_inventory_operations_details_by_correlative(correlative, header.get("destination_store"))
+                # Determinar validación por descripción
+                desc = (header.get("description") or "").strip().lower()
+                validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
+        except Exception as e:
+            print("Error cargando TRANSFER procesada:", e)
+    return render_template("check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated)
+
+
+@app.route("/api/reception/update_count", methods=["POST"])
+def api_reception_update_count():
+    """Actualiza la cantidad contada de un producto en la TRANSFER procesada (recepción)."""
+    correlative = request.form.get("correlative", type=int)
+    product_code = request.form.get("product_code")
+    counted = request.form.get("counted")
+    if not (correlative and product_code and counted is not None):
+        return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
+    try:
+        # Bloquear si ya fue validada/chequeada
+        try:
+            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+            if hdr_rows:
+                d = (hdr_rows[0].get("description") or "").strip().lower()
+                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
+                    return jsonify({"ok": False, "error": "Recepción ya validada. No se puede modificar."}), 400
+        except Exception:
+            pass
+        counted_val = float(str(counted).replace(",", "."))
+        if counted_val < 0:
+            return jsonify({"ok": False, "error": "Cantidad negativa"}), 400
+    except ValueError:
+        return jsonify({"ok": False, "error": "Cantidad inválida"}), 400
+    try:
+        rows = update_inventory_operation_detail_amount(correlative, product_code, counted_val)
+        if rows == 0:
+            return jsonify({"ok": False, "error": "Producto no encontrado en la TRANSFER."}), 404
+        return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/reception/confirm", methods=["POST"])
+def api_reception_confirm():
+    """Marca la TRANSFER procesada como chequeada en recepción (NO crea nueva operación)."""
+    source_correlative = request.form.get("correlative", type=int)
+    if not source_correlative:
+        return jsonify({"ok": False, "error": "Falta correlative"}), 400
+    try:
+        header_rows = get_inventory_operations_by_correlative(source_correlative, "TRANSFER", False)
+        if not header_rows:
+            return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
+        header = header_rows[0]
+        details = get_inventory_operations_details_by_correlative(source_correlative, header.get("destination_store"))
+        # Bloquear doble confirmación
+        desc_hdr = (header.get("description") or "").strip().lower()
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
+            return jsonify({"ok": False, "error": "La recepción ya fue validada previamente."}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error consultando TRANSFER: {e}"}), 500
+
+    # Validación de que todos los productos fueron contados
+    try:
+        counted_codes_raw = (request.form.get("counted_codes") or "").strip()
+        counted_codes = set([c.strip() for c in counted_codes_raw.split(",") if c and c.strip()])
+        server_codes = set([d.get("code_product") for d in details if d.get("code_product")])
+        if not details or len(server_codes) == 0:
+            return jsonify({"ok": False, "error": "La TRANSFER no tiene detalles"}), 400
+        if not counted_codes or counted_codes != server_codes:
+            return jsonify({"ok": False, "error": "No se puede validar: faltan productos por contar.", "expected": sorted(list(server_codes)), "received": sorted(list(counted_codes))}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Validación de conteo falló: {e}"}), 400
+
+    try:
+        document_no = get_document_no_inventory_operation(source_correlative)
+        desc_msg = f"Documento chequeado en recepción {document_no}" if document_no else "Documento chequeado en recepción"
+        update_description_inventory_operations(source_correlative, desc_msg)
+        return jsonify({"ok": True, "transfer_correlative": source_correlative, "document_no": document_no})
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error actualizando recepción: {e}"}), 500
+
+
+@app.route("/api/reception/delete_item", methods=["POST"])
+def api_reception_delete_item():
+    correlative = request.form.get("correlative", type=int)
+    product_code = (request.form.get("product_code") or "").strip()
+    if not correlative:
+        return jsonify({"ok": False, "error": "Falta correlative"}), 400
+    if not product_code:
+        return jsonify({"ok": False, "error": "Falta product_code"}), 400
+    try:
+        try:
+            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+            if hdr_rows:
+                d = (hdr_rows[0].get("description") or "").strip().lower()
+                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
+                    return jsonify({"ok": False, "error": "Recepción ya validada. No se puede eliminar."}), 400
+        except Exception:
+            pass
+        from db import delete_inventory_operation_detail
+        delete_inventory_operation_detail(correlative, product_code)
+        return jsonify({"ok": True, "deleted": product_code})
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error eliminando: {e}"}), 500
+
+
+@app.route("/api/reception/add_item", methods=["POST"])
+def api_reception_add_item():
+    correlative = request.form.get("correlative", type=int)
+    product_code_input = (request.form.get("product_code") or "").strip()
+    quantity_raw = (request.form.get("quantity") or "").replace(",", ".")
+    if correlative is None:
+        return jsonify({"ok": False, "error": "Falta correlative"}), 400
+    if not product_code_input:
+        return jsonify({"ok": False, "error": "Falta product_code"}), 400
+    if quantity_raw == "":
+        return jsonify({"ok": False, "error": "Falta quantity"}), 400
+    try:
+        quantity = float(quantity_raw)
+    except ValueError:
+        return jsonify({"ok": False, "error": "Cantidad inválida"}), 400
+    if quantity <= 0:
+        return jsonify({"ok": False, "error": "Cantidad debe ser > 0"}), 400
+
+    try:
+        header_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+        if not header_rows:
+            return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
+        header = header_rows[0]
+        desc_hdr = (header.get("description") or "").strip().lower()
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
+            return jsonify({"ok": False, "error": "Recepción ya validada. No se puede agregar."}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error verificando TRANSFER: {e}"}), 500
+
+    try:
+        rows = search_product(product_code_input) or []
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error buscando producto: {e}"}), 500
+    if not rows:
+        return jsonify({"ok": False, "error": "Producto no encontrado"}), 404
+    prod = rows[0]
+    main_code = prod.get("code")
+    description = prod.get("description")
+    unit_corr = prod.get("unit_correlative") or get_correlative_product_unit(main_code)
+
+    item = {
+        "product_code": main_code,
+        "description": description or None,
+        "quantity": quantity,
+        "from_store": header.get("store"),
+        "to_store": header.get("destination_store"),
+        "unit": int(unit_corr) if unit_corr else 1,
+        "conversion_factor": 1.0,
+        "unit_type": 1,
+        "unit_price": 0.0,
+        "total_price": 0.0,
+        "total_cost": 0.0,
+        "coin_code": "02",
+    }
+    try:
+        save_transfer_order_items(correlative, [item])
+        return jsonify({"ok": True, "added": {
+            "code_product": main_code,
+            "description_product": description,
+            "unit_description": prod.get("unit_description"),
+            "amount": quantity,
+        }})
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error agregando item: {e}"}), 500
+
+
+@app.route("/api/reception/resolve_code", methods=["GET"])
+def api_reception_resolve_code():
+    correlative = request.args.get("correlative", type=int)
+    query = (request.args.get("query") or "").strip()
+    if not correlative or not query:
+        return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
+    try:
+        headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+        if not headers:
+            return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
+        header = headers[0]
+        # Para recepción, priorizar depósito destino; si falla, usar origen
+        dest = header.get("destination_store")
+        origin = header.get("store")
+        rows = []
+        if dest:
+            try:
+                rows = search_product_failure(query, dest) or []
+            except Exception:
+                rows = []
+        if not rows and origin:
+            try:
+                rows = search_product_failure(query, origin) or []
+            except Exception:
+                rows = []
+        if not rows:
+            return jsonify({"ok": False, "error": "Producto no encontrado por código alterno"}), 404
+        prod = rows[0]
+        return jsonify({"ok": True, "product_code": prod.get("code"), "product": prod})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/api/collection_order/confirm_transfer", methods=["POST"])
@@ -1081,25 +1295,25 @@ def api_collection_order_add_item():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("APP_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("APP_PORT", "5001"))
+    except Exception:
+        port = 5001
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)
