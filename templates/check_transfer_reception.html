@@ -50,7 +50,6 @@
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Orden</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Contada</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Estado</th>
-          <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Opciones</th>
         </tr>
       </thead>
       <tbody id="collection-items" class="bg-white divide-y divide-gray-200 text-sm">
@@ -63,11 +62,10 @@
           <td class="px-3 py-2 text-right" data-original="{{ item.amount }}">{{ item.amount }}</td>
           <td class="px-3 py-2 text-right counted-cell" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
           <td class="px-3 py-2 text-right status-cell"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
-          <td class="px-3 py-2 text-right"><button type="button" class="delete-item px-2 py-1 text-xs rounded bg-red-600 text-white" data-code="{{ item.code_product }}">Eliminar</button></td>
         </tr>
         {% endfor %}
         {% if not items %}
-        <tr><td colspan="8" class="px-3 py-4 text-center text-gray-500">Sin detalles para este correlativo.</td></tr>
+        <tr><td colspan="7" class="px-3 py-4 text-center text-gray-500">Sin detalles para este correlativo.</td></tr>
         {% endif %}
       </tbody>
     </table>
@@ -75,159 +73,115 @@
 
   {% elif correlative and validated %}
   <p class="text-green-700 font-medium">La recepción de la TRANSFER con correlativo {{ correlative }} ya fue validada. No es posible volver a chequearla.</p>
+  {% endif %}
   <div class="mt-4 p-4 border rounded bg-green-50 text-sm text-green-800">
     <p>Descripción actual: {{ header.description }}</p>
     <p>Depósito origen: {{ header.store }} | Depósito destino: {{ header.destination_store }}</p>
-    <p>Fecha emisión: {{ header.emission_date }}</p>
   </div>
-  {% elif correlative and not header %}
-  <p class="text-red-600">No se encontró una TRANSFER procesada con correlativo {{ correlative }}.</p>
-  {% endif %}
-</div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const metaDiv = document.getElementById('check-meta');
+      const notFound = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
+      if (notFound) { alert('No se encontró una TRANSFER procesada con ese correlativo.'); try { document.getElementById('correlative').focus(); } catch(e){} }
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const metaDiv = document.getElementById('check-meta');
-  const notFound = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
-  if (notFound) { alert('No se encontró una TRANSFER procesada con ese correlativo.'); try { document.getElementById('correlative').focus(); } catch(e){} }
+      const rawCorr = metaDiv ? metaDiv.dataset.correlative : '';
+      const correlative = rawCorr ? parseInt(rawCorr, 10) : null;
+      const searchInput = document.getElementById('product-search');
+      const countedInput = document.getElementById('counted-qty');
+      const applyBtn = document.getElementById('apply-count');
+      const finalizeBtn = document.getElementById('finalize-reception');
+      const statusMsg = document.getElementById('status-msg');
+      const tableBody = document.getElementById('collection-items');
+      if (!tableBody) return;
 
-  const rawCorr = metaDiv ? metaDiv.dataset.correlative : '';
-  const correlative = rawCorr ? parseInt(rawCorr, 10) : null;
-  const searchInput = document.getElementById('product-search');
-  const countedInput = document.getElementById('counted-qty');
-  const applyBtn = document.getElementById('apply-count');
-  const finalizeBtn = document.getElementById('finalize-reception');
-  const statusMsg = document.getElementById('status-msg');
-  const tableBody = document.getElementById('collection-items');
-  if (!tableBody) return;
+      function normalize(v){ return (v||'').toString().trim().toLowerCase(); }
+      function findRowByCode(code){ const q=(code||'').toString().trim().toLowerCase(); const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); return rows.find(r => (r.dataset.code||'').toLowerCase()===q) || null; }
+      function setStatus(msg, kind='info'){ statusMsg.textContent=msg; statusMsg.className='text-sm '+(kind==='error'?'text-red-600':kind==='success'?'text-green-600':'text-gray-700'); }
+      function markRow(row, original, counted){ const statusCell=row.querySelector('.status-cell'); const countedCell=row.querySelector('.counted-cell'); if(!statusCell||!countedCell) return; countedCell.dataset.counted=counted; countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`; const diff = Math.abs(Number(original)-Number(counted)) < 1e-9; if(diff){ statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>'; row.style.display='none'; setStatus('Producto conciliado y ocultado de la lista', 'success'); } else { statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>'; row.classList.add('bg-yellow-50'); } }
 
-  function normalize(v){ return (v||'').toString().trim().toLowerCase(); }
-  function findRowByCode(code){ const q=(code||'').toString().trim().toLowerCase(); const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); return rows.find(r => (r.dataset.code||'').toLowerCase()===q) || null; }
-  function setStatus(msg, kind='info'){ statusMsg.textContent=msg; statusMsg.className='text-sm '+(kind==='error'?'text-red-600':kind==='success'?'text-green-600':'text-gray-700'); }
-  function markRow(row, original, counted){ const statusCell=row.querySelector('.status-cell'); const countedCell=row.querySelector('.counted-cell'); if(!statusCell||!countedCell) return; countedCell.dataset.counted=counted; countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`; const diff = Math.abs(Number(original)-Number(counted)) < 1e-9; if(diff){ statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>'; row.style.display='none'; setStatus('Producto conciliado y ocultado de la lista', 'success'); } else { statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>'; row.classList.add('bg-yellow-50'); } }
+      applyBtn && applyBtn.addEventListener('click', async () => {
+        let code = normalize(searchInput.value);
+        const countedRaw = countedInput.value;
+        if (!code){ setStatus('Ingresa un código primero', 'error'); return; }
+        let row = findRowByCode(code);
+        if (!row){
+          try {
+            const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin);
+            url.searchParams.set('correlative', correlative ?? '');
+            url.searchParams.set('query', code);
+            const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+            if (res.ok){ const data = await res.json(); if (data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); } }
+          } catch(e){}
+        }
+        if (!row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+        let countedVal = Number(String(countedRaw).replace(',', '.'));
+        if (isNaN(countedVal) || countedVal < 0){ setStatus('Cantidad contada inválida', 'error'); return; }
+        const original = Number(row.querySelector('[data-original]').dataset.original);
+        if (correlative === null){ setStatus('No hay correlativo cargado.', 'error'); return; }
+        try {
+          // Sólo chequeo: no modificar DB, actualizar UI localmente
+          markRow(row, original, countedVal);
+          setStatus('Conteo aplicado (no se grabó en DB)', 'success');
+          searchInput.value=''; countedInput.value=''; try{ searchInput.focus(); }catch(e){}
+          try { reevaluateFinalizeState(); } catch(_){ }
+        } catch(e){ setStatus(e.message, 'error'); }
+      });
 
-  applyBtn && applyBtn.addEventListener('click', async () => {
-    let code = normalize(searchInput.value);
-    const countedRaw = countedInput.value;
-    if (!code){ setStatus('Ingresa un código primero', 'error'); return; }
-    let row = findRowByCode(code);
-    if (!row){
-      try {
-        const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin);
-        url.searchParams.set('correlative', correlative ?? '');
-        url.searchParams.set('query', code);
-        const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
-        if (res.ok){ const data = await res.json(); if (data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); } }
-      } catch(e){}
-    }
-    if (!row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
-    let countedVal = Number(String(countedRaw).replace(',', '.'));
-    if (isNaN(countedVal) || countedVal < 0){ setStatus('Cantidad contada inválida', 'error'); return; }
-    const original = Number(row.querySelector('[data-original]').dataset.original);
-    if (correlative === null){ setStatus('No hay correlativo cargado.', 'error'); return; }
-    try {
-      const formData = new URLSearchParams(); formData.set('correlative', correlative); formData.set('product_code', code); formData.set('counted', countedVal);
-      const res = await fetch('{{ url_for("api_reception_update_count") }}', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString() });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Error en actualización');
-      markRow(row, original, countedVal); setStatus('Conteo aplicado', 'success'); searchInput.value=''; countedInput.value=''; try{ searchInput.focus(); }catch(e){}
-      try { reevaluateFinalizeState(); } catch(_){ }
-    } catch(e){ setStatus(e.message, 'error'); }
-  });
+      finalizeBtn && finalizeBtn.addEventListener('click', async () => {
+        if (correlative === null){ setStatus('Sin correlativo', 'error'); return; }
+        finalizeBtn.disabled = true; setStatus('Validando recepción ...');
+        try {
+          const rows = Array.from(tableBody.querySelectorAll('tr[data-code]'));
+          const counts = {};
+          const countedCodes = [];
+          rows.forEach(r => {
+            const cell = r.querySelector('.counted-cell');
+            if (cell && cell.dataset.counted !== ''){ counts[r.dataset.code] = Number(cell.dataset.counted); countedCodes.push(r.dataset.code); }
+          });
+          const formData = new URLSearchParams();
+          formData.set('correlative', correlative);
+          formData.set('counted_codes', countedCodes.join(','));
+          formData.set('counts', JSON.stringify(counts));
+          const res = await fetch('{{ url_for("api_reception_confirm") }}', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString() });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Error en validación de recepción');
+          setStatus(data.message || 'Recepción validada', 'success');
+          const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
+          window.open(pdfUrl, '_blank');
+        } catch(e){ setStatus(e.message, 'error'); }
+        finally { finalizeBtn.disabled = false; }
+      });
 
-  finalizeBtn && finalizeBtn.addEventListener('click', async () => {
-    if (correlative === null){ setStatus('Sin correlativo', 'error'); return; }
-    finalizeBtn.disabled = true; setStatus('Validando recepción ...');
-    try {
-      const rows = Array.from(tableBody.querySelectorAll('tr[data-code]'));
-      const countedCodes = rows.filter(r => { const cell=r.querySelector('.counted-cell'); return cell && cell.dataset.counted !== ''; }).map(r => r.dataset.code);
-      const formData = new URLSearchParams(); formData.set('correlative', correlative); formData.set('counted_codes', countedCodes.join(','));
-      const res = await fetch('{{ url_for("api_reception_confirm") }}', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString() });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Error en validación de recepción');
-      setStatus('Recepción validada', 'success');
-      const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
-      window.open(pdfUrl, '_blank');
-    } catch(e){ setStatus(e.message, 'error'); }
-    finally { finalizeBtn.disabled = false; }
-  });
+      searchInput && searchInput.addEventListener('input', () => {
+        const code = normalize(searchInput.value);
+        Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
+        if (!code) return; const row=findRowByCode(code); if (row){ row.classList.add('ring','ring-indigo-300'); }
+      });
 
-  searchInput && searchInput.addEventListener('input', () => {
-    const code = normalize(searchInput.value);
-    Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
-    if (!code) return; const row=findRowByCode(code); if (row){ row.classList.add('ring','ring-indigo-300'); }
-  });
+      async function resolveToRow(code){ let row=findRowByCode(code); if(!row){ try{ const url=new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res=await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }}); if(res.ok){ const data=await res.json(); if(data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); if(row){ searchInput.value=code; } } } }catch(e){} } return { row, code }; }
 
-  async function resolveToRow(code){ let row=findRowByCode(code); if(!row){ try{ const url=new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res=await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }}); if(res.ok){ const data=await res.json(); if(data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); if(row){ searchInput.value=code; } } } }catch(e){} } return { row, code }; }
+      searchInput && searchInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const code=normalize(searchInput.value);
+          if(!code){ setStatus('Ingresa un código primero', 'error'); return; }
+          const result=await resolveToRow(code);
+          if(!result.row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
+          result.row.classList.add('ring','ring-indigo-300');
+          countedInput.focus(); try{ countedInput.select(); }catch(e){}
+        }
+      });
 
-  searchInput && searchInput.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); const code=normalize(searchInput.value); if(!code){ setStatus('Ingresa un código primero', 'error'); return; } const result=await resolveToRow(code); if(!result.row){ try{ const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin); url.searchParams.set('query', code); const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }}); const data = await res.json(); if (!res.ok || !data.ok) { setStatus(data.error || 'Producto no encontrado', 'error'); return; } const modal = document.getElementById('add-item-modal'); const codeInput=document.getElementById('add-code'); const descInput=document.getElementById('add-description'); const unitInput=document.getElementById('add-unit'); const qtyInput=document.getElementById('add-quantity'); const statusP=document.getElementById('add-item-status'); codeInput.value=data.code||''; codeInput.setAttribute('value', data.code||''); descInput.value=data.description||''; descInput.setAttribute('value', data.description||''); unitInput.value=data.unit_description||''; unitInput.setAttribute('value', data.unit_description||''); qtyInput.value=''; statusP.textContent=''; modal.classList.remove('hidden'); setTimeout(()=>{ try{ qtyInput.focus(); }catch(e){} }, 50); } catch(err){ setStatus('Error consultando producto', 'error'); } return; } Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300')); result.row.classList.add('ring','ring-indigo-300'); countedInput.focus(); try{ countedInput.select(); }catch(e){} }
-  });
+      countedInput && countedInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.focus(); } });
+      applyBtn && applyBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); } });
 
-  countedInput && countedInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.focus(); } });
-  applyBtn && applyBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); } });
-
-  function allRowsCounted(){ const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); if(rows.length===0) return false; return rows.every(r => { const countedCell=r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
-  function reevaluateFinalizeState(){ if(!finalizeBtn) return; finalizeBtn.disabled = !allRowsCounted(); }
-  reevaluateFinalizeState();
-
-  tableBody && tableBody.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.delete-item'); if (!btn) return; const code=btn.dataset.code; if(!code) return; if(!confirm(`¿Eliminar producto ${code} de la recepción?`)) return; try{ const res = await fetch('{{ url_for("api_reception_delete_item") }}', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: new URLSearchParams({ correlative: String(correlative), product_code: code }).toString(), }); const data = await res.json(); if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar'); const row = tableBody.querySelector(`tr[data-code="${code}"]`); if (row) row.remove(); setStatus('Producto eliminado', 'success'); reevaluateFinalizeState(); } catch(err){ setStatus(err.message, 'error'); }
-  });
-
-  // Modal agregar ítem
-  const addModal=document.getElementById('add-item-modal');
-  const addForm=document.getElementById('add-item-form');
-  const addCancel=document.getElementById('add-cancel');
-  const addStatus=document.getElementById('add-item-status');
-  function closeAddModal(){ if(addModal) addModal.classList.add('hidden'); }
-  addCancel && addCancel.addEventListener('click', () => { closeAddModal(); searchInput.focus(); });
-  addForm && addForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); if(!correlative){ addStatus.textContent='Sin correlativo'; addStatus.className='text-sm text-red-600'; return; }
-    const fd=new FormData(addForm); const q=fd.get('quantity'); const codeVal=fd.get('product_code'); if(!codeVal){ addStatus.textContent='Código vacío'; addStatus.className='text-sm text-red-600'; return; }
-    let qty = Number(String(q||'').replace(',', '.')); if (isNaN(qty) || qty <= 0){ addStatus.textContent='Cantidad inválida'; addStatus.className='text-sm text-red-600'; return; }
-    try{ addStatus.textContent='Agregando...'; addStatus.className='text-sm text-gray-600'; const res = await fetch('{{ url_for("api_reception_add_item") }}', { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'}, body: new URLSearchParams({ correlative: String(correlative), product_code: String(codeVal), quantity: String(qty) }).toString(), }); const data=await res.json(); if(!res.ok || !data.ok){ throw new Error(data.error || 'Error agregando'); } const newRow=document.createElement('tr'); newRow.dataset.code=data.added.code_product; newRow.innerHTML = `
-      <td class="px-3 py-2 font-mono">${data.added.code_product}</td>
-      <td class="px-3 py-2">${data.added.description_product||''}</td>
-      <td class="px-3 py-2"></td>
-      <td class="px-3 py-2">${data.added.unit_description||''}</td>
-      <td class="px-3 py-2 text-right" data-original="${Number(data.added.amount).toFixed(3)}">${Number(data.added.amount).toFixed(3)}</td>
-      <td class="px-3 py-2 text-right counted-cell" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
-      <td class="px-3 py-2 text-right status-cell"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
-      <td class="px-3 py-2 text-right"><button type="button" class="delete-item px-2 py-1 text-xs rounded bg-red-600 text-white" data-code="${data.added.code_product}">Eliminar</button></td>
-    `; tableBody.appendChild(newRow); try{ reevaluateFinalizeState(); }catch(_){} addStatus.textContent='Agregado'; addStatus.className='text-sm text-green-600'; setTimeout(()=>{ closeAddModal(); searchInput.value=''; countedInput.value=''; searchInput.focus(); }, 250); setStatus('Producto agregado', 'success'); }catch(err){ addStatus.textContent=err.message; addStatus.className='text-sm text-red-600'; setStatus(err.message, 'error'); }
-  });
-});
-</script>
-
-<!-- Modal agregar producto -->
-<div id="add-item-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
-  <div class="bg-white rounded shadow-lg w-full max-w-md p-4 space-y-4">
-    <h2 class="text-lg font-semibold">Agregar producto a la recepción</h2>
-    <form id="add-item-form" class="space-y-3">
-      <input type="hidden" name="correlative" value="{{ correlative }}" />
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Código</label>
-        <input id="add-code" name="product_code" readonly class="border rounded px-2 py-1 w-full bg-gray-100" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Descripción</label>
-        <input id="add-description" readonly class="border rounded px-2 py-1 w-full bg-gray-100" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Unidad</label>
-        <input id="add-unit" readonly class="border rounded px-2 py-1 w-full bg-gray-100" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Cantidad</label>
+      function allRowsCounted(){ const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); if(rows.length===0) return false; return rows.every(r => { const countedCell=r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
+      function reevaluateFinalizeState(){ if(!finalizeBtn) return; finalizeBtn.disabled = !allRowsCounted(); }
+      reevaluateFinalizeState();
+    });
+    </script>
+  
         <input id="add-quantity" name="quantity" type="number" step="any" min="0" placeholder="0" class="border rounded px-2 py-1 w-full" required />
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" id="add-cancel" class="px-3 py-1 rounded border">Cancelar</button>
-        <button type="submit" class="px-3 py-1 rounded bg-indigo-600 text-white">Agregar</button>
-      </div>
-      <p id="add-item-status" class="text-sm"></p>
-    </form>
-  </div>
-</div>
-{% endblock %}
+ {% endblock %}

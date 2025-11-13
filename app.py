@@ -186,7 +186,7 @@ def api_update_minmax_product_failure():
     Usa el depósito desde sesión (session['store']) si no se envía store_code explícito.
     """
     product_code = request.form.get("product_code")
-    store_code = request.form.get("store_code") or session.get("store")
+    store_code = session.get("store_code_destination")
     minimal_stock = request.form.get("minimal_stock")
     maximum_stock = request.form.get("maximum_stock")
 
@@ -963,14 +963,48 @@ def api_reception_confirm():
             return jsonify({"ok": False, "error": "La TRANSFER no tiene detalles"}), 400
         if not counted_codes or counted_codes != server_codes:
             return jsonify({"ok": False, "error": "No se puede validar: faltan productos por contar.", "expected": sorted(list(server_codes)), "received": sorted(list(counted_codes))}), 400
+        # Recibir mapa de conteos para evaluación de diferencias (no se modifica DB)
+        counts_json = request.form.get("counts")
+        if not counts_json:
+            return jsonify({"ok": False, "error": "Faltan conteos para validar diferencias (counts)."}), 400
+        try:
+            counts_map = json.loads(counts_json)
+            if not isinstance(counts_map, dict):
+                return jsonify({"ok": False, "error": "Formato inválido de counts."}), 400
+        except Exception:
+            return jsonify({"ok": False, "error": "Counts no es un JSON válido."}), 400
+        # Verificar que todos los códigos tengan conteo
+        missing = [c for c in server_codes if c not in counts_map]
+        if missing:
+            return jsonify({"ok": False, "error": "Faltan conteos para algunos productos.", "missing": sorted(missing)}), 400
     except Exception as e:
         return jsonify({"ok": False, "error": f"Validación de conteo falló: {e}"}), 400
 
     try:
+        # Detectar diferencias entre orden y conteo recibido
+        differences = False
+        for d in details:
+            code = d.get("code_product")
+            try:
+                original = float(d.get("amount") or 0)
+            except Exception:
+                original = 0.0
+            counted_val = float(counts_map.get(code, 0))
+            if abs(original - counted_val) > 1e-9:
+                differences = True
+                break
+
         document_no = get_document_no_inventory_operation(source_correlative)
-        desc_msg = f"Documento chequeado en recepción {document_no}" if document_no else "Documento chequeado en recepción"
+        base_msg = f"Documento chequeado en recepción {document_no}" if document_no else "Documento chequeado en recepción"
+        desc_msg = base_msg + (" — Se encontraron diferencias" if differences else "")
         update_description_inventory_operations(source_correlative, desc_msg)
-        return jsonify({"ok": True, "transfer_correlative": source_correlative, "document_no": document_no})
+        return jsonify({
+            "ok": True,
+            "transfer_correlative": source_correlative,
+            "document_no": document_no,
+            "differences": differences,
+            "message": ("Recepción validada con diferencias" if differences else "Recepción validada")
+        })
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error actualizando recepción: {e}"}), 500
 
@@ -1295,25 +1329,25 @@ def api_collection_order_add_item():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    try:
-        port = int(os.environ.get("APP_PORT", "5001"))
-    except Exception:
-        port = 5001
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("APP_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
 
-    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    if use_waitress:
-        try:
-            from waitress import serve
-            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-            serve(app, host=host, port=port, threads=threads)
-        except Exception as e:
-            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-            app.run(debug=False, host=host, port=port)
-    else:
-        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-        app.run(debug=debug, host=host, port=port)
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)
