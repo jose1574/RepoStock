@@ -577,23 +577,23 @@
             const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
             const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
             const qtyInput = document.querySelector(`input[name="to_transfer_${code}"]`);
-            const raw = qtyInput ? qtyInput.value : '0';
-            const value = parseFloat(String(raw).replace(',', '.'));
-            if (!value || value <= 0) continue;
-
-            items.push({ product_code: code, description: desc, unit: unit, quantity: value });
+            let raw = qtyInput ? qtyInput.value : '0';
+            if (typeof raw === 'string') raw = raw.replace(',', '.');
+            let parsed = parseFloat(raw);
+            if (isNaN(parsed) || parsed < 0) parsed = 0;
+            // Incluir siempre el producto, aunque cantidad sea 0, para permitir editar desde la previsualización
+            items.push({ product_code: code, description: desc, unit: unit, quantity: parsed });
             const tr = document.createElement('tr');
             tr.innerHTML = `
                         <td class="px-3 py-2 text-sm">${code}</td>
                         <td class="px-3 py-2 text-sm">${desc || ''}</td>
                         <td class="px-3 py-2 text-sm">${unit || ''}</td>
-                        <td class="px-3 py-2 text-sm text-right">${value.toFixed(3)}</td>
+                        <td class="px-3 py-2 text-sm text-right">${parsed.toFixed(2)}</td>
                      `;
             previewBody.appendChild(tr);
          }
-
          if (items.length === 0) {
-            alert('Los productos seleccionados deben tener una cantidad válida (> 0).');
+            alert('No hay productos seleccionados con cantidades.');
             return;
          }
 
