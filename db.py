@@ -1007,5 +1007,33 @@ __all__ = [
     "delete_inventory_operation_detail",
     "search_product",
     "update_inventory_operation_type",
-    "search_product",
+    "get_product_stock",
 ]
+
+def get_product_stock(product_code: str, store_code: str) -> float:
+    """Obtiene el stock actual para un producto en un depósito específico.
+    Devuelve 0.0 si no hay registro.
+    """
+    conn = get_db_connection()
+    sql = """
+        SELECT COALESCE(ROUND(stock::numeric, 2), 0)
+        FROM products_stock
+        WHERE product_code = %s AND store = %s
+        LIMIT 1;
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (product_code, store_code))
+            row = cur.fetchone()
+            if row and row[0] is not None:
+                try:
+                    # Asegurar dos decimales exactos
+                    return float(f"{float(row[0]):.2f}")
+                except Exception:
+                    return float(round(float(row[0]), 2))
+            return 0.0
+    except Exception as e:
+        # Propagar para manejo superior
+        raise
+    finally:
+        close_db_connection(conn)

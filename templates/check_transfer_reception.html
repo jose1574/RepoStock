@@ -5,6 +5,63 @@
 {% block content %}
 <div class="mx-auto px-4 py-6">
   <h1 class="text-xl font-semibold mb-4">Chequeo de Recepción de Traslados</h1>
+  <style>
+    /* Resaltado fuerte reutilizado del chequeo de recolección */
+    .collection-highlight {
+      background-color: #fff7ed; /* naranja muy claro */
+      box-shadow: inset 0 0 0 9999px rgba(255, 186, 73, 0.15);
+      outline: 2px solid #f59e0b;
+    }
+    .collection-highlight td { transition: background-color .15s ease; }
+    /* Responsive: convertir tabla a tarjetas en móviles */
+    @media (max-width: 640px) {
+      .reception-table thead { display: none; }
+      .reception-table tbody tr {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.6rem 0.75rem 0.7rem 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: #ffffff;
+        margin-bottom: 0.5rem;
+      }
+      .reception-table tbody tr td {
+        display: flex;
+        align-items: flex-start;
+        font-size: 0.72rem;
+        padding: 0.15rem 0.25rem;
+        border: 0;
+      }
+      .reception-table tbody tr td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #374151;
+        width: 6.5rem;
+        flex: 0 0 6.5rem;
+        text-align: left;
+        padding-right: 0.35rem;
+        line-height: 1.05rem;
+      }
+      .reception-table tbody tr td.desc-cell {
+        flex-direction: column;
+      }
+      .reception-table tbody tr td.desc-cell::before {
+        width: auto;
+        flex: 0 0 auto;
+        margin-bottom: 0.15rem;
+      }
+      .reception-table tbody tr td.desc-cell span, .reception-table tbody tr td.desc-cell { line-height: 1.05rem; }
+      .reception-table tbody tr td.status-cell::before { width: 6.5rem; }
+      .reception-actions { flex-direction: column; align-items: stretch; }
+      .reception-actions > div, .reception-actions button { width: 100%; }
+      .reception-actions input { width: 100% !important; }
+    }
+    @media (min-width: 640px) and (max-width: 880px) {
+      .reception-table thead th, .reception-table tbody td { padding: 0.35rem 0.5rem; }
+      .reception-table tbody td { font-size: 0.75rem; }
+    }
+  </style>
 
   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
     <div>
@@ -14,21 +71,27 @@
     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Cargar</button>
   </form>
 
-  <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}" data-not-found="{{ '1' if correlative and not header else '0' }}"></div>
+  <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}" data-not-found="{{ '1' if correlative and not header and not pending_wait else '0' }}" data-pending="{{ '1' if pending_wait else '0' }}"></div>
 
-  {% if correlative and header and not validated %}
+  {% if correlative and header %}
   <div class="mb-4 text-sm text-gray-600 space-y-1">
     <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
     <p><span class="font-medium">Depósito origen:</span> {{ header.store }}</p>
     <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store }}</p>
     <p><span class="font-medium">Fecha emisión:</span> {{ header.emission_date }}</p>
-    <p class="text-xs text-gray-500">TRANSFER procesada (recepción sin validar)</p>
+    <p class="text-xs text-gray-500">TRANSFER procesada (recepción sin chequear)</p>
   </div>
 
-  <div class="flex flex-wrap items-center gap-3 mb-4">
+  <div class="flex flex-wrap items-center gap-3 mb-4 reception-actions">
     <div>
-      <label for="product-search" class="text-sm font-medium text-gray-700">Buscar código</label>
-      <input id="product-search" type="search" placeholder="Código" class="border rounded px-2 py-1 text-sm w-48" />
+      <label for="product-search" class="text-sm font-medium text-gray-700">Buscar código de barra</label>
+      <input id="product-search" type="text" placeholder="pistolear codigo de barra" class="border rounded px-2 py-1 text-sm w-48"
+             inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
+    </div>
+    <div>
+      <label for="manual-code" class="text-sm font-medium text-gray-700">Código manual</label>
+      <input id="manual-code" type="text" placeholder="Ingresar código manualmente" class="border rounded px-2 py-1 text-sm w-48"
+             autocomplete="off" autocapitalize="none" spellcheck="false" />
     </div>
     <div>
       <label for="counted-qty" class="text-sm font-medium text-gray-700">Cantidad contada</label>
@@ -40,12 +103,11 @@
   </div>
 
   <div class="overflow-x-auto overflow-y-auto max-h-[60vh] border rounded">
-    <table class="min-w-full divide-y divide-gray-200">
+    <table class="min-w-full divide-y divide-gray-200 reception-table">
       <thead class="bg-gray-50">
         <tr>
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-          <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Orden</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Contada</th>
@@ -55,13 +117,12 @@
       <tbody id="collection-items" class="bg-white divide-y divide-gray-200 text-sm">
         {% for item in items %}
         <tr data-code="{{ item.code_product }}">
-          <td class="px-3 py-2 font-mono">{{ item.code_product }}</td>
-          <td class="px-3 py-2">{{ item.description_product }}</td>
-          <td class="px-3 py-2">{{ item.location or '' }}</td>
-          <td class="px-3 py-2">{{ item.unit_description }}</td>
-          <td class="px-3 py-2 text-right" data-original="{{ item.amount }}">{{ item.amount }}</td>
-          <td class="px-3 py-2 text-right counted-cell" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
-          <td class="px-3 py-2 text-right status-cell"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
+          <td class="px-3 py-2 font-mono" data-label="Código">{{ item.code_product }}</td>
+          <td class="px-3 py-2 desc-cell" data-label="Descripción">{{ item.description_product }}</td>
+          <td class="px-3 py-2" data-label="Unidad">{{ item.unit_description }}</td>
+          <td class="px-3 py-2 text-right" data-label="Cant. Orden" data-original="{{ item.amount }}">{{ item.amount }}</td>
+          <td class="px-3 py-2 text-right counted-cell" data-label="Cant. Contada" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
+          <td class="px-3 py-2 text-right status-cell" data-label="Estado"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
         </tr>
         {% endfor %}
         {% if not items %}
@@ -71,22 +132,24 @@
     </table>
   </div>
 
-  {% elif correlative and validated %}
-  <p class="text-green-700 font-medium">La recepción de la TRANSFER con correlativo {{ correlative }} ya fue validada. No es posible volver a chequearla.</p>
   {% endif %}
-  <div class="mt-4 p-4 border rounded bg-green-50 text-sm text-green-800">
-    <p>Descripción actual: {{ header.description }}</p>
-    <p>Depósito origen: {{ header.store }} | Depósito destino: {{ header.destination_store }}</p>
-  </div>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
       const metaDiv = document.getElementById('check-meta');
       const notFound = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
-      if (notFound) { alert('No se encontró una TRANSFER procesada con ese correlativo.'); try { document.getElementById('correlative').focus(); } catch(e){} }
+      const pending = metaDiv ? (metaDiv.dataset.pending === '1') : false;
+      if (pending) {
+        alert('La TRANSFER existe pero aún está en espera (wait=true). Debe procesarse antes de chequear recepción.');
+        try { document.getElementById('correlative').focus(); } catch(e){}
+      } else if (notFound) {
+        alert('No se encontró una TRANSFER procesada con ese correlativo.');
+        try { document.getElementById('correlative').focus(); } catch(e){}
+      }
 
       const rawCorr = metaDiv ? metaDiv.dataset.correlative : '';
       const correlative = rawCorr ? parseInt(rawCorr, 10) : null;
       const searchInput = document.getElementById('product-search');
+      const manualInput = document.getElementById('manual-code');
       const countedInput = document.getElementById('counted-qty');
       const applyBtn = document.getElementById('apply-count');
       const finalizeBtn = document.getElementById('finalize-reception');
@@ -122,7 +185,9 @@
           // Sólo chequeo: no modificar DB, actualizar UI localmente
           markRow(row, original, countedVal);
           setStatus('Conteo aplicado (no se grabó en DB)', 'success');
-          searchInput.value=''; countedInput.value=''; try{ searchInput.focus(); }catch(e){}
+          searchInput.value=''; countedInput.value='';
+          if (manualInput) { manualInput.value=''; }
+          try{ searchInput.focus(); }catch(e){}
           try { reevaluateFinalizeState(); } catch(_){ }
         } catch(e){ setStatus(e.message, 'error'); }
       });
@@ -152,10 +217,54 @@
         finally { finalizeBtn.disabled = false; }
       });
 
+      // Suprimir teclado virtual en móviles (scanner conectado)
+      if (searchInput && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        // Reaplicar atributos defensivamente
+        searchInput.setAttribute('inputmode','none');
+        searchInput.setAttribute('autocomplete','off');
+        searchInput.setAttribute('autocorrect','off');
+        searchInput.setAttribute('spellcheck','false');
+        // Evitar que un tap abra el teclado
+        searchInput.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          searchInput.focus({ preventScroll: true });
+          // Algunos navegadores experimentales
+          if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
+            try { navigator.virtualKeyboard.hide(); } catch(_){}
+          }
+        }, { passive: false });
+        // En foco, intentar ocultar si abre
+        searchInput.addEventListener('focus', () => {
+          if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
+            try { navigator.virtualKeyboard.hide(); } catch(_){}
+          }
+        });
+      }
+
       searchInput && searchInput.addEventListener('input', () => {
         const code = normalize(searchInput.value);
-        Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
-        if (!code) return; const row=findRowByCode(code); if (row){ row.classList.add('ring','ring-indigo-300'); }
+        Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
+        if (!code) return; const row=findRowByCode(code); if (row){ row.classList.add('collection-highlight'); }
+      });
+
+      // Sincronizar input manual con buscador (para permitir teclado normal)
+      manualInput && manualInput.addEventListener('input', () => {
+        if (!manualInput.value) return;
+        searchInput.value = manualInput.value;
+        searchInput.dispatchEvent(new Event('input'));
+      });
+      manualInput && manualInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          searchInput.value = manualInput.value;
+          const code = normalize(manualInput.value);
+          if (!code){ setStatus('Ingresa un código primero', 'error'); return; }
+          const result = await resolveToRow(code);
+          if (!result.row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('collection-highlight'));
+          result.row.classList.add('collection-highlight');
+          countedInput.focus(); try{ countedInput.select(); }catch(e){}
+        }
       });
 
       async function resolveToRow(code){ let row=findRowByCode(code); if(!row){ try{ const url=new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res=await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }}); if(res.ok){ const data=await res.json(); if(data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); if(row){ searchInput.value=code; } } } }catch(e){} } return { row, code }; }
@@ -168,7 +277,7 @@
           const result=await resolveToRow(code);
           if(!result.row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
           Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
-          result.row.classList.add('ring','ring-indigo-300');
+          result.row.classList.add('collection-highlight');
           countedInput.focus(); try{ countedInput.select(); }catch(e){}
         }
       });
@@ -177,11 +286,10 @@
       applyBtn && applyBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); } });
 
       function allRowsCounted(){ const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); if(rows.length===0) return false; return rows.every(r => { const countedCell=r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
-      function reevaluateFinalizeState(){ if(!finalizeBtn) return; finalizeBtn.disabled = !allRowsCounted(); }
+      function reevaluateFinalizeState(){ if(!finalizeBtn) return; // Siempre activo para permitir validación parcial
+        finalizeBtn.disabled = false; }
       reevaluateFinalizeState();
     });
     </script>
-  
-        <input id="add-quantity" name="quantity" type="number" step="any" min="0" placeholder="0" class="border rounded px-2 py-1 w-full" required />
-      </div>
+        </div>
  {% endblock %}

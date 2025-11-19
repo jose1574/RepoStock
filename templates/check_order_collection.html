@@ -6,6 +6,15 @@ para que coincida con lo que se va a trasladar entre depositos. -->
 {% block content %}
 <div class="mx-auto px-4 py-6">
    <h1 class="text-xl font-semibold mb-4">Chequeo de Orden de Recolección</h1>
+   <style>
+      /* Resaltado fuerte para la fila encontrada por búsqueda */
+      .collection-highlight {
+         background-color: #fff7ed; /* naranja muy claro */
+         box-shadow: inset 0 0 0 9999px rgba(255, 186, 73, 0.15);
+         outline: 2px solid #f59e0b;
+      }
+      .collection-highlight td { transition: background-color .15s ease; }
+   </style>
 
    <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
       <div>
@@ -19,10 +28,10 @@ para que coincida con lo que se va a trasladar entre depositos. -->
    {% if correlative and header and not validated %}
       <div class="mb-4 text-sm text-gray-600 space-y-1">
          <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
-         <p><span class="font-medium">Depósito origen:</span> {{ header.store }}</p>
-         <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store }}</p>
+         <p><span class="font-medium">Documento:</span> {{ header.document_no }}</p>
+         <p><span class="font-medium">Depósito origen:</span> {{ header.origin_store_description }}</p>
+         <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store_description }}</p>
          <p><span class="font-medium">Fecha emisión:</span> {{ header.emission_date }}</p>
-         <p class="text-xs text-gray-500">Operation type: ORDER_COLLECTION (verificada)</p>
       </div>
 
       <!-- Barra de acciones -->
@@ -58,6 +67,10 @@ para que coincida con lo que se va a trasladar entre depositos. -->
                      <label class="block text-sm font-medium text-gray-700">Unidad</label>
                      <input id="add-unit" readonly class="border rounded px-2 py-1 w-full bg-gray-100" />
                   </div>
+                  <div>
+                     <label class="block text-sm font-medium text-gray-700">Stock en origen</label>
+                     <input id="add-stock" readonly class="border rounded px-2 py-1 w-full bg-gray-100" />
+                  </div>
                <div>
                   <label class="block text-sm font-medium text-gray-700">Cantidad</label>
                   <input id="add-quantity" name="quantity" type="number" step="any" min="0" placeholder="0" class="border rounded px-2 py-1 w-full" required />
@@ -77,7 +90,6 @@ para que coincida con lo que se va a trasladar entre depositos. -->
                <tr>
                   <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
                   <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
                   <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
                   <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Orden</th>
                   <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Contada</th>
@@ -90,7 +102,6 @@ para que coincida con lo que se va a trasladar entre depositos. -->
                   <tr data-code="{{ item.code_product }}">
                      <td class="px-3 py-2 font-mono">{{ item.code_product }}</td>
                      <td class="px-3 py-2">{{ item.description_product }}</td>
-                     <td class="px-3 py-2">{{ item.location or '' }}</td>
                      <td class="px-3 py-2">{{ item.unit_description }}</td>
                      <td class="px-3 py-2 text-right" data-original="{{ item.amount }}">{{ item.amount }}</td>
                      <td class="px-3 py-2 text-right counted-cell" data-counted="">
@@ -245,10 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
    // Resaltar fila al buscar
    searchInput && searchInput.addEventListener('input', () => {
       const code = normalize(searchInput.value);
-      Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
+      Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
       if (!code) return;
       const row = findRowByCode(code);
-      if (row){ row.classList.add('ring','ring-indigo-300'); }
+      if (row){ row.classList.add('collection-highlight'); }
    });
 
    // Al presionar Enter en el buscador: resolver código (incluye other_code) y mover el foco a cantidad
@@ -295,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
                const descInput = document.getElementById('add-description');
                const unitInput = document.getElementById('add-unit');
                const qtyInput = document.getElementById('add-quantity');
+               const stockInput = document.getElementById('add-stock');
                const statusP = document.getElementById('add-item-status');
                // Poblar y también fijar atributo value como pides
                codeInput.value = data.code || '';
@@ -304,6 +316,25 @@ document.addEventListener('DOMContentLoaded', () => {
                unitInput.value = data.unit_description || '';
                unitInput.setAttribute('value', data.unit_description || '');
                qtyInput.value = '';
+               // Consultar stock en depósito de origen para el código principal
+               try {
+                  if (stockInput) {
+                     stockInput.value = 'Consultando...';
+                     const sUrl = new URL('{{ url_for("api_collection_order_product_stock") }}', window.location.origin);
+                     sUrl.searchParams.set('correlative', correlative ?? '');
+                     sUrl.searchParams.set('code', data.code || '');
+                     const sRes = await fetch(sUrl.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                     const sData = await sRes.json();
+                     if (!sRes.ok || !sData.ok) {
+                        stockInput.value = 'N/D';
+                     } else {
+                        const sv = Number(sData.stock || 0);
+                        stockInput.value = isNaN(sv) ? '0' : sv.toFixed(3);
+                     }
+                  }
+               } catch (_) {
+                  if (stockInput) stockInput.value = 'N/D';
+               }
                statusP.textContent = '';
                modal.classList.remove('hidden');
                setTimeout(()=>{ try{ qtyInput.focus(); }catch(e){} }, 50);
@@ -313,8 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return; 
          }
          // resaltar y pasar el foco a cantidad
-         Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
-         result.row.classList.add('ring','ring-indigo-300');
+            Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
+            result.row.classList.add('collection-highlight');
          countedInput.focus();
          try { countedInput.select(); } catch (e) {}
       }
@@ -390,6 +421,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!codeVal){ addStatus.textContent='Código vacío'; addStatus.className='text-sm text-red-600'; return; }
       let qty = Number(String(q||'').replace(',', '.'));
       if (isNaN(qty) || qty <= 0){ addStatus.textContent='Cantidad inválida'; addStatus.className='text-sm text-red-600'; return; }
+         // Validación: no exceder stock disponible en origen
+         try {
+            const stockField = document.getElementById('add-stock');
+            const stockVal = Number(String(stockField && stockField.value || '0').replace(',', '.'));
+            if (!isNaN(stockVal) && qty > stockVal) {
+               addStatus.textContent = `La cantidad (${qty}) no puede ser mayor al stock (${stockVal}).`;
+               addStatus.className = 'text-sm text-red-600';
+               return;
+            }
+         } catch(_){}
       try {
          addStatus.textContent='Agregando...'; addStatus.className='text-sm text-gray-600';
          const res = await fetch('{{ url_for("api_collection_order_add_item") }}', {
@@ -406,16 +447,15 @@ document.addEventListener('DOMContentLoaded', () => {
          // Añadir fila DOM
          const newRow = document.createElement('tr');
          newRow.dataset.code = data.added.code_product;
-         newRow.innerHTML = `
-           <td class="px-3 py-2 font-mono">${data.added.code_product}</td>
-           <td class="px-3 py-2">${data.added.description_product||''}</td>
-              <td class="px-3 py-2"></td>
-              <td class="px-3 py-2">${data.added.unit_description || ''}</td>
-           <td class="px-3 py-2 text-right" data-original="${Number(data.added.amount).toFixed(3)}">${Number(data.added.amount).toFixed(3)}</td>
-           <td class="px-3 py-2 text-right counted-cell" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
-           <td class="px-3 py-2 text-right status-cell"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
+             newRow.innerHTML = `
+                <td class="px-3 py-2 font-mono">${data.added.code_product}</td>
+                <td class="px-3 py-2">${data.added.description_product || ''}</td>
+                <td class="px-3 py-2">${data.added.unit_description || ''}</td>
+                   <td class="px-3 py-2 text-right" data-original="${Number(data.added.amount).toFixed(2)}">${Number(data.added.amount).toFixed(2)}</td>
+                <td class="px-3 py-2 text-right counted-cell" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
+                <td class="px-3 py-2 text-right status-cell"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
                 <td class="px-3 py-2 text-right"><button type="button" class="delete-item px-2 py-1 text-xs rounded bg-red-600 text-white" data-code="${data.added.code_product}">Eliminar</button></td>
-         `;
+             `;
          tableBody.appendChild(newRow);
          // Nuevo ítem agregado sin conteo: deshabilitar finalizar
          try { reevaluateFinalizeState(); } catch(_) {}

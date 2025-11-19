@@ -6,25 +6,55 @@
 <div class="container mx-auto px-4 pt-6 pb-12">
    <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
    <div class="mb-4 flex items-center gap-3 sticky top-0 z-40 bg-white border-b border-gray-200 py-2">
-      <label for="department-filter" class="text-sm font-medium text-gray-700">Departamento:</label>
-      <select id="department-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por departamento">
-         <option value="">-- Todos --</option>
-         {% if departments %}
-         {% for d in departments %}
-         <option value="{{ d }}">{{ d }}</option>
-         {% endfor %}
-         {% endif %}
-      </select>
-
-      <label for="brand-filter" class="text-sm font-medium text-gray-700">Marca:</label>
-      <select id="brand-filter" class="border rounded px-2 py-1 text-sm" aria-label="Filtrar por marca">
-         <option value="">-- Todas --</option>
-         {% if brands %}
-         {% for b in brands %}
-         <option value="{{ b }}">{{ b }}</option>
-         {% endfor %}
-         {% endif %}
-      </select>
+         <!-- Dropdown multi-filtro Departamentos -->
+         <div class="relative" id="dept-dropdown">
+            <button type="button" class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="dept-toggle" aria-haspopup="true" aria-expanded="false">
+               <span class="font-medium">Departamentos</span>
+               <span id="dept-selected-summary" class="text-xs text-gray-500">Todos</span>
+               <svg width="14" height="14" fill="currentColor" class="text-gray-500"><path d="M4 5l3 3 3-3"/></svg>
+            </button>
+            <div id="dept-panel" class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+               <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-600">Filtrar departamentos</span>
+                  <button type="button" id="dept-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+               </div>
+               <div class="space-y-1" id="dept-options">
+                  {% if departments %}
+                  {% for d in departments %}
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                     <input type="checkbox" class="dept-check" value="{{ d }}">
+                     <span>{{ d }}</span>
+                  </label>
+                  {% endfor %}
+                  {% endif %}
+               </div>
+            </div>
+         </div>
+         <!-- Dropdown multi-filtro Marcas -->
+         <div class="relative" id="brand-dropdown">
+            <button type="button" class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="brand-toggle" aria-haspopup="true" aria-expanded="false">
+               <span class="font-medium">Marcas</span>
+               <span id="brand-selected-summary" class="text-xs text-gray-500">Todas</span>
+               <svg width="14" height="14" fill="currentColor" class="text-gray-500"><path d="M4 5l3 3 3-3"/></svg>
+            </button>
+            <div id="brand-panel" class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+               <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-600">Filtrar marcas</span>
+                  <button type="button" id="brand-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+               </div>
+               <div class="space-y-1" id="brand-options">
+                  {% if brands %}
+                  {% for b in brands %}
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                     <input type="checkbox" class="brand-check" value="{{ b }}">
+                     <span>{{ b }}</span>
+                  </label>
+                  {% endfor %}
+                  {% endif %}
+               </div>
+            </div>
+         </div>
+         <span id="selected-count" class="text-xs text-gray-600 ml-2"></span>
 
       <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
       <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
@@ -146,9 +176,23 @@
       let currentPreviewItems = [];
       let currentPreviewMeta = {};
       const editStoreCode = "{{ session.get('store', '') }}";
+      // Dropdown elements
+      const deptToggle = document.getElementById('dept-toggle');
+      const deptPanel = document.getElementById('dept-panel');
+      const deptSummary = document.getElementById('dept-selected-summary');
+      const brandToggle = document.getElementById('brand-toggle');
+      const brandPanel = document.getElementById('brand-panel');
+      const brandSummary = document.getElementById('brand-selected-summary');
+      const searchInput = document.getElementById('product-search');
 
       function getCheckboxes() {
          return Array.from(document.querySelectorAll('.product-checkbox'));
+      }
+
+      function updateSelectedCount(){
+         const totalChecked = getCheckboxes().filter(cb => cb.checked).length;
+         const elem = document.getElementById('selected-count');
+         if(elem){ elem.textContent = totalChecked ? (totalChecked + ' seleccionados') : 'Sin selección'; }
       }
 
       selectAllBtn && selectAllBtn.addEventListener('click', function () {
@@ -156,17 +200,16 @@
          rows.forEach(row => {
             const cb = row.querySelector('.product-checkbox');
             if (!cb) return;
-            // Seleccionar solo los visibles por el filtro; deseleccionar los ocultos
-            if (row.style.display === 'none') {
-               cb.checked = false;
-            } else {
-               cb.checked = true;
+            if (row.style.display !== 'none') {
+               cb.checked = true; // NO desmarcar ocultos
             }
          });
+         updateSelectedCount();
       });
 
       clearBtn && clearBtn.addEventListener('click', function () {
          getCheckboxes().forEach(cb => cb.checked = false);
+         updateSelectedCount();
       });
 
       // Validación simple antes de enviar: debe haber al menos un producto seleccionado
@@ -329,6 +372,7 @@
             if (inp && !this.checked) {
                clearInvalid(inp);
             }
+            updateSelectedCount();
          });
       });
 
@@ -355,41 +399,57 @@
 
       // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
 
-      // BUSCADOR CLIENTE y filtro por departamento
-      const searchInput = document.getElementById('product-search');
-      const deptSelect = document.getElementById('department-filter');
-      const brandSelect = document.getElementById('brand-filter');
-
       function normalizeText(s) { return (s || '').toString().toLowerCase(); }
-
-      function filterRows() {
+      function getCheckedValues(containerSelector){
+         return Array.from(document.querySelectorAll(containerSelector)).filter(c => c.checked).map(c => normalizeText(c.value));
+      }
+      function updateDropdownSummary(){
+         const dVals = getCheckedValues('.dept-check');
+         deptSummary.textContent = dVals.length ? (dVals.length === 1 ? dVals[0] : dVals.length + ' seleccionados') : 'Todos';
+         const bVals = getCheckedValues('.brand-check');
+         brandSummary.textContent = bVals.length ? (bVals.length === 1 ? bVals[0] : bVals.length + ' seleccionadas') : 'Todas';
+      }
+      function filterRows(){
          const q = normalizeText(searchInput && searchInput.value);
-         const dept = normalizeText(deptSelect && deptSelect.value);
-         const brand = normalizeText(brandSelect && brandSelect.value);
+         const depts = getCheckedValues('.dept-check');
+         const brands = getCheckedValues('.brand-check');
          const rows = Array.from(document.querySelectorAll('tbody tr'));
          rows.forEach(row => {
             const codeCell = row.querySelector('td:nth-child(2)');
             const descCell = row.querySelector('td:nth-child(3)');
             const rowDept = normalizeText(row.getAttribute('data-department'));
             const rowBrand = normalizeText(row.getAttribute('data-brand'));
-
-            const matchesDept = !dept || rowDept === dept;
-            const matchesBrand = !brand || rowBrand === brand;
-            const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).indexOf(q) !== -1) || (normalizeText(descCell && descCell.textContent).indexOf(q) !== -1);
-
-            if (matchesDept && matchesBrand && matchesQuery) {
-               row.style.display = '';
-            } else {
-               row.style.display = 'none';
-            }
+            const matchesDept = (depts.length === 0) || depts.includes(rowDept);
+            const matchesBrand = (brands.length === 0) || brands.includes(rowBrand);
+            const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).includes(q)) || (normalizeText(descCell && descCell.textContent).includes(q));
+            row.style.display = (matchesDept && matchesBrand && matchesQuery) ? '' : 'none';
          });
       }
-
-      if (searchInput) searchInput.addEventListener('input', filterRows);
-      if (deptSelect) deptSelect.addEventListener('change', filterRows);
-      if (brandSelect) brandSelect.addEventListener('change', filterRows);
-
-      // iniciar filtro en load
+      searchInput && searchInput.addEventListener('input', filterRows);
+      // Toggle handlers
+      function togglePanel(panel, btn){
+         const isOpen = !panel.classList.contains('hidden');
+         document.querySelectorAll('#dept-panel,#brand-panel').forEach(p => p.classList.add('hidden'));
+         if(!isOpen){ panel.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); } else { panel.classList.add('hidden'); btn.setAttribute('aria-expanded','false'); }
+      }
+      deptToggle && deptToggle.addEventListener('click', () => togglePanel(deptPanel, deptToggle));
+      brandToggle && brandToggle.addEventListener('click', () => togglePanel(brandPanel, brandToggle));
+      document.addEventListener('click', (e) => {
+         if(!e.target.closest('#dept-dropdown') && !e.target.closest('#brand-dropdown')){
+            deptPanel.classList.add('hidden'); brandPanel.classList.add('hidden');
+         }
+      });
+      // Clear buttons
+      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked=false); updateDropdownSummary(); filterRows(); });
+      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked=false); updateDropdownSummary(); filterRows(); });
+      // Change event on checkboxes
+      document.addEventListener('change', (e) => {
+         if(e.target.classList.contains('dept-check') || e.target.classList.contains('brand-check')){
+            updateDropdownSummary();
+            filterRows();
+         }
+      });
+      updateDropdownSummary();
       filterRows();
 
       // ---- MODAL EDITAR MIN/MAX ----
@@ -618,6 +678,7 @@
          // Limpieza opcional
          setTimeout(() => { try { document.body.removeChild(formPdf); } catch (e) { } }, 1000);
       });
+      updateSelectedCount();
    });
 </script>
 <!-- Modal de previsualización antes de enviar -->

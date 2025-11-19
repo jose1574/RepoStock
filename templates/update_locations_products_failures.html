@@ -10,6 +10,27 @@
                 Se le asignara la ubicación <b style="color: green ;">"{{ location }}"</b> a los productos agregados
             </h1>
         </header>
+                <style>
+                    @media (max-width: 640px) {
+                        #searchPanel form { flex-direction: column; }
+                        #searchPanel form input, #searchPanel form button { width: 100%; }
+                        #actionsPanel { flex-direction: column; align-items: stretch; }
+                        #actionsPanel form { flex-direction: column; width: 100%; }
+                        #actionsPanel button { width: 100%; }
+                        #resultsPanel table thead { display: none; }
+                        #resultsPanel table tbody tr { display: flex; flex-direction: column; background: #ffffff; margin-bottom: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.55rem 0.75rem; }
+                        #resultsPanel table tbody tr td { display: flex; font-size: 0.78rem; padding: 0.2rem 0; line-height: 1.05rem; }
+                        #resultsPanel table tbody tr td::before { content: attr(data-label); font-weight: 600; color: #374151; width: 5.8rem; flex: 0 0 5.8rem; padding-right: 0.4rem; }
+                        #resultsPanel table tbody tr td.action-cell { flex-direction: column; }
+                        #resultsPanel table tbody tr td.action-cell::before { margin-bottom: 0.25rem; }
+                        #resultsPanel table tbody tr td.action-cell form { width: 100%; }
+                        #resultsPanel table tbody tr td.action-cell button { width: 100%; }
+                    }
+                    @media (min-width: 641px) and (max-width: 880px) {
+                        #resultsPanel table tbody tr td { padding: 0.35rem 0.4rem; }
+                        #searchPanel form input { max-width: 260px; }
+                    }
+                </style>
 
         <section id="searchPanel" class="mb-4">
             <form action="{{ url_for('update_locations_products_failures') }}" method="post" id="search-form" class="flex gap-2">
@@ -19,7 +40,7 @@
                     required />
                 <button type="submit" id="search_button"
                     class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                    Buscar
+                    Agregar
                 </button>
 
             </form>
@@ -47,7 +68,6 @@
                     Actualizar ubicaciones
                 </button>
 
-                <span class="text-sm text-gray-600 ml-2">Acciones sobre la lista de productos</span>
             </form>
         </section>
 
@@ -59,17 +79,15 @@
                         <tr>
                             <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Código</th>
                             <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Descripción</th>
-                            <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Ubicacion</th>
                             <th id="options" class="text-left px-4 py-2 text-sm font-medium text-gray-700">Opciones</th>
                         </tr>
                     </thead>
                     <tbody id="products-table-body" class="divide-y divide-gray-100">
                         {% for product in products | reverse %}
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.code }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.description }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-800">{{ product.location }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-800">
+                            <td class="px-4 py-2 text-sm text-gray-800" data-label="Código">{{ product.code }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-800" data-label="Descripción">{{ product.description }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-800 action-cell" data-label="Opciones">
                                 <form action="{{ url_for('delete_product', code=product.code) }}" method="post">
                                      <button type="submit"
                                         class="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm"

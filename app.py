@@ -74,6 +74,7 @@ from db import (
     search_product_failure,
     search_product,
     # update_inventory_operation_type,  # deprecado: ahora se usa description para validación
+    get_product_stock,
 )
 
 app = Flask(__name__, template_folder=template_folder)
@@ -847,6 +848,7 @@ def check_order_collection():
                 desc = (header.get("description") or "").strip().lower()
                 # Se considera validada si ya fue marcada con el formato nuevo o el anterior
                 validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
+                print("este es mi header", header)
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
     return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
@@ -888,19 +890,27 @@ def check_transfer_reception():
     correlative = request.args.get("correlative", type=int)
     header = None
     details = []
-    validated = True
+    # Se elimina la lógica de bloqueo por validación: siempre permitir re-chequeo
+    validated = False
+    pending_wait = False  # indica que existe como wait=true (no procesada aún)
     if correlative:
         try:
             rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
-            if rows:
+            if rows and len(rows) > 0:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative, header.get("destination_store"))
-                # Determinar validación por descripción
-                desc = (header.get("description") or "").strip().lower()
-                validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
+                # Ignorar estado de descripción para permitir múltiples validaciones
+            else:
+                # Fallback: buscar en espera (wait=true) para informar al usuario que aún no está procesada
+                pending_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+                if pending_rows:
+                    pending_wait = True
+                    # Podemos mostrar parte del encabezado para referencia al usuario, pero sin detalles para recepción
+                    header = pending_rows[0]
+                    # No cargamos detalles destino porque aún no está procesada
         except Exception as e:
             print("Error cargando TRANSFER procesada:", e)
-    return render_template("check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated)
+    return render_template("check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated, pending_wait=pending_wait)
 
 
 @app.route("/api/reception/update_count", methods=["POST"])
@@ -947,10 +957,7 @@ def api_reception_confirm():
             return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = header_rows[0]
         details = get_inventory_operations_details_by_correlative(source_correlative, header.get("destination_store"))
-        # Bloquear doble confirmación
-        desc_hdr = (header.get("description") or "").strip().lower()
-        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
-            return jsonify({"ok": False, "error": "La recepción ya fue validada previamente."}), 400
+        # Se permite revalidar múltiples veces: quitar bloqueo por descripción previa
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error consultando TRANSFER: {e}"}), 500
 
@@ -1102,6 +1109,7 @@ def api_reception_add_item():
 @app.route("/api/reception/resolve_code", methods=["GET"])
 def api_reception_resolve_code():
     correlative = request.args.get("correlative", type=int)
+    print("este es el correlativo que recibo ->", correlative)
     query = (request.args.get("query") or "").strip()
     if not correlative or not query:
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
@@ -1204,9 +1212,13 @@ def api_collection_order_resolve_code():
     if not correlative or not query:
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
     try:
-        headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+        headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
         if not headers:
-            return jsonify({"ok": False, "error": "Orden no encontrada"}), 404
+            # Intentar fallback en espera (wait=true) para diferenciar entre inexistente y no procesada
+            pending_headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            if pending_headers:
+                return jsonify({"ok": False, "error": "TRANSFER no procesada (wait=true). No disponible para recepción.", "status": "pending"}), 409
+            return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = headers[0]
         dest = header.get("destination_store")
         origin = header.get("store")
@@ -1301,6 +1313,19 @@ def api_collection_order_add_item():
     description = prod.get("description")
     unit_corr = prod.get("unit_correlative") or get_correlative_product_unit(main_code)
 
+    # Validación de negocio: no permitir agregar cantidad mayor a stock disponible en origen
+    try:
+        origin_store = header.get("store")
+        available_stock = get_product_stock(main_code, origin_store) if origin_store else 0.0
+        if available_stock is not None and quantity > float(available_stock) + 1e-9:
+            return jsonify({
+                "ok": False,
+                "error": f"Cantidad solicitada ({quantity}) excede el stock disponible en origen ({available_stock})."
+            }), 400
+    except Exception as e:
+        # Si falla la consulta de stock, devolver error claro
+        return jsonify({"ok": False, "error": f"No se pudo validar stock disponible: {e}"}), 500
+
     # Preparar item usando los campos esperados por save_transfer_order_items
     item = {
         "product_code": main_code,
@@ -1328,26 +1353,47 @@ def api_collection_order_add_item():
         return jsonify({"ok": False, "error": f"Error agregando item: {e}"}), 500
 
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
-   #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("APP_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+@app.route("/api/collection_order/product_stock", methods=["GET"])
+def api_collection_order_product_stock():
+    """Devuelve el stock disponible en depósito origen para un producto de una ORDER_COLLECTION (wait=true)."""
+    correlative = request.args.get("correlative", type=int)
+    code = (request.args.get("code") or "").strip()
+    if not correlative or not code:
+        return jsonify({"ok": False, "error": "Faltan correlative o code"}), 400
+    try:
+        header_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+        if not header_rows:
+            return jsonify({"ok": False, "error": "ORDER_COLLECTION no encontrada"}), 404
+        header = header_rows[0]
+        origin_store = header.get("store")
+        if not origin_store:
+            return jsonify({"ok": False, "error": "No se pudo determinar el depósito origen"}), 400
+        stock = get_product_stock(code, origin_store)
+        return jsonify({"ok": True, "code": code, "store": origin_store, "stock": float(stock or 0.0)})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+
+if __name__ == "__main__":
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+   #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("APP_PORT", "5001"))
+    except Exception:
+        port = 5001
+
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)
