@@ -367,7 +367,7 @@ def create_collection_order():
         if b and b not in seen_b:
             seen_b.add(b)
             brands.append(b)
-
+    print("estos son los productos que reviuso ->",products)
     return render_template(
         "create_collection_order.html",
         products=products,

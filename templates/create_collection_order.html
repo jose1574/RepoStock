@@ -81,8 +81,9 @@
             class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
          <button id="clear-selection" type="button"
             class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
-         <button id="open-preview" type="button"
-            class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600">Previsualizar</button>
+         <button id="open-preview" type="button" data-js-hook="open-preview"
+            class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+            onclick="window.__openPreview && window.__openPreview()">Previsualizar</button>
       </div>
 
       <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
@@ -274,10 +275,12 @@
          const origin = parseNum(originCell ? originCell.textContent : 0);
          const dest = parseNum(destCell ? destCell.textContent : 0);
          const maxStock = parseNum(maxCell ? maxCell.textContent : 0);
-         // Fórmula de backend: min(stock_origen, max(maximo - stock_destino, 0))
-         const suggested = Math.min(origin, Math.max(maxStock - dest, 0));
+         // Fórmula base: min(stock_origen, max(maximo - stock_destino, 0))
+         // Si el stock de origen es negativo o cero, sugerimos 0 pero permitimos que el usuario ingrese manualmente.
+         const safeOrigin = Math.max(origin, 0);
+         const suggested = Math.min(safeOrigin, Math.max(maxStock - dest, 0));
          if (input) {
-            input.value = (suggested || 0).toFixed(2);
+            input.value = suggested.toFixed(2);
             clearInvalid(input);
          }
       }
@@ -299,16 +302,20 @@
          const raw = input.value;
          const val = Number(raw);
          const maxAttr = input.getAttribute('max');
-         const max = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : Infinity;
+         const originMax = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : NaN;
 
          // Requerimos número > 0 y <= stock origen
          if (!raw || isNaN(val) || val <= 0) {
             setInvalid(input, 'El valor debe ser un número mayor que 0');
             return false;
          }
-         if (!(val <= max)) {
-            setInvalid(input, `El valor debe ser menor que el stock de origen (${max})`);
-            return false;
+         // Si el stock de origen es positivo, validamos el límite superior.
+         // Si es 0 o negativo, no bloqueamos por stock de origen para permitir reposición.
+         if (Number.isFinite(originMax) && originMax > 0) {
+            if (val > originMax) {
+               setInvalid(input, `El valor debe ser menor o igual al stock de origen (${originMax})`);
+               return false;
+            }
          }
 
          clearInvalid(input);
@@ -368,7 +375,7 @@
       getCheckboxes().forEach(cb => {
          cb.addEventListener('change', function () {
             const code = this.value;
-            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
             if (inp && !this.checked) {
                clearInvalid(inp);
             }
@@ -382,7 +389,7 @@
          let firstInvalid = null;
          for (const cb of checked) {
             const code = cb.value;
-            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
             if (inp) {
                const ok = validateInput(inp);
                if (!ok && !firstInvalid) firstInvalid = inp;
@@ -559,6 +566,7 @@
       const previewClose = document.getElementById('preview-close');
 
       function openPreview() {
+         console.debug('[open-preview] click handler invoked');
          const rows = Array.from(document.querySelectorAll('tbody tr'));
          const selected = Array.from(document.querySelectorAll('.product-checkbox:checked'));
          if (selected.length === 0) {
@@ -576,7 +584,7 @@
             const unitCell = row.querySelector('td:nth-child(4)');
             const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
             const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
-            const qtyInput = document.querySelector(`input[name="to_transfer_${code}"]`);
+            const qtyInput = document.getElementsByName('to_transfer_' + code)[0];
             let raw = qtyInput ? qtyInput.value : '0';
             if (typeof raw === 'string') raw = raw.replace(',', '.');
             let parsed = parseFloat(raw);
@@ -620,7 +628,13 @@
          previewModal.classList.remove('flex');
       }
 
-      openPreviewBtn && openPreviewBtn.addEventListener('click', openPreview);
+      if (!openPreviewBtn) {
+         console.warn('[open-preview] Botón no encontrado en DOM');
+      } else {
+         openPreviewBtn.addEventListener('click', openPreview);
+      }
+      // Exponer función global como fallback para entorno empaquetado (PyInstaller / WebView)
+      window.__openPreview = openPreview;
       previewAddMore && previewAddMore.addEventListener('click', closePreview);
       previewClose && previewClose.addEventListener('click', closePreview);
       previewSubmit && previewSubmit.addEventListener('click', function () {
@@ -633,7 +647,7 @@
          let firstInvalid = null;
          for (const cb of checked) {
             const code = cb.value;
-            const inp = document.querySelector(`input[name="to_transfer_${code}"]`);
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
             if (inp && !validateInput(inp)) {
                if (!firstInvalid) firstInvalid = inp;
             }
