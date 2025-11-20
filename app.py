@@ -1223,20 +1223,24 @@ def api_collection_order_resolve_code():
         dest = header.get("destination_store")
         origin = header.get("store")
         rows = []
-        if dest:
+        if not rows:
             try:
-                rows = search_product_failure(query, dest) or []
+                rows = search_product(query) or []
             except Exception:
                 rows = []
-        if not rows and origin:
-            try:
-                rows = search_product_failure(query, origin) or []
-            except Exception:
-                rows = []
+
         if not rows:
             return jsonify({"ok": False, "error": "Producto no encontrado por código alterno"}), 404
+
         prod = rows[0]
-        return jsonify({"ok": True, "product_code": prod.get("code"), "product": prod})
+        # Normalizar la estructura del producto para la respuesta (asegura keys comunes)
+        product_response = {
+            "code": prod.get("code"),
+            "description": prod.get("description"),
+            "unit_description": prod.get("unit_description") if prod.get("unit_description") is not None else prod.get("unit_description"),
+            "unit_correlative": prod.get("unit_correlative") if prod.get("unit_correlative") is not None else prod.get("unit_correlative"),
+        }
+        return jsonify({"ok": True, "product_code": prod.get("code"), "product": product_response})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

@@ -189,14 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
          if (!row){
             // Intentar resolver como other_code
             try {
-               const url = new URL('{{ url_for("api_collection_order_resolve_code") }}', window.location.origin);
-               url.searchParams.set('correlative', correlative ?? '');
+               const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin);
                url.searchParams.set('query', code);
                const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
                if (res.ok){
                   const data = await res.json();
-                  if (data && data.ok && data.product_code){
-                     code = String(data.product_code);
+                  if (data && data.ok && data.code){
+                     code = String(data.code);
                      row = findRowByCode(code);
                   }
                }
@@ -267,14 +266,13 @@ document.addEventListener('DOMContentLoaded', () => {
       let row = findRowByCode(code);
       if (!row) {
          try {
-            const url = new URL('{{ url_for("api_collection_order_resolve_code") }}', window.location.origin);
-            url.searchParams.set('correlative', correlative ?? '');
+            const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin);
             url.searchParams.set('query', code);
             const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
             if (res.ok) {
                const data = await res.json();
-               if (data && data.ok && data.product_code) {
-                  code = String(data.product_code);
+               if (data && data.ok && data.code) {
+                  code = String(data.code);
                   row = findRowByCode(code);
                   if (row) {
                      // actualizar input para que el siguiente paso opere con el code principal
