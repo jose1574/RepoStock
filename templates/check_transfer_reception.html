@@ -8,14 +8,22 @@
   <style>
     /* Resaltado fuerte reutilizado del chequeo de recolección */
     .collection-highlight {
-      background-color: #fff7ed; /* naranja muy claro */
+      background-color: #fff7ed;
+      /* naranja muy claro */
       box-shadow: inset 0 0 0 9999px rgba(255, 186, 73, 0.15);
       outline: 2px solid #f59e0b;
     }
-    .collection-highlight td { transition: background-color .15s ease; }
+
+    .collection-highlight td {
+      transition: background-color .15s ease;
+    }
+
     /* Responsive: convertir tabla a tarjetas en móviles */
     @media (max-width: 640px) {
-      .reception-table thead { display: none; }
+      .reception-table thead {
+        display: none;
+      }
+
       .reception-table tbody tr {
         display: flex;
         flex-direction: column;
@@ -26,6 +34,7 @@
         background: #ffffff;
         margin-bottom: 0.5rem;
       }
+
       .reception-table tbody tr td {
         display: flex;
         align-items: flex-start;
@@ -33,6 +42,7 @@
         padding: 0.15rem 0.25rem;
         border: 0;
       }
+
       .reception-table tbody tr td::before {
         content: attr(data-label);
         font-weight: 600;
@@ -43,41 +53,73 @@
         padding-right: 0.35rem;
         line-height: 1.05rem;
       }
+
       .reception-table tbody tr td.desc-cell {
         flex-direction: column;
       }
+
       .reception-table tbody tr td.desc-cell::before {
         width: auto;
         flex: 0 0 auto;
         margin-bottom: 0.15rem;
       }
-      .reception-table tbody tr td.desc-cell span, .reception-table tbody tr td.desc-cell { line-height: 1.05rem; }
-      .reception-table tbody tr td.status-cell::before { width: 6.5rem; }
-      .reception-actions { flex-direction: column; align-items: stretch; }
-      .reception-actions > div, .reception-actions button { width: 100%; }
-      .reception-actions input { width: 100% !important; }
+
+      .reception-table tbody tr td.desc-cell span,
+      .reception-table tbody tr td.desc-cell {
+        line-height: 1.05rem;
+      }
+
+      .reception-table tbody tr td.status-cell::before {
+        width: 6.5rem;
+      }
+
+      .reception-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .reception-actions>div,
+      .reception-actions button {
+        width: 100%;
+      }
+
+      .reception-actions input {
+        width: 100% !important;
+      }
     }
+
     @media (min-width: 640px) and (max-width: 880px) {
-      .reception-table thead th, .reception-table tbody td { padding: 0.35rem 0.5rem; }
-      .reception-table tbody td { font-size: 0.75rem; }
+
+      .reception-table thead th,
+      .reception-table tbody td {
+        padding: 0.35rem 0.5rem;
+      }
+
+      .reception-table tbody td {
+        font-size: 0.75rem;
+      }
     }
   </style>
 
   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
     <div>
       <label for="correlative" class="block text-sm font-medium text-gray-700">Correlativo de TRANSFER procesada</label>
-      <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48" placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
+      <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48"
+        placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
     </div>
     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Cargar</button>
   </form>
 
-  <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}" data-not-found="{{ '1' if correlative and not header and not pending_wait else '0' }}" data-pending="{{ '1' if pending_wait else '0' }}"></div>
+  <div id="check-meta" data-correlative="{{ correlative if correlative else '' }}"
+    data-not-found="{{ '1' if correlative and not header and not pending_wait else '0' }}"
+    data-pending="{{ '1' if pending_wait else '0' }}"
+    data-destination-store="{{ header.destination_store if header else '' }}"></div>
 
   {% if correlative and header %}
   <div class="mb-4 text-sm text-gray-600 space-y-1">
     <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
-    <p><span class="font-medium">Depósito origen:</span> {{ header.store }}</p>
-    <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store }}</p>
+    <p><span class="font-medium">Depósito origen:</span> {{ header.origin_store_description }}</p>
+    <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store_description }}</p>
     <p><span class="font-medium">Fecha emisión:</span> {{ header.emission_date }}</p>
     <p class="text-xs text-gray-500">TRANSFER procesada (recepción sin chequear)</p>
   </div>
@@ -85,20 +127,22 @@
   <div class="flex flex-wrap items-center gap-3 mb-4 reception-actions">
     <div>
       <label for="product-search" class="text-sm font-medium text-gray-700">Buscar código de barra</label>
-      <input id="product-search" type="text" placeholder="pistolear codigo de barra" class="border rounded px-2 py-1 text-sm w-48"
-             inputmode="none" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
+      <input id="product-search" type="text" placeholder="pistolear codigo de barra"
+        class="border rounded px-2 py-1 text-sm w-48" inputmode="none" autocomplete="off" autocorrect="off"
+        spellcheck="false" enterkeyhint="done" />
     </div>
     <div>
       <label for="manual-code" class="text-sm font-medium text-gray-700">Código manual</label>
-      <input id="manual-code" type="text" placeholder="Ingresar código manualmente" class="border rounded px-2 py-1 text-sm w-48"
-             autocomplete="off" autocapitalize="none" spellcheck="false" />
+      <input id="manual-code" type="text" placeholder="Ingresar código manualmente"
+        class="border rounded px-2 py-1 text-sm w-48" autocomplete="off" autocapitalize="none" spellcheck="false" />
     </div>
     <div>
       <label for="counted-qty" class="text-sm font-medium text-gray-700">Cantidad contada</label>
       <input id="counted-qty" type="number" step="any" min="0" class="border rounded px-2 py-1 text-sm w-32" />
     </div>
     <button id="apply-count" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Aplicar conteo</button>
-    <button id="finalize-reception" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Validar recepción</button>
+    <button id="finalize-reception" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Validar
+      recepción</button>
     <span id="status-msg" class="text-sm text-gray-700"></span>
   </div>
 
@@ -109,6 +153,7 @@
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
           <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+          <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Deposito destino</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Orden</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cant. Contada</th>
           <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Estado</th>
@@ -116,34 +161,66 @@
       </thead>
       <tbody id="collection-items" class="bg-white divide-y divide-gray-200 text-sm">
         {% for item in items %}
-        <tr data-code="{{ item.code_product }}">
+        <tr data-code="{{ item.code_product }}" data-dest-store="{{ item.destination_store }}">
           <td class="px-3 py-2 font-mono" data-label="Código">{{ item.code_product }}</td>
           <td class="px-3 py-2 desc-cell" data-label="Descripción">{{ item.description_product }}</td>
           <td class="px-3 py-2" data-label="Unidad">{{ item.unit_description }}</td>
-          <td class="px-3 py-2 text-right" data-label="Cant. Orden" data-original="{{ item.amount }}">{{ item.amount }}</td>
-          <td class="px-3 py-2 text-right counted-cell" data-label="Cant. Contada" data-counted=""><span class="text-gray-400 italic">Sin conteo</span></td>
-          <td class="px-3 py-2 text-right status-cell" data-label="Estado"><span class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
+          <td class="px-3 py-2" data-label="Deposito destino">{{ item.destination_store }}</td>
+          <td class="px-3 py-2 text-right" data-label="Cant. Orden" data-original="{{ item.amount }}">{{ item.amount }}
+          </td>
+          <td class="px-3 py-2 text-right counted-cell" data-label="Cant. Contada" data-counted=""><span
+              class="text-gray-400 italic">Sin conteo</span></td>
+          <td class="px-3 py-2 text-right status-cell" data-label="Estado"><span
+              class="inline-block px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs">Pendiente</span></td>
         </tr>
         {% endfor %}
         {% if not items %}
-        <tr><td colspan="7" class="px-3 py-4 text-center text-gray-500">Sin detalles para este correlativo.</td></tr>
+        <tr>
+          <td colspan="7" class="px-3 py-4 text-center text-gray-500">Sin detalles para este correlativo.</td>
+        </tr>
         {% endif %}
       </tbody>
     </table>
   </div>
 
   {% endif %}
-    <script>
+  <!-- Modal edición min/max para depósito destino -->
+  <div id="minmax-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-3">
+      <!-- muestra deposito de destindo -->
+      <div class="text-sm text-gray-600"><span class="font-medium">Depósito destino:</span> <span id="mm-destination-store"></span></div>
+      <h2 class="text-lg font-semibold">Editar existencias mínima y máxima (destino)</h2>
+      <div class="text-sm text-gray-600"><span class="font-medium">Producto:</span> <span id="mm-product-code"
+          class="font-mono"></span></div>
+      <div class="text-sm text-gray-600"><span class="font-medium">Descripción:</span> <span
+          id="mm-product-desc"></span></div>
+      <div class="flex items-center gap-3">
+        <label for="mm-min" class="w-32 text-sm text-gray-700">Existencia mínima</label>
+        <input id="mm-min" type="number" min="0" step="1" class="border rounded px-2 py-1 w-40 text-right" />
+      </div>
+      <div class="flex items-center gap-3">
+        <label for="mm-max" class="w-32 text-sm text-gray-700">Existencia máxima</label>
+        <input id="mm-max" type="number" min="0" step="1" class="border rounded px-2 py-1 w-40 text-right" />
+      </div>
+      <p id="mm-status" class="text-sm"></p>
+      <div class="flex justify-end gap-2 mt-2">
+        <button type="button" id="mm-cancel" class="px-3 py-1 bg-gray-200 rounded">Cancelar</button>
+        <button type="button" id="mm-save" class="px-3 py-1 bg-indigo-600 text-white rounded">Guardar</button>
+      </div>
+    </div>
+  </div>
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
       const metaDiv = document.getElementById('check-meta');
       const notFound = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
       const pending = metaDiv ? (metaDiv.dataset.pending === '1') : false;
       if (pending) {
         alert('La TRANSFER existe pero aún está en espera (wait=true). Debe procesarse antes de chequear recepción.');
-        try { document.getElementById('correlative').focus(); } catch(e){}
+        try { document.getElementById('correlative').focus(); } catch (e) { }
       } else if (notFound) {
         alert('No se encontró una TRANSFER procesada con ese correlativo.');
-        try { document.getElementById('correlative').focus(); } catch(e){}
+        try { document.getElementById('correlative').focus(); } catch (e) { }
       }
 
       const rawCorr = metaDiv ? metaDiv.dataset.correlative : '';
@@ -156,44 +233,115 @@
       const statusMsg = document.getElementById('status-msg');
       const tableBody = document.getElementById('collection-items');
       if (!tableBody) return;
+      const destinationStore = metaDiv ? metaDiv.dataset.destinationStore : '';
+      // Modal elementos
+      const mmModal = document.getElementById('minmax-modal');
+      const mmCodeEl = document.getElementById('mm-product-code');
+      const mmDescEl = document.getElementById('mm-product-desc');
+      const mmMinInput = document.getElementById('mm-min');
+      const mmMaxInput = document.getElementById('mm-max');
+      const mmStatus = document.getElementById('mm-status');
+      const mmCancel = document.getElementById('mm-cancel');
+      const mmSave = document.getElementById('mm-save');
 
-      function normalize(v){ return (v||'').toString().trim().toLowerCase(); }
-      function findRowByCode(code){ const q=(code||'').toString().trim().toLowerCase(); const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); return rows.find(r => (r.dataset.code||'').toLowerCase()===q) || null; }
-      function setStatus(msg, kind='info'){ statusMsg.textContent=msg; statusMsg.className='text-sm '+(kind==='error'?'text-red-600':kind==='success'?'text-green-600':'text-gray-700'); }
-      function markRow(row, original, counted){ const statusCell=row.querySelector('.status-cell'); const countedCell=row.querySelector('.counted-cell'); if(!statusCell||!countedCell) return; countedCell.dataset.counted=counted; countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`; const diff = Math.abs(Number(original)-Number(counted)) < 1e-9; if(diff){ statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>'; row.style.display='none'; setStatus('Producto conciliado y ocultado de la lista', 'success'); } else { statusCell.innerHTML='<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>'; row.classList.add('bg-yellow-50'); } }
+      function openMinMaxModal(code) {
+        if (!code) return;
+        const row = findRowByCode(code);
+        const desc = row ? (row.querySelector('.desc-cell')?.textContent || '') : '';
+        // Obtener depósito destino específico desde la fila; fallback al global
+        const rowDestStore = row && row.dataset.destStore ? row.dataset.destStore.trim().toUpperCase() : (destinationStore || '').toUpperCase();
+        mmCodeEl.textContent = code.toUpperCase();
+        mmDescEl.textContent = desc;
+        // Mostrar depósito destino en el modal
+        const mmDestEl = document.getElementById('mm-destination-store');
+        if (mmDestEl) mmDestEl.textContent = rowDestStore || 'N/D';
+        // Guardar depósito destino actual para uso en guardar
+        window.__currentMinMaxDestStore = rowDestStore;
+        mmStatus.textContent = '';
+        mmStatus.className = 'text-sm text-gray-600';
+        mmMinInput.value = ''; mmMaxInput.value = '';
+        mmModal.classList.remove('hidden');
+        mmModal.classList.add('flex');
+        try {
+          const url = new URL('{{ url_for("api_get_minmax_product_failure") }}', window.location.origin);
+          url.searchParams.set('product_code', code.toUpperCase());
+          if (rowDestStore) { url.searchParams.set('store_code', rowDestStore); }
+          fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json().then(d => ({ ok: r.ok, data: d })))
+            .then(res => {
+              if (!res.ok || !res.data.ok) { mmStatus.textContent = (res.data.error || 'Error consultando min/max'); mmStatus.className = 'text-sm text-red-600'; return; }
+              if (res.data.minimal_stock !== null && res.data.minimal_stock !== undefined) mmMinInput.value = res.data.minimal_stock;
+              if (res.data.maximum_stock !== null && res.data.maximum_stock !== undefined) mmMaxInput.value = res.data.maximum_stock;
+              mmMinInput.focus(); try { mmMinInput.select(); } catch (e) { }
+            })
+            .catch(() => { mmStatus.textContent = 'Error cargando min/max'; mmStatus.className = 'text-sm text-red-600'; });
+        } catch (_) { mmStatus.textContent = 'Error iniciando consulta'; mmStatus.className = 'text-sm text-red-600'; }
+      }
+      function closeMinMaxModal() { mmModal.classList.add('hidden'); mmModal.classList.remove('flex'); }
+      mmCancel && mmCancel.addEventListener('click', () => { closeMinMaxModal(); });
+      mmSave && mmSave.addEventListener('click', async () => {
+        const code = mmCodeEl.textContent.trim().toUpperCase();
+        if (!code) { mmStatus.textContent = 'Código vacío'; mmStatus.className = 'text-sm text-red-600'; return; }
+        const vMinRaw = mmMinInput.value; const vMaxRaw = mmMaxInput.value;
+        let vMin = vMinRaw === '' ? '' : Number(vMinRaw); let vMax = vMaxRaw === '' ? '' : Number(vMaxRaw);
+        if (vMin !== '' && (isNaN(vMin) || vMin < 0)) { mmStatus.textContent = 'Mínimo inválido'; mmStatus.className = 'text-sm text-red-600'; return; }
+        if (vMax !== '' && (isNaN(vMax) || vMax < 0)) { mmStatus.textContent = 'Máximo inválido'; mmStatus.className = 'text-sm text-red-600'; return; }
+        if (vMin !== '' && vMax !== '' && vMax < vMin) { mmStatus.textContent = 'Máximo < Mínimo'; mmStatus.className = 'text-sm text-red-600'; return; }
+        try {
+          mmStatus.textContent = 'Guardando...'; mmStatus.className = 'text-sm text-gray-600';
+          const formData = new URLSearchParams();
+          formData.set('product_code', code);
+          formData.set('minimal_stock', vMinRaw);
+          formData.set('maximum_stock', vMaxRaw);
+          const destStoreToSave = (window.__currentMinMaxDestStore || destinationStore || '').toUpperCase();
+          if (destStoreToSave) formData.set('store_code', destStoreToSave);
+          const res = await fetch('{{ url_for("api_update_minmax_product_failure") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Error guardando');
+          mmStatus.textContent = 'Guardado'; mmStatus.className = 'text-sm text-green-600';
+          // Cerrar modal inmediatamente y enfocar cantidad contada
+          closeMinMaxModal();
+          if (countedInput) { countedInput.focus(); try { countedInput.select(); } catch (e) { } }
+        } catch (e) { mmStatus.textContent = e.message; mmStatus.className = 'text-sm text-red-600'; }
+      });
+
+      function normalize(v) { return (v || '').toString().trim().toLowerCase(); }
+      function findRowByCode(code) { const q = (code || '').toString().trim().toLowerCase(); const rows = Array.from(tableBody.querySelectorAll('tr[data-code]')); return rows.find(r => (r.dataset.code || '').toLowerCase() === q) || null; }
+      function setStatus(msg, kind = 'info') { statusMsg.textContent = msg; statusMsg.className = 'text-sm ' + (kind === 'error' ? 'text-red-600' : kind === 'success' ? 'text-green-600' : 'text-gray-700'); }
+      function markRow(row, original, counted) { const statusCell = row.querySelector('.status-cell'); const countedCell = row.querySelector('.counted-cell'); if (!statusCell || !countedCell) return; countedCell.dataset.counted = counted; countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`; const diff = Math.abs(Number(original) - Number(counted)) < 1e-9; if (diff) { statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>'; row.style.display = 'none'; setStatus('Producto conciliado y ocultado de la lista', 'success'); } else { statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>'; row.classList.add('bg-yellow-50'); } }
 
       applyBtn && applyBtn.addEventListener('click', async () => {
         let code = normalize(searchInput.value);
         const countedRaw = countedInput.value;
-        if (!code){ setStatus('Ingresa un código primero', 'error'); return; }
+        if (!code) { setStatus('Ingresa un código primero', 'error'); return; }
         let row = findRowByCode(code);
-        if (!row){
+        if (!row) {
           try {
             const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin);
             url.searchParams.set('correlative', correlative ?? '');
             url.searchParams.set('query', code);
-            const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
-            if (res.ok){ const data = await res.json(); if (data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); } }
-          } catch(e){}
+            const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (res.ok) { const data = await res.json(); if (data && data.ok && data.product_code) { code = String(data.product_code); row = findRowByCode(code); } }
+          } catch (e) { }
         }
-        if (!row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+        if (!row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
         let countedVal = Number(String(countedRaw).replace(',', '.'));
-        if (isNaN(countedVal) || countedVal < 0){ setStatus('Cantidad contada inválida', 'error'); return; }
+        if (isNaN(countedVal) || countedVal < 0) { setStatus('Cantidad contada inválida', 'error'); return; }
         const original = Number(row.querySelector('[data-original]').dataset.original);
-        if (correlative === null){ setStatus('No hay correlativo cargado.', 'error'); return; }
+        if (correlative === null) { setStatus('No hay correlativo cargado.', 'error'); return; }
         try {
           // Sólo chequeo: no modificar DB, actualizar UI localmente
           markRow(row, original, countedVal);
           setStatus('Conteo aplicado (no se grabó en DB)', 'success');
-          searchInput.value=''; countedInput.value='';
-          if (manualInput) { manualInput.value=''; }
-          try{ searchInput.focus(); }catch(e){}
-          try { reevaluateFinalizeState(); } catch(_){ }
-        } catch(e){ setStatus(e.message, 'error'); }
+          searchInput.value = ''; countedInput.value = '';
+          if (manualInput) { manualInput.value = ''; }
+          try { searchInput.focus(); } catch (e) { }
+          try { reevaluateFinalizeState(); } catch (_) { }
+        } catch (e) { setStatus(e.message, 'error'); }
       });
 
       finalizeBtn && finalizeBtn.addEventListener('click', async () => {
-        if (correlative === null){ setStatus('Sin correlativo', 'error'); return; }
+        if (correlative === null) { setStatus('Sin correlativo', 'error'); return; }
         finalizeBtn.disabled = true; setStatus('Validando recepción ...');
         try {
           const rows = Array.from(tableBody.querySelectorAll('tr[data-code]'));
@@ -201,50 +349,50 @@
           const countedCodes = [];
           rows.forEach(r => {
             const cell = r.querySelector('.counted-cell');
-            if (cell && cell.dataset.counted !== ''){ counts[r.dataset.code] = Number(cell.dataset.counted); countedCodes.push(r.dataset.code); }
+            if (cell && cell.dataset.counted !== '') { counts[r.dataset.code] = Number(cell.dataset.counted); countedCodes.push(r.dataset.code); }
           });
           const formData = new URLSearchParams();
           formData.set('correlative', correlative);
           formData.set('counted_codes', countedCodes.join(','));
           formData.set('counts', JSON.stringify(counts));
-          const res = await fetch('{{ url_for("api_reception_confirm") }}', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString() });
+          const res = await fetch('{{ url_for("api_reception_confirm") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || 'Error en validación de recepción');
           setStatus(data.message || 'Recepción validada', 'success');
           const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
           window.open(pdfUrl, '_blank');
-        } catch(e){ setStatus(e.message, 'error'); }
+        } catch (e) { setStatus(e.message, 'error'); }
         finally { finalizeBtn.disabled = false; }
       });
 
       // Suprimir teclado virtual en móviles (scanner conectado)
       if (searchInput && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         // Reaplicar atributos defensivamente
-        searchInput.setAttribute('inputmode','none');
-        searchInput.setAttribute('autocomplete','off');
-        searchInput.setAttribute('autocorrect','off');
-        searchInput.setAttribute('spellcheck','false');
+        searchInput.setAttribute('inputmode', 'none');
+        searchInput.setAttribute('autocomplete', 'off');
+        searchInput.setAttribute('autocorrect', 'off');
+        searchInput.setAttribute('spellcheck', 'false');
         // Evitar que un tap abra el teclado
         searchInput.addEventListener('touchstart', (e) => {
           e.preventDefault();
           searchInput.focus({ preventScroll: true });
           // Algunos navegadores experimentales
           if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
-            try { navigator.virtualKeyboard.hide(); } catch(_){}
+            try { navigator.virtualKeyboard.hide(); } catch (_) { }
           }
         }, { passive: false });
         // En foco, intentar ocultar si abre
         searchInput.addEventListener('focus', () => {
           if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
-            try { navigator.virtualKeyboard.hide(); } catch(_){}
+            try { navigator.virtualKeyboard.hide(); } catch (_) { }
           }
         });
       }
 
       searchInput && searchInput.addEventListener('input', () => {
         const code = normalize(searchInput.value);
-        Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
-        if (!code) return; const row=findRowByCode(code); if (row){ row.classList.add('collection-highlight'); }
+        Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring', 'ring-indigo-300', 'collection-highlight'));
+        if (!code) return; const row = findRowByCode(code); if (row) { row.classList.add('collection-highlight'); }
       });
 
       // Sincronizar input manual con buscador (para permitir teclado normal)
@@ -258,38 +406,57 @@
           e.preventDefault();
           searchInput.value = manualInput.value;
           const code = normalize(manualInput.value);
-          if (!code){ setStatus('Ingresa un código primero', 'error'); return; }
+          if (!code) { setStatus('Ingresa un código primero', 'error'); return; }
           const result = await resolveToRow(code);
-          if (!result.row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          if (!result.row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
           Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('collection-highlight'));
           result.row.classList.add('collection-highlight');
-          countedInput.focus(); try{ countedInput.select(); }catch(e){}
+          // Abrir modal y enfocar existencia mínima (sin pasar a cantidad contada todavía)
+          openMinMaxModal(result.code);
         }
       });
 
-      async function resolveToRow(code){ let row=findRowByCode(code); if(!row){ try{ const url=new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res=await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }}); if(res.ok){ const data=await res.json(); if(data && data.ok && data.product_code){ code=String(data.product_code); row=findRowByCode(code); if(row){ searchInput.value=code; } } } }catch(e){} } return { row, code }; }
+      async function resolveToRow(code) { let row = findRowByCode(code); if (!row) { try { const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } }); if (res.ok) { const data = await res.json(); if (data && data.ok && data.product_code) { code = String(data.product_code); row = findRowByCode(code); if (row) { searchInput.value = code; } } } } catch (e) { } } return { row, code }; }
 
       searchInput && searchInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          const code=normalize(searchInput.value);
-          if(!code){ setStatus('Ingresa un código primero', 'error'); return; }
-          const result=await resolveToRow(code);
-          if(!result.row){ setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
-          Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300'));
+          const code = normalize(searchInput.value);
+          if (!code) { setStatus('Ingresa un código primero', 'error'); return; }
+          const result = await resolveToRow(code);
+          if (!result.row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring', 'ring-indigo-300'));
           result.row.classList.add('collection-highlight');
-          countedInput.focus(); try{ countedInput.select(); }catch(e){}
+          // Abrir modal y enfocar mm-min
+          openMinMaxModal(result.code);
+        }
+      });
+
+      // Flujo Enter dentro de modal min/max
+      mmMinInput && mmMinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (mmMaxInput) { mmMaxInput.focus(); try { mmMaxInput.select(); } catch (err) { } }
+        }
+      });
+      mmMaxInput && mmMaxInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          // Disparar guardado y luego enfoque irá a cantidad contada (en handler mmSave)
+          mmSave && mmSave.click();
         }
       });
 
       countedInput && countedInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.focus(); } });
       applyBtn && applyBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); } });
 
-      function allRowsCounted(){ const rows=Array.from(tableBody.querySelectorAll('tr[data-code]')); if(rows.length===0) return false; return rows.every(r => { const countedCell=r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
-      function reevaluateFinalizeState(){ if(!finalizeBtn) return; // Siempre activo para permitir validación parcial
-        finalizeBtn.disabled = false; }
+      function allRowsCounted() { const rows = Array.from(tableBody.querySelectorAll('tr[data-code]')); if (rows.length === 0) return false; return rows.every(r => { const countedCell = r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
+      function reevaluateFinalizeState() {
+        if (!finalizeBtn) return; // Siempre activo para permitir validación parcial
+        finalizeBtn.disabled = false;
+      }
       reevaluateFinalizeState();
     });
-    </script>
-        </div>
- {% endblock %}
+  </script>
+</div>
+{% endblock %}

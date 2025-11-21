@@ -793,8 +793,7 @@ def get_inventory_operations_details_by_correlative(main_correlative: int, produ
 
     sql = """
                 select 
-                iod.code_product,
-                iod.description_product,
+                iod.*,
                 u.description as unit_description, 
                 pf.location,
                 iod.amount

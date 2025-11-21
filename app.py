@@ -187,7 +187,13 @@ def api_update_minmax_product_failure():
     Usa el depósito desde sesión (session['store']) si no se envía store_code explícito.
     """
     product_code = request.form.get("product_code")
-    store_code = session.get("store_code_destination")
+    # Normalizar a MAYÚSCULAS para consistencia con la base
+    if product_code:
+        product_code = product_code.strip().upper()
+    # Permitir recibir store_code explícito (fallback a sesión) y normalizar a MAYÚSCULAS
+    store_code = request.form.get("store_code")
+    if store_code:
+        store_code = str(store_code).strip().upper()
     minimal_stock = request.form.get("minimal_stock")
     maximum_stock = request.form.get("maximum_stock")
 
@@ -224,6 +230,40 @@ def api_update_minmax_product_failure():
                 "maximum_stock": mx,
             }
         )
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/product_failure/get_minmax", methods=["GET"])
+def api_get_minmax_product_failure():
+    """Devuelve minimal_stock y maximum_stock para un producto en un depósito destino.
+    Si no existe registro en products_failures retorna valores None.
+    Parámetros:
+      - product_code (str)
+      - store_code (str, opcional si existe en session['store_code_destination'])
+    """
+    product_code = request.args.get("product_code")
+    if product_code:
+        product_code = product_code.strip().upper()
+    store_code = request.args.get("store_code") or session.get("store_code_destination")
+    if store_code:
+        store_code = str(store_code).strip().upper()
+    if not product_code or not store_code:
+        return jsonify({"ok": False, "error": "Faltan product_code o store_code"}), 400
+    try:
+        rows = search_product_failure(product_code, store_code) or []
+        minimal_stock = None
+        maximum_stock = None
+        if rows:
+            r = rows[0]
+            minimal_stock = r.get("minimal_stock")
+            maximum_stock = r.get("maximum_stock")
+        return jsonify({
+            "ok": True,
+            "product_code": product_code,
+            "store_code": store_code,
+            "minimal_stock": minimal_stock,
+            "maximum_stock": maximum_stock
+        })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -367,7 +407,6 @@ def create_collection_order():
         if b and b not in seen_b:
             seen_b.add(b)
             brands.append(b)
-    print("estos son los productos que reviuso ->",products)
     return render_template(
         "create_collection_order.html",
         products=products,
@@ -799,7 +838,7 @@ def save_collection_order():
             "operation_comments": "Orden creada desde interfaz Repostock",
             "total": sum([it["quantity"] for it in items]),
         }
-
+        print("esto es lo que voy a guardar: ", transfer_data, items)
         try:
             # Crear la ORDER_COLLECTION con descripción inicial de no validada
             order_id = save_transfer_order_in_wait(transfer_data, "La operacion aun no ha sido validada")
@@ -848,7 +887,6 @@ def check_order_collection():
                 desc = (header.get("description") or "").strip().lower()
                 # Se considera validada si ya fue marcada con el formato nuevo o el anterior
                 validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
-                print("este es mi header", header)
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
     return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
@@ -884,6 +922,8 @@ def api_collection_order_update_count():
         return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+    
+
 @app.route("/check_transfer_reception", methods=["GET"])
 def check_transfer_reception():
     """Pantalla para chequear la recepción de una TRANSFER procesada (wait=false)."""
@@ -900,6 +940,7 @@ def check_transfer_reception():
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative, header.get("destination_store"))
                 # Ignorar estado de descripción para permitir múltiples validaciones
+                print("esto es el detalle: ", details)
             else:
                 # Fallback: buscar en espera (wait=true) para informar al usuario que aún no está procesada
                 pending_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
@@ -1109,7 +1150,6 @@ def api_reception_add_item():
 @app.route("/api/reception/resolve_code", methods=["GET"])
 def api_reception_resolve_code():
     correlative = request.args.get("correlative", type=int)
-    print("este es el correlativo que recibo ->", correlative)
     query = (request.args.get("query") or "").strip()
     if not correlative or not query:
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
@@ -1185,7 +1225,6 @@ def api_collection_order_confirm_transfer():
             )
     except Exception as e:
         return jsonify({"ok": False, "error": f"Validación de conteo falló: {e}"}), 400
-
     # Nuevo flujo: NO crear nueva operación; sólo actualizar descripción de la existente.
     try:
         existing_document_no = get_document_no_inventory_operation(source_correlative)

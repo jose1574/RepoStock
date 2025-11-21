@@ -79,6 +79,8 @@
                         <tr>
                             <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Código</th>
                             <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Descripción</th>
+                            <th class="text-left px-4 py-2 text-sm font-medium text-gray-700">Ubicación</th>
+
                             <th id="options" class="text-left px-4 py-2 text-sm font-medium text-gray-700">Opciones</th>
                         </tr>
                     </thead>
@@ -87,6 +89,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 text-sm text-gray-800" data-label="Código">{{ product.code }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800" data-label="Descripción">{{ product.description }}</td>
+                            <td class="px-4 py-2 text-sm text-gray-800" data-label="Ubicación">{{ product.location }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800 action-cell" data-label="Opciones">
                                 <form action="{{ url_for('delete_product', code=product.code) }}" method="post">
                                      <button type="submit"
