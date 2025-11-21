@@ -790,24 +790,29 @@ def delete_inventory_operation_by_correlative(correlative: int):
 def get_inventory_operations_details_by_correlative(main_correlative: int, product_failure_store: str = None):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
     conn = get_db_connection()
-
+    print("este es el correlavito que recibo: ", main_correlative)
+    # NOTA: Antes se filtraba con "AND pu.main_unit = true" en el WHERE.
+    # Eso convertía el LEFT JOIN a products_units en un JOIN efectivo, descartando
+    # cualquier línea cuyo "iod.unit" no tenga unidad principal (o esté NULL),
+    # provocando que no se devolvieran todas las líneas del correlativo.
+    # Se elimina ese filtro para retornar todas las líneas. Si se necesita la unidad
+    # principal, se puede validar en aplicación o agregar un CASE.
     sql = """
-                select 
-                iod.*,
-                u.description as unit_description, 
-                pf.location,
-                iod.amount
-                from inventory_operation_details as iod
-                /* Evitar duplicados: ubicar por producto y deposito destino */
-                left join products_failures as pf 
-                    on iod.code_product = pf.product_code
-                   and pf.store_code = COALESCE(%s, iod.destination_store)
-                left join products_units as pu on iod.unit = pu.correlative
-                left join units as u on (u.code = pu.unit)
-                where iod.main_correlative = %s
-                and pu.main_unit = true
-                order by pf.location;
-        """
+        SELECT 
+            iod.*,
+            u.description AS unit_description,
+            pf.location
+        FROM inventory_operation_details AS iod
+        LEFT JOIN products_failures AS pf 
+            ON iod.code_product = pf.product_code
+           AND pf.store_code = COALESCE(%s, iod.destination_store)
+        LEFT JOIN products_units AS pu 
+            ON iod.unit = pu.correlative
+        LEFT JOIN units AS u 
+            ON u.code = pu.unit
+        WHERE iod.main_correlative = %s
+        ORDER BY pf.location NULLS LAST, iod.line NULLS LAST;
+    """
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (product_failure_store, main_correlative))

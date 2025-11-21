@@ -938,7 +938,7 @@ def check_transfer_reception():
             rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
             if rows and len(rows) > 0:
                 header = rows[0]
-                details = get_inventory_operations_details_by_correlative(correlative, header.get("destination_store"))
+                details = get_inventory_operations_details_by_correlative(correlative)
                 # Ignorar estado de descripción para permitir múltiples validaciones
                 print("esto es el detalle: ", details)
             else:
@@ -1418,25 +1418,25 @@ def api_collection_order_product_stock():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    try:
-        port = int(os.environ.get("APP_PORT", "5001"))
-    except Exception:
-        port = 5001
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("APP_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
 
-    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    if use_waitress:
-        try:
-            from waitress import serve
-            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-            serve(app, host=host, port=port, threads=threads)
-        except Exception as e:
-            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-            app.run(debug=False, host=host, port=port)
-    else:
-        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-        app.run(debug=debug, host=host, port=port)
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)
