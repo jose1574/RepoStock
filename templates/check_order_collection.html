@@ -16,10 +16,10 @@ para que coincida con lo que se va a trasladar entre depositos. -->
       .collection-highlight td { transition: background-color .15s ease; }
    </style>
 
-   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
+   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header and not validated else '' }}">
       <div>
          <label for="correlative" class="block text-sm font-medium text-gray-700">Ingrese el numero de <b>Correlativo</b> del documento</label>
-         <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48" placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
+         <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48" placeholder="Ingrese codigo de barra" value="{{ correlative if correlative else '' }}">
       </div>
       <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Cargar</button>
    </form>
@@ -48,6 +48,56 @@ para que coincida con lo que se va a trasladar entre depositos. -->
          <button id="finalize-transfer" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Generar TRASLADO en espera</button>
          <span id="status-msg" class="text-sm text-gray-700"></span>
       </div>
+
+      <!-- Modal conteo producto (similar a minmax-modal pero simplificado) -->
+      <div id="count-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+         <div class="bg-white rounded shadow-lg w-full max-w-md p-4 space-y-4">
+            <h2 class="text-lg font-semibold">Conteo de producto</h2>
+            <div class="text-sm text-gray-600"><span class="font-medium">Código:</span> <span id="cm-code" class="font-mono"></span></div>
+            <div class="text-sm text-gray-600"><span class="font-medium">Descripción:</span> <span id="cm-desc"></span></div>
+            <div class="text-sm text-gray-600"><span class="font-medium">Unidad:</span> <span id="cm-unit"></span></div>
+            <div class="text-sm text-gray-600"><span class="font-medium">Cant. Orden:</span> <span id="cm-original"></span></div>
+            <div class="flex items-center gap-3">
+               <label for="cm-qty" class="w-32 text-sm text-gray-700">Cantidad contada</label>
+               <input id="cm-qty" type="number" step="any" min="0" class="border rounded px-2 py-1 w-40 text-right" />
+            </div>
+            <p id="cm-status" class="text-sm"></p>
+            <div class="flex justify-end gap-2 pt-2">
+               <button type="button" id="cm-cancel" class="px-3 py-1 rounded bg-gray-200">Cancelar</button>
+               <button type="button" id="cm-apply" class="px-3 py-1 rounded bg-indigo-600 text-white">Aplicar Conteo</button>
+            </div>
+         </div>
+      </div>
+         <!-- Modal alerta diferencia en conteo -->
+         <div id="mismatch-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-red-600">
+               <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
+                  <h3 class="text-lg font-semibold text-red-700">Diferencia en conteo</h3>
+               </div>
+               <p class="text-sm text-red-700" id="mmw-message"></p>
+               <div class="text-xs text-red-600" id="mmw-detail"></div>
+               <div class="flex justify-end">
+                  <button type="button" id="mmw-close" class="px-4 py-1 rounded bg-red-600 text-white">Cerrar</button>
+               </div>
+            </div>
+         </div>
+         <!-- Modal confirmar validación con diferencias -->
+         <div id="diff-validation-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-yellow-500">
+               <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 text-white font-bold">?</span>
+                  <h3 class="text-lg font-semibold text-yellow-700">Validar con diferencias</h3>
+               </div>
+               <p class="text-sm text-yellow-700" id="diff-validation-text">Se detectaron diferencias. ¿Desea generar el traslado en espera con las diferencias encontradas?</p>
+               <div class="flex justify-end gap-2">
+                  <button type="button" id="diff-no" class="px-4 py-1 rounded bg-gray-200 text-gray-800">No, seguir contando</button>
+                  <button type="button" id="diff-yes" class="px-4 py-1 rounded bg-yellow-600 text-white">Sí, validar</button>
+               </div>
+            </div>
+         </div>
 
       <!-- Modal agregar producto no encontrado -->
       <div id="add-item-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
@@ -123,9 +173,8 @@ para que coincida con lo que se va a trasladar entre depositos. -->
       </div>
 
    {% elif correlative and validated %}
-      <p class="text-red-700 font-medium">No existe una orden con  {{ correlative }} por validar</p>
-      <div class="mt-4 p-4 border rounded bg-green-50 text-sm text-green-800">
-         <p>Descripción actual: {{ header.description }}</p>
+      <div class="mt-2 p-4 border rounded bg-green-50 text-sm text-green-800">
+         <p><span class="font-medium">Orden ya validada:</span> {{ header.description }}</p>
          <p>Depósito origen: {{ header.store }} | Depósito destino: {{ header.destination_store }}</p>
          <p>Fecha emisión: {{ header.emission_date }}</p>
       </div>
@@ -152,6 +201,63 @@ document.addEventListener('DOMContentLoaded', () => {
    const tableBody = document.getElementById('collection-items');
    if (!tableBody) return;
 
+     // Elementos modal conteo
+     const countModal = document.getElementById('count-modal');
+     const cmCode = document.getElementById('cm-code');
+     const cmDesc = document.getElementById('cm-desc');
+     const cmUnit = document.getElementById('cm-unit');
+     const cmOriginal = document.getElementById('cm-original');
+     const cmQty = document.getElementById('cm-qty');
+     const cmStatus = document.getElementById('cm-status');
+     const cmCancel = document.getElementById('cm-cancel');
+     const cmApply = document.getElementById('cm-apply');
+   // Mismatch modal elementos
+   const mismatchModal = document.getElementById('mismatch-modal');
+   const mmwMessage = document.getElementById('mmw-message');
+   const mmwDetail = document.getElementById('mmw-detail');
+   const mmwClose = document.getElementById('mmw-close');
+   // Modal validación con diferencias
+   const diffValidationModal = document.getElementById('diff-validation-modal');
+   const diffYes = document.getElementById('diff-yes');
+   const diffNo = document.getElementById('diff-no');
+   window.__awaitDiffValidation = false; // bandera para abrir modal de confirmación al cerrar mismatch si corresponde
+
+     function openCountModal(row){
+        if(!row) return;
+        const code = (row.dataset.code||'').toUpperCase();
+        const desc = row.children[1] ? row.children[1].textContent.trim() : '';
+        const unit = row.children[2] ? row.children[2].textContent.trim() : '';
+        const originalRaw = row.querySelector('[data-original]') ? row.querySelector('[data-original]').dataset.original : '';
+        let originalFmt = originalRaw;
+        try { const n = Number(originalRaw); if(!isNaN(n)) originalFmt = n.toFixed(3); } catch(_){}
+        cmCode.textContent = code;
+        cmDesc.textContent = desc;
+        if(cmUnit) cmUnit.textContent = unit || 'N/D';
+        if(cmOriginal) cmOriginal.textContent = originalFmt || 'N/D';
+        cmQty.value = '';
+        cmStatus.textContent = '';
+        cmStatus.className = 'text-sm text-gray-600';
+        countModal.classList.remove('hidden');
+        setTimeout(()=>{ try{ cmQty.focus(); cmQty.select(); }catch(e){} },50);
+     }
+     function closeCountModal(){ countModal.classList.add('hidden'); }
+     cmCancel && cmCancel.addEventListener('click', ()=>{ closeCountModal(); searchInput.focus(); });
+     cmApply && cmApply.addEventListener('click', ()=>{
+        const code = cmCode.textContent.trim();
+        if(!code){ cmStatus.textContent='Código vacío'; cmStatus.className='text-sm text-red-600'; return; }
+        const row = findRowByCode(code);
+        if(!row){ cmStatus.textContent='Fila no encontrada'; cmStatus.className='text-sm text-red-600'; return; }
+        const qtyRaw = cmQty.value.trim();
+        let countedVal = Number(String(qtyRaw).replace(',', '.'));
+        if(isNaN(countedVal) || countedVal < 0){ cmStatus.textContent='Cantidad inválida'; cmStatus.className='text-sm text-red-600'; return; }
+        // Reutilizar flujo existente: establecer inputs originales y disparar applyBtn
+        searchInput.value = code;
+        countedInput.value = countedVal;
+        closeCountModal();
+        applyBtn.click();
+     });
+     cmQty && cmQty.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); cmApply.click(); } });
+
    function normalize(v){ return (v||'').toString().trim().toLowerCase(); }
       function findRowByCode(code){
          const q = (code||'').toString().trim().toLowerCase();
@@ -161,6 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
    function setStatus(message, kind='info'){
       statusMsg.textContent = message;
       statusMsg.className = 'text-sm ' + (kind==='error' ? 'text-red-600' : kind==='success' ? 'text-green-600' : 'text-gray-700');
+   }
+   function hasDifferences(){
+      return Array.from(document.querySelectorAll('#collection-items tr[data-code]'))
+         .some(r => r.classList.contains('bg-yellow-50')); // diferencia marcada
    }
    function markRow(row, original, counted){
       const statusCell = row.querySelector('.status-cell');
@@ -178,8 +288,89 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
          statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>';
          row.classList.add('bg-yellow-50');
+             const code = (row.dataset.code||'').toUpperCase();
+             openMismatchModal(code, original, counted);
+             // Si tras aplicar este conteo ya no quedan pendientes y existen diferencias, preparar confirmación
+             try {
+                const pendingAfter = Array.from(document.querySelectorAll('#collection-items tr[data-code]'))
+                   .filter(r => r.querySelector('.counted-cell') && r.querySelector('.counted-cell').dataset.counted === '');
+                if (pendingAfter.length === 0 && hasDifferences()) {
+                   window.__awaitDiffValidation = true; // se abrirá al cerrar mismatch
+                }
+             } catch(_){}
+      }
+      // Re-evaluar habilitación del botón finalizar tras cada conteo
+      try { reevaluateFinalizeState(); } catch(_) {}
+         // Auto-generar TRANSFER si ya no quedan items por chequear
+         try {
+             const remaining = Array.from(document.querySelectorAll('#collection-items tr[data-code]'))
+                .filter(r => {
+                   const cCell = r.querySelector('.counted-cell');
+                   // Consideramos "por chequear" si no tiene conteo aplicado
+                   return cCell && cCell.dataset.counted === '';
+                });
+            if (remaining.length === 0 && !window.__autoFinalized) {
+               if (hasDifferences()) {
+                  // Existen diferencias: requerir confirmación
+                  if (!mismatchModal.classList.contains('flex')) { // si no hay mismatch abierto, abrir directamente
+                     openDiffValidationModal();
+                     window.__awaitDiffValidation = false; // ya mostrado
+                  } else {
+                     window.__awaitDiffValidation = true; // se mostrará tras cerrar mismatch
+                  }
+               } else {
+                  window.__autoFinalized = true;
+                  if (finalizeBtn) { finalizeBtn.disabled = false; finalizeBtn.click(); }
+               }
+            }
+         } catch(_){}
+   }
+
+   function openMismatchModal(code, original, counted){
+      if(!mismatchModal) return;
+      const diff = Number(counted) - Number(original);
+      mmwMessage.textContent = `El producto ${code} no cuadra con la cantidad de la orden.`;
+      mmwDetail.textContent = `Cant. orden: ${Number(original).toFixed(3)} | Cant. contada: ${Number(counted).toFixed(3)} | Diferencia: ${diff.toFixed(3)}`;
+      mismatchModal.classList.remove('hidden');
+      mismatchModal.classList.add('flex');
+      try { mmwClose.focus(); } catch(_){}
+   }
+   function closeMismatchModal(){
+      if(!mismatchModal) return;
+      mismatchModal.classList.add('hidden');
+      mismatchModal.classList.remove('flex');
+      // Si queda pendiente la confirmación por diferencias al final
+      if (window.__awaitDiffValidation) {
+         openDiffValidationModal();
+         window.__awaitDiffValidation = false;
       }
    }
+   mmwClose && mmwClose.addEventListener('click', ()=>{ closeMismatchModal(); searchInput && searchInput.focus(); });
+
+   function openDiffValidationModal(){
+      if (!diffValidationModal) return;
+      diffValidationModal.classList.remove('hidden');
+      diffValidationModal.classList.add('flex');
+      try { diffNo.focus(); } catch(_){}
+   }
+   function closeDiffValidationModal(){
+      if (!diffValidationModal) return;
+      diffValidationModal.classList.add('hidden');
+      diffValidationModal.classList.remove('flex');
+   }
+   diffYes && diffYes.addEventListener('click', ()=>{
+      closeDiffValidationModal();
+      // Proceder a validar (generar traslado) respetando flujo existente
+      window.__autoFinalized = true; // evitar doble ejecución
+      if (finalizeBtn) { finalizeBtn.disabled = false; finalizeBtn.click(); }
+   });
+   diffNo && diffNo.addEventListener('click', ()=>{
+      closeDiffValidationModal();
+      // Permitir seguir ajustando: mantener botón habilitado pero no auto-finalizar
+      window.__awaitDiffValidation = false; // limpiar bandera
+      setStatus('Continúa ajustando las cantidades antes de validar.', 'info');
+      try { searchInput.focus(); } catch(_){}
+   });
 
       applyBtn && applyBtn.addEventListener('click', async () => {
          let code = normalize(searchInput.value);
@@ -248,6 +439,10 @@ document.addEventListener('DOMContentLoaded', () => {
          // Abrir PDF de la TRANSFER en nueva pestaña
          const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=true';
          window.open(pdfUrl, '_blank');
+         // Redireccionar a la pantalla de chequeo de orden para mostrar estado actualizado
+         setTimeout(() => {
+            window.location.href = '{{ url_for("check_order_collection") }}' + '?correlative=' + data.transfer_correlative;
+         }, 600);
       } catch(e){ setStatus(e.message, 'error'); }
       finally { finalizeBtn.disabled = false; }
    });
@@ -341,11 +536,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return; 
          }
-         // resaltar y pasar el foco a cantidad
-            Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
-            result.row.classList.add('collection-highlight');
-         countedInput.focus();
-         try { countedInput.select(); } catch (e) {}
+         // Resaltar y abrir modal de conteo
+         Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring','ring-indigo-300','collection-highlight'));
+         result.row.classList.add('collection-highlight');
+         openCountModal(result.row);
       }
    });
 

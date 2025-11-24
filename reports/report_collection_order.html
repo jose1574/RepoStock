@@ -59,6 +59,9 @@
 
 <body>
     <h1>Orden de Recolección</h1>
+    <div id="barcode-wrapper" style="margin:10px 0; text-align:center;">
+        <svg id="barcode-correlative"></svg>
+    </div>
 
     <div class="meta">
         <div class="row">
@@ -101,4 +104,26 @@
         <div class="cell"><strong>Documento No.:</strong> {{ header.description or '' }}</div>
     </footer>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script>
+    (function(){
+        var corr = "{{ header.correlative or '' }}";
+        if(corr){
+            try {
+                JsBarcode('#barcode-correlative', corr.toString(), {
+                    format: 'code128',
+                    displayValue: true,
+                    fontSize: 14,
+                    height: 60,
+                    margin: 4,
+                    textMargin: 2
+                });
+            } catch(e){
+                console && console.warn('Error generando barcode:', e);
+                var el = document.getElementById('barcode-wrapper');
+                if(el){ el.innerHTML = '<div style="color:#c00;font-size:11px;">No se pudo generar código de barras</div>'; }
+            }
+        }
+    })();
+</script>
 </html>

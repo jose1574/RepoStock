@@ -99,13 +99,36 @@
         font-size: 0.75rem;
       }
     }
+
+    /* --- MinMax modal: estilos adaptativos móviles para evitar que el teclado lo cubra --- */
+    #minmax-modal .modal-panel { /* estilos base desktop */ }
+    @media (max-width:640px) {
+      #minmax-modal.flex { align-items: flex-end; }
+      #minmax-modal .modal-panel {
+        width:100%;
+        max-width:100%;
+        border-radius:0.75rem 0.75rem 0 0;
+        margin:0;
+        padding:0.9rem 1rem 1.3rem;
+        box-shadow:0 -2px 12px rgba(0,0,0,0.25);
+        max-height:75vh;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+      #minmax-modal .modal-panel h2 { font-size:1rem; margin-bottom:.25rem; }
+      #minmax-modal .modal-panel .text-sm { font-size:.75rem; }
+      #minmax-modal .modal-panel input { font-size:.85rem; }
+    }
+    @supports (padding: max(0px)) {
+      #minmax-modal .modal-panel { padding-bottom: max(env(safe-area-inset-bottom), 1.2rem); }
+    }
   </style>
 
   <form method="get" class="mb-6 flex items-end gap-3 {{ 'hidden' if correlative and header else '' }}">
     <div>
-      <label for="correlative" class="block text-sm font-medium text-gray-700">Correlativo de TRANSFER procesada</label>
+      <label for="correlative" class="block text-sm font-medium text-gray-700">Ingrese Correlativo de Traslado </label>
       <input type="number" name="correlative" id="correlative" required class="border rounded px-3 py-2 w-48"
-        placeholder="Ej: 1234" value="{{ correlative if correlative else '' }}">
+        placeholder="Codigo de barra" value="{{ correlative if correlative else '' }}">
     </div>
     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Cargar</button>
   </form>
@@ -119,28 +142,21 @@
   <div class="mb-4 text-sm text-gray-600 space-y-1">
     <p><span class="font-medium">Correlativo:</span> {{ correlative }}</p>
     <p><span class="font-medium">Depósito origen:</span> {{ header.origin_store_description }}</p>
-    <p><span class="font-medium">Depósito destino:</span> {{ header.destination_store_description }}</p>
     <p><span class="font-medium">Fecha emisión:</span> {{ header.emission_date }}</p>
-    <p class="text-xs text-gray-500">TRANSFER procesada (recepción sin chequear)</p>
   </div>
 
   <div class="flex flex-wrap items-center gap-3 mb-4 reception-actions">
     <div>
-      <label for="product-search" class="text-sm font-medium text-gray-700">Buscar código de barra</label>
+      <label for="product-search" class="text-sm font-medium text-gray-700">Código de barra</label>
       <input id="product-search" type="text" placeholder="pistolear codigo de barra"
         class="border rounded px-2 py-1 text-sm w-48" inputmode="none" autocomplete="off" autocorrect="off"
         spellcheck="false" enterkeyhint="done" />
     </div>
     <div>
-      <label for="manual-code" class="text-sm font-medium text-gray-700">Código manual</label>
-      <input id="manual-code" type="text" placeholder="Ingresar código manualmente"
+      <label for="manual-code" class="text-sm font-medium text-gray-700">Código Manual</label>
+      <input id="manual-code" type="text" placeholder="Ingresar código manual"
         class="border rounded px-2 py-1 text-sm w-48" autocomplete="off" autocapitalize="none" spellcheck="false" />
     </div>
-    <div>
-      <label for="counted-qty" class="text-sm font-medium text-gray-700">Cantidad contada</label>
-      <input id="counted-qty" type="number" step="any" min="0" class="border rounded px-2 py-1 text-sm w-32" />
-    </div>
-    <button id="apply-count" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Aplicar conteo</button>
     <button id="finalize-reception" type="button" class="px-3 py-1 bg-blue-600 text-white rounded">Validar
       recepción</button>
     <span id="status-msg" class="text-sm text-gray-700"></span>
@@ -187,14 +203,15 @@
   <!-- Modal edición min/max para depósito destino -->
   <div id="minmax-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
     <div class="absolute inset-0 bg-black/40"></div>
-    <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-3">
+    <div class="modal-panel relative bg-white rounded shadow-lg w-full max-w-md p-2 flex flex-col gap-3">
       <!-- muestra deposito de destindo -->
-      <div class="text-sm text-gray-600"><span class="font-medium">Depósito destino:</span> <span id="mm-destination-store"></span></div>
-      <h2 class="text-lg font-semibold">Editar existencias mínima y máxima (destino)</h2>
-      <div class="text-sm text-gray-600"><span class="font-medium">Producto:</span> <span id="mm-product-code"
+      <h2 class="text-lg font-semibold">Detalles del producto</h2>
+      <div class="text-sm text-gray-600"><span class="font-medium">codigo</span> <span id="mm-product-code"
           class="font-mono"></span></div>
       <div class="text-sm text-gray-600"><span class="font-medium">Descripción:</span> <span
           id="mm-product-desc"></span></div>
+      <div class="text-sm text-gray-600"><span class="font-medium">Unidad:</span> <span id="mm-product-unit"></span></div>
+        <div class="text-sm text-gray-600"><span class="font-medium">Cant. Orden:</span> <span id="mm-order-amount"></span></div>
       <div class="flex items-center gap-3">
         <label for="mm-min" class="w-32 text-sm text-gray-700">Existencia mínima</label>
         <input id="mm-min" type="number" min="0" step="1" class="border rounded px-2 py-1 w-40 text-right" />
@@ -203,10 +220,53 @@
         <label for="mm-max" class="w-32 text-sm text-gray-700">Existencia máxima</label>
         <input id="mm-max" type="number" min="0" step="1" class="border rounded px-2 py-1 w-40 text-right" />
       </div>
+      <div class="flex items-center gap-3">
+        <label for="counted-qty" class="w-32 text-sm text-gray-700">Cantidad contada</label>
+        <input id="counted-qty" type="number" step="any" min="0" class="border rounded px-2 py-1 w-40 text-right" />
+      </div>
       <p id="mm-status" class="text-sm"></p>
       <div class="flex justify-end gap-2 mt-2">
         <button type="button" id="mm-cancel" class="px-3 py-1 bg-gray-200 rounded">Cancelar</button>
-        <button type="button" id="mm-save" class="px-3 py-1 bg-indigo-600 text-white rounded">Guardar</button>
+        <button type="button" id="mm-save" class="px-3 py-1 bg-indigo-600 text-white rounded">Aplicar Conteo</button>
+      </div>
+    </div>
+  </div>
+  <div id="mismatch-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-red-600">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
+        <h3 class="text-lg font-semibold text-red-700">Diferencia en conteo</h3>
+      </div>
+      <p class="text-sm text-red-700" id="mmw-message"></p>
+      <div class="text-xs text-red-600" id="mmw-detail"></div>
+      <div class="flex justify-end">
+        <button type="button" id="mmw-close" class="px-4 py-1 rounded bg-red-600 text-white">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <div id="notfound-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-red-600">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
+        <h3 class="text-lg font-semibold text-red-700">Código no encontrado</h3>
+      </div>
+      <p class="text-sm text-red-700" id="nf-message"></p>
+      <div class="text-xs text-red-600" id="nf-detail"></div>
+      <div class="flex justify-end">
+        <button type="button" id="nf-close" class="px-4 py-1 rounded bg-red-600 text-white">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <div id="print-validation-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded shadow-lg w-full max-w-md p-5 flex flex-col gap-4 border-2 border-indigo-600">
+      <h3 class="text-lg font-semibold text-indigo-700">¿Desea imprimir la validación?</h3>
+      <p class="text-sm text-gray-700">Se han contado todos los productos del traslado. Puede generar el PDF o continuar sin imprimir.</p>
+      <div class="flex justify-end gap-3">
+        <button type="button" id="pv-no" class="px-4 py-1 rounded bg-gray-200 text-gray-800">No</button>
+        <button type="button" id="pv-si" class="px-4 py-1 rounded bg-indigo-600 text-white">Sí</button>
       </div>
     </div>
   </div>
@@ -216,10 +276,10 @@
       const notFound = metaDiv ? (metaDiv.dataset.notFound === '1') : false;
       const pending = metaDiv ? (metaDiv.dataset.pending === '1') : false;
       if (pending) {
-        alert('La TRANSFER existe pero aún está en espera (wait=true). Debe procesarse antes de chequear recepción.');
+        alert('El traslado existe pero aún está en espera (wait=true). Debe procesarse antes de chequear recepción.');
         try { document.getElementById('correlative').focus(); } catch (e) { }
       } else if (notFound) {
-        alert('No se encontró una TRANSFER procesada con ese correlativo.');
+        alert('No se encontró un traslado procesado con ese correlativo.');
         try { document.getElementById('correlative').focus(); } catch (e) { }
       }
 
@@ -243,15 +303,74 @@
       const mmStatus = document.getElementById('mm-status');
       const mmCancel = document.getElementById('mm-cancel');
       const mmSave = document.getElementById('mm-save');
+      // Mismatch modal elementos
+      const mismatchModal = document.getElementById('mismatch-modal');
+      const mmwMessage = document.getElementById('mmw-message');
+      const mmwDetail = document.getElementById('mmw-detail');
+      const mmwClose = document.getElementById('mmw-close');
+      // Not found modal elementos
+      const notFoundModal = document.getElementById('notfound-modal');
+      const nfMessage = document.getElementById('nf-message');
+      const nfDetail = document.getElementById('nf-detail');
+      const nfClose = document.getElementById('nf-close');
+      // Print validation modal elementos
+      const pvModal = document.getElementById('print-validation-modal');
+      const pvNo = document.getElementById('pv-no');
+      const pvSi = document.getElementById('pv-si');
+      function openMismatchModal(code, original, counted) {
+        if (!mismatchModal) return;
+        const diff = Number(counted) - Number(original);
+        mmwMessage.textContent = `El producto ${code} no cuadra con la cantidad del traslado.`;
+        mmwDetail.textContent = `Cant. traslado: ${Number(original).toFixed(3)} | Cant. contada: ${Number(counted).toFixed(3)} | Diferencia: ${diff.toFixed(3)}`;
+        mismatchModal.classList.remove('hidden');
+        mismatchModal.classList.add('flex');
+        try { mmwClose.focus(); } catch (_) {}
+      }
+      function closeMismatchModal() {
+        if (!mismatchModal) return;
+        mismatchModal.classList.add('hidden');
+        mismatchModal.classList.remove('flex');
+        // Si estaba pendiente mostrar modal de impresión, hacerlo ahora
+        if (window.__pendingPrintModal && pvModal) {
+          pvModal.classList.remove('hidden');
+          pvModal.classList.add('flex');
+          window.__printModalShown = true;
+          window.__pendingPrintModal = false;
+        }
+      }
+      mmwClose && mmwClose.addEventListener('click', () => { closeMismatchModal(); searchInput && searchInput.focus(); });
+      function openNotFoundModal(code) {
+        if (!notFoundModal) return;
+        nfMessage.textContent = 'El código ingresado no corresponde a ningún producto del traslado.';
+        nfDetail.textContent = `Ingresado: ${String(code || '').toUpperCase()}`;
+        notFoundModal.classList.remove('hidden');
+        notFoundModal.classList.add('flex');
+        try { nfClose.focus(); } catch (_) {}
+      }
+      function closeNotFoundModal() {
+        if (!notFoundModal) return;
+        notFoundModal.classList.add('hidden');
+        notFoundModal.classList.remove('flex');
+      }
+      nfClose && nfClose.addEventListener('click', () => { closeNotFoundModal(); searchInput && searchInput.focus(); });
 
       function openMinMaxModal(code) {
         if (!code) return;
         const row = findRowByCode(code);
         const desc = row ? (row.querySelector('.desc-cell')?.textContent || '') : '';
+        const orderedAmount = row ? (row.querySelector('[data-original]')?.dataset.original || '') : '';
+        const unitTxt = row ? (row.querySelector('[data-label="Unidad"]')?.textContent || '') : '';
         // Obtener depósito destino específico desde la fila; fallback al global
         const rowDestStore = row && row.dataset.destStore ? row.dataset.destStore.trim().toUpperCase() : (destinationStore || '').toUpperCase();
         mmCodeEl.textContent = code.toUpperCase();
         mmDescEl.textContent = desc;
+        const mmUnitEl = document.getElementById('mm-product-unit');
+        if (mmUnitEl) { mmUnitEl.textContent = unitTxt || 'N/D'; }
+        // Mostrar cantidad orden en modal
+        const mmOrderEl = document.getElementById('mm-order-amount');
+        if (mmOrderEl) {
+          mmOrderEl.textContent = orderedAmount ? Number(orderedAmount).toFixed(3) : 'N/D';
+        }
         // Mostrar depósito destino en el modal
         const mmDestEl = document.getElementById('mm-destination-store');
         if (mmDestEl) mmDestEl.textContent = rowDestStore || 'N/D';
@@ -272,12 +391,21 @@
               if (!res.ok || !res.data.ok) { mmStatus.textContent = (res.data.error || 'Error consultando min/max'); mmStatus.className = 'text-sm text-red-600'; return; }
               if (res.data.minimal_stock !== null && res.data.minimal_stock !== undefined) mmMinInput.value = res.data.minimal_stock;
               if (res.data.maximum_stock !== null && res.data.maximum_stock !== undefined) mmMaxInput.value = res.data.maximum_stock;
+              console.log('esto es lo que recibo de data: ', res.data);
+              
               mmMinInput.focus(); try { mmMinInput.select(); } catch (e) { }
+              ensureFocusVisible(mmMinInput);
             })
             .catch(() => { mmStatus.textContent = 'Error cargando min/max'; mmStatus.className = 'text-sm text-red-600'; });
         } catch (_) { mmStatus.textContent = 'Error iniciando consulta'; mmStatus.className = 'text-sm text-red-600'; }
       }
       function closeMinMaxModal() { mmModal.classList.add('hidden'); mmModal.classList.remove('flex'); }
+      function ensureFocusVisible(el){
+        if(!el) return;
+        if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+        setTimeout(()=>{ try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_){ } },120);
+      }
+      [mmMinInput, mmMaxInput, countedInput].forEach(inp=>{ if(inp){ inp.addEventListener('focus',()=>ensureFocusVisible(inp)); }});
       mmCancel && mmCancel.addEventListener('click', () => { closeMinMaxModal(); });
       mmSave && mmSave.addEventListener('click', async () => {
         const code = mmCodeEl.textContent.trim().toUpperCase();
@@ -298,17 +426,67 @@
           const res = await fetch('{{ url_for("api_update_minmax_product_failure") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || 'Error guardando');
-          mmStatus.textContent = 'Guardado'; mmStatus.className = 'text-sm text-green-600';
-          // Cerrar modal inmediatamente y enfocar cantidad contada
+          // Guardado correcto de min/max
+          mmStatus.textContent = 'Min/Max guardado'; mmStatus.className = 'text-sm text-green-600';
+          // Aplicar conteo si se ingresó cantidad
+          const countedRaw = countedInput ? countedInput.value.trim() : '';
+          if (countedRaw !== '') {
+            let countedVal = Number(countedRaw.replace(',', '.'));
+            if (!isNaN(countedVal) && countedVal >= 0) {
+              const row = findRowByCode(code);
+              if (row) {
+                const original = Number(row.querySelector('[data-original]').dataset.original);
+                markRow(row, original, countedVal);
+                setStatus('Conteo aplicado');
+              } else {
+                setStatus('No se encontró la fila para conteo', 'error');
+              }
+            } else {
+              setStatus('Cantidad contada inválida (no aplicada)', 'error');
+            }
+          } else {
+            setStatus('Min/Max guardado (sin conteo)', 'info');
+          }
+          // Limpiar y cerrar modal
+          if (countedInput) countedInput.value = '';
           closeMinMaxModal();
-          if (countedInput) { countedInput.focus(); try { countedInput.select(); } catch (e) { } }
+          // Preparar siguiente escaneo: limpiar códigos
+          if (searchInput) { searchInput.value = ''; }
+          if (manualInput) { manualInput.value = ''; }
+          try { searchInput && searchInput.focus(); } catch (_) {}
         } catch (e) { mmStatus.textContent = e.message; mmStatus.className = 'text-sm text-red-600'; }
       });
 
       function normalize(v) { return (v || '').toString().trim().toLowerCase(); }
       function findRowByCode(code) { const q = (code || '').toString().trim().toLowerCase(); const rows = Array.from(tableBody.querySelectorAll('tr[data-code]')); return rows.find(r => (r.dataset.code || '').toLowerCase() === q) || null; }
       function setStatus(msg, kind = 'info') { statusMsg.textContent = msg; statusMsg.className = 'text-sm ' + (kind === 'error' ? 'text-red-600' : kind === 'success' ? 'text-green-600' : 'text-gray-700'); }
-      function markRow(row, original, counted) { const statusCell = row.querySelector('.status-cell'); const countedCell = row.querySelector('.counted-cell'); if (!statusCell || !countedCell) return; countedCell.dataset.counted = counted; countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`; const diff = Math.abs(Number(original) - Number(counted)) < 1e-9; if (diff) { statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>'; row.style.display = 'none'; setStatus('Producto conciliado y ocultado de la lista', 'success'); } else { statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>'; row.classList.add('bg-yellow-50'); } }
+      function markRow(row, original, counted) {
+        const statusCell = row.querySelector('.status-cell');
+        const countedCell = row.querySelector('.counted-cell');
+        if (!statusCell || !countedCell) return;
+        countedCell.dataset.counted = counted;
+        countedCell.innerHTML = `<span>${Number(counted).toFixed(3)}</span>`;
+        const match = Math.abs(Number(original) - Number(counted)) < 1e-9;
+        if (match) {
+          statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-700 text-xs">Ok</span>';
+          row.style.display = 'none';
+          setStatus('Producto conciliado y ocultado de la lista', 'success');
+          // Si todos los productos ya fueron contados y no hay modal pendiente de mismatch
+          if (allRowsCounted() && !window.__printModalShown && !window.__pendingPrintModal) {
+            window.__printModalShown = true;
+            if (pvModal) { pvModal.classList.remove('hidden'); pvModal.classList.add('flex'); }
+          }
+        } else {
+          statusCell.innerHTML = '<span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-800 text-xs">Ajustado</span>';
+          row.classList.add('bg-yellow-50');
+          const code = (row.dataset.code || '').toUpperCase();
+          openMismatchModal(code, original, counted);
+          // Si este era el último conteo, programar mostrar el modal de impresión luego de cerrar mismatch
+          if (allRowsCounted() && !window.__printModalShown) {
+            window.__pendingPrintModal = true;
+          }
+        }
+      }
 
       applyBtn && applyBtn.addEventListener('click', async () => {
         let code = normalize(searchInput.value);
@@ -324,7 +502,7 @@
             if (res.ok) { const data = await res.json(); if (data && data.ok && data.product_code) { code = String(data.product_code); row = findRowByCode(code); } }
           } catch (e) { }
         }
-        if (!row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+        if (!row) { setStatus('Producto no encontrado en el traslado', 'error'); openNotFoundModal(code); return; }
         let countedVal = Number(String(countedRaw).replace(',', '.'));
         if (isNaN(countedVal) || countedVal < 0) { setStatus('Cantidad contada inválida', 'error'); return; }
         const original = Number(row.querySelector('[data-original]').dataset.original);
@@ -340,9 +518,10 @@
         } catch (e) { setStatus(e.message, 'error'); }
       });
 
-      finalizeBtn && finalizeBtn.addEventListener('click', async () => {
+      async function finalizeReception(printPdf = true){
         if (correlative === null) { setStatus('Sin correlativo', 'error'); return; }
-        finalizeBtn.disabled = true; setStatus('Validando recepción ...');
+        finalizeBtn && (finalizeBtn.disabled = true);
+        setStatus('Validando recepción ...');
         try {
           const rows = Array.from(tableBody.querySelectorAll('tr[data-code]'));
           const counts = {};
@@ -359,11 +538,26 @@
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || 'Error en validación de recepción');
           setStatus(data.message || 'Recepción validada', 'success');
-          const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
-          window.open(pdfUrl, '_blank');
+          if (printPdf) {
+            const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
+            window.open(pdfUrl, '_blank');
+          }
+          // Redirigir siempre a la ruta base tras validación
+          setTimeout(()=>{ window.location.href = '{{ url_for("check_transfer_reception") }}'; }, 600);
         } catch (e) { setStatus(e.message, 'error'); }
-        finally { finalizeBtn.disabled = false; }
+        finally { finalizeBtn && (finalizeBtn.disabled = false); }
+      }
+      // Botón validar: si ya todos contados mostrar modal, si no proceder normal sin preguntar.
+      finalizeBtn && finalizeBtn.addEventListener('click', () => {
+        if (allRowsCounted()) {
+          if (!window.__printModalShown) { window.__printModalShown = true; }
+          if (pvModal) { pvModal.classList.remove('hidden'); pvModal.classList.add('flex'); }
+        } else {
+          finalizeReception(true); // comportamiento original
+        }
       });
+      pvNo && pvNo.addEventListener('click', () => { pvModal.classList.add('hidden'); pvModal.classList.remove('flex'); finalizeReception(false); });
+      pvSi && pvSi.addEventListener('click', () => { pvModal.classList.add('hidden'); pvModal.classList.remove('flex'); finalizeReception(true); });
 
       // Suprimir teclado virtual en móviles (scanner conectado)
       if (searchInput && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -408,7 +602,7 @@
           const code = normalize(manualInput.value);
           if (!code) { setStatus('Ingresa un código primero', 'error'); return; }
           const result = await resolveToRow(code);
-          if (!result.row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          if (!result.row) { setStatus('Producto no encontrado en el traslado', 'error'); openNotFoundModal(code); return; }
           Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('collection-highlight'));
           result.row.classList.add('collection-highlight');
           // Abrir modal y enfocar existencia mínima (sin pasar a cantidad contada todavía)
@@ -424,7 +618,7 @@
           const code = normalize(searchInput.value);
           if (!code) { setStatus('Ingresa un código primero', 'error'); return; }
           const result = await resolveToRow(code);
-          if (!result.row) { setStatus('Producto no encontrado en la TRANSFER', 'error'); return; }
+          if (!result.row) { setStatus('Producto no encontrado en el traslado', 'error'); openNotFoundModal(code); return; }
           Array.from(tableBody.querySelectorAll('tr')).forEach(tr => tr.classList.remove('ring', 'ring-indigo-300'));
           result.row.classList.add('collection-highlight');
           // Abrir modal y enfocar mm-min
@@ -437,17 +631,26 @@
         if (e.key === 'Enter') {
           e.preventDefault();
           if (mmMaxInput) { mmMaxInput.focus(); try { mmMaxInput.select(); } catch (err) { } }
+          ensureFocusVisible(mmMaxInput);
         }
       });
       mmMaxInput && mmMaxInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          // Disparar guardado y luego enfoque irá a cantidad contada (en handler mmSave)
+          // Avanzar a cantidad contada (no guardar todavía)
+          if (countedInput) { countedInput.focus(); try { countedInput.select(); } catch (_) {} }
+          ensureFocusVisible(countedInput);
+        }
+      });
+
+      // Enter en cantidad contada dentro del modal: ejecutar guardado + conteo
+      countedInput && countedInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
           mmSave && mmSave.click();
         }
       });
 
-      countedInput && countedInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.focus(); } });
       applyBtn && applyBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); } });
 
       function allRowsCounted() { const rows = Array.from(tableBody.querySelectorAll('tr[data-code]')); if (rows.length === 0) return false; return rows.every(r => { const countedCell = r.querySelector('.counted-cell'); return countedCell && countedCell.dataset.counted !== ''; }); }
