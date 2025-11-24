@@ -149,6 +149,7 @@ def config_param_product():
     if isinstance(session_store_code, str):
         session_store_code = session_store_code.strip()
 
+    product_stock = None
     if request.method == "POST":
         # obtiene los datos del formulario
         product_code = request.form.get("product_code")
@@ -164,7 +165,12 @@ def config_param_product():
         )
         if product_code:
             product = search_product_failure(product_code, session_store_code)
-            if not product:
+            if product:
+                try:
+                    product_stock = get_product_stock(product_code, session_store_code)
+                except Exception:
+                    product_stock = None
+            else:
                 product_not_found = True
     else:
         # GET: intentar cargar la tienda desde sesión si existe
@@ -178,6 +184,7 @@ def config_param_product():
         products=product,
         store=search_store,
         product_not_found=product_not_found,
+        product_stock=product_stock,
     )
 
 
@@ -1418,25 +1425,25 @@ def api_collection_order_product_stock():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("APP_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("APP_PORT", "5001"))
+    except Exception:
+        port = 5001
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)

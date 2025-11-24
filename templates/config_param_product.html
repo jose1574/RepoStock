@@ -1,26 +1,30 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<!-- buscador de producto que se va configurar -->
-<section class="bg-gray-50 py-1">
-    <div class="container mx-auto px-4">
-        <div class="bg-white shadow-md rounded-lg p-8">
-            <h2 class="text-2xl font-semibold text-gray-800">Configurar Parámetros del Producto</h2>
-            <h2 class="text-2xl font-semibold text-gray-800">En Deposito: {{store.description}}</h2>
-
-            <p class="mt-2 text-gray-600">Ingresa el código del producto para configurar sus parámetros de inventario.
+<!-- buscador de producto responsive -->
+<section class="bg-gray-50 py-3">
+    <div class="mx-auto px-3 w-full max-w-xl">
+        <div class="bg-white shadow-sm rounded-lg p-4 sm:p-5 border border-gray-100">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-800 leading-tight">Configurar Parámetros</h2>
+            <p class="mt-1 text-xs sm:text-sm text-gray-600 flex items-center gap-1.5">
+                <span class="inline-block px-2 py-0.5 rounded bg-teal-50 text-teal-700 text-[11px] font-medium border border-teal-100">Depósito</span>
+                <span class="font-medium text-teal-800 truncate text-xs sm:text-sm">{{ store.description }}</span>
             </p>
-
-            <form id="product-config-form" action="{{ url_for('config_param_product') }}" method="POST" class="mt-6">
-                <label for="product_code" class="block text-sm font-medium text-gray-700">Código del Producto</label>
-                <input type="text" id="product_code" value="" name="product_code" required
-                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                    style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase();"
-                    placeholder="Ingresa el código del producto">
-
+            <p class="mt-2 text-gray-600 text-xs sm:text-sm">Ingresa el código del producto para editar parámetros.</p>
+            <form id="product-config-form" action="{{ url_for('config_param_product') }}" method="POST" class="mt-4 space-y-2.5">
+                <div>
+                    <label for="product_code" class="block text-[11px] font-medium text-gray-700 tracking-wide">Código del Producto</label>
+                    <input type="text" id="product_code" name="product_code" required
+                        class="mt-1 block w-full py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-xs sm:text-sm"
+                        style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase();"
+                        placeholder="Ej: ABC123">
+                </div>
                 <button id="btn-submit-product" type="submit"
-                    class="mt-4 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 focus:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">
-                    Buscar Producto
+                    class="w-full sm:w-auto inline-flex justify-center sm:justify-start items-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-700 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 9.75 9 12l2.25 2.25M4.5 19.5l15-15" />
+                    </svg>
+                    Buscar
                 </button>
             </form>
         </div>
@@ -29,33 +33,50 @@
 {% if products %}
 {% set product = products[0] %}
 <section class="bg-gray-50">
-    <div class="container mx-auto px-4">
-        <div class="bg-white shadow-md rounded-lg p-8">
-            <h2 class="text-2xl font-semibold text-gray-800">Configuración de Parámetros para: {{ product.description }}
-            </h2>
-            <h2 class="text-2xl font-semibold text-gray-800">En el Deposito: {{ store.description }}</h2>
-
-            <form id="param-config-form" action="{{ url_for('save_config_param_product') }}" method="POST" class="mt-6">
-                <!-- hidden fields para enviar store y product_code -->
+        <div class="mx-auto px-3 w-full max-w-2xl">
+                <div class="bg-white border border-gray-100 shadow-sm rounded-lg p-4 sm:p-5 space-y-3 param-dynamic-height">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-800 leading-tight"><span class="text-teal-700 font-mono text-sm">{{ product.code }}</span> <span class="text-gray-700 text-sm">— {{ product.description }}</span></h2>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="inline-flex items-center gap-0.5 text-[11px] font-medium px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">Depósito: {{ store.description }}</span>
+                            {% if product_stock is not none %}
+                                {% if product.minimal_stock is not none and product_stock < product.minimal_stock %}
+                                    <span class="inline-flex items-center gap-0.5 text-[11px] font-medium px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-100">Stock: {{ '%.2f'|format(product_stock) }}</span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-0.5 text-[11px] font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Stock: {{ '%.2f'|format(product_stock) }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                        <form id="param-config-form" action="{{ url_for('save_config_param_product') }}" method="POST" class="space-y-4">
                 <input type="hidden" name="store_code" value="{{ store.code if store else '' }}">
                 <input type="hidden" name="product_code" value="{{ product.code if product else '' }}">
-                <label for="min_stock" class="block text-sm font-medium text-gray-700">Stock Mínimo</label>
-                <input type="number" id="min_stock" name="minimal_stock" value="{{ product.minimal_stock }}" required
-                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
-
-                <label for="max_stock" class="block text-sm font-medium text-gray-700 mt-4">Stock Máximo</label>
-                <input type="number" id="max_stock" name="maximum_stock" value="{{ product.maximum_stock }}" required
-                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
-                <label for="location" class="block text-sm font-medium text-gray-700 mt-4">Ubicacion en el
-                    deposito</label>
-                <input type="text" id="location" name="location" value="{{ product.location }}" required
-                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                    placeholder="Opcional">
-
-                <button id="btn-submit-params" type="submit"
-                    class="mt-4 inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 focus:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">
-                    Guardar Parámetros
-                </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col">
+                        <label for="min_stock" class="text-xs font-medium text-gray-700 tracking-wide">Stock Mínimo</label>
+                        <input type="number" id="min_stock" name="minimal_stock" value="{{ product.minimal_stock }}" required
+                            class="mt-1 py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-xs sm:text-sm" placeholder="Ej: 10">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="max_stock" class="text-xs font-medium text-gray-700 tracking-wide">Stock Máximo</label>
+                        <input type="number" id="max_stock" name="maximum_stock" value="{{ product.maximum_stock }}" required
+                            class="mt-1 py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-xs sm:text-sm" placeholder="Ej: 100">
+                    </div>
+                    <div class="flex flex-col sm:col-span-2">
+                        <label for="location" class="text-xs font-medium text-gray-700 tracking-wide">Ubicación en el depósito</label>
+                        <input type="text" id="location" name="location" value="{{ product.location if product.location is not none else '' }}"
+                            class="mt-1 py-1.5 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-xs sm:text-sm" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
+                    <button id="btn-submit-params" type="submit"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-700 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1 transition">
+                        Guardar Parámetros
+                    </button>
+                    <a href="{{ url_for('config_param_product_store') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-2 px-3 rounded-md border border-gray-200 shadow-sm transition">
+                        Cambiar Depósito
+                    </a>
+                </div>
             </form>
         </div>
     </div>
@@ -63,7 +84,7 @@
 
     <!-- contenedor para alertas de guardado -->
     <div id="save-alert-container" data-product-not-found="{{ product_not_found|default(false)|tojson }}"
-        class="fixed inset-x-0 top-6 flex justify-center z-50 pointer-events-none"></div>
+        class="fixed left-0 right-0 top-4 sm:top-6 flex justify-center z-50 pointer-events-none px-4"></div>
 
     <script>
         (function () {
@@ -75,7 +96,7 @@
             function showAlert(message, opts) {
                 alertContainer.innerHTML = '';
                 const wrap = document.createElement('div');
-                wrap.className = 'pointer-events-auto bg-white shadow-lg rounded-lg px-4 py-3 border flex items-center gap-3';
+                wrap.className = 'pointer-events-auto bg-white shadow-md rounded-lg px-4 py-3 border border-teal-200 flex items-center gap-3 max-w-sm w-full';
                 const txt = document.createElement('div');
                 txt.className = 'text-sm text-gray-800';
                 txt.textContent = message;
@@ -83,7 +104,7 @@
 
                 if (opts && opts.dismiss) {
                     const btn = document.createElement('button');
-                    btn.className = 'ml-4 bg-teal-600 text-white px-3 py-1 rounded';
+                    btn.className = 'ml-auto bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded text-xs shadow';
                     btn.textContent = 'Aceptar';
                     btn.addEventListener('click', function () {
                         alertContainer.innerHTML = '';
@@ -177,7 +198,7 @@
             if (alertContainer) {
                 alertContainer.innerHTML = '';
                 const wrap = document.createElement('div');
-                wrap.className = 'pointer-events-auto bg-red-50 border border-red-300 text-red-800 shadow-lg rounded-lg px-4 py-3 flex items-center gap-3';
+                wrap.className = 'pointer-events-auto bg-red-50 border border-red-300 text-red-800 shadow-md rounded-lg px-4 py-3 flex items-center gap-3 max-w-sm w-full';
                 const txt = document.createElement('div');
                 txt.className = 'text-sm';
                 txt.textContent = message;
@@ -191,4 +212,36 @@
             }
         })();
     </script>
+
+        <!-- Ajuste para visibilidad completa en Android cuando aparece el teclado -->
+        <style>
+            .param-dynamic-height { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+            @supports(height:100dvh){ .param-dynamic-height{ max-height:100dvh; } }
+        </style>
+        <script>
+            (function(){
+                const vv = window.visualViewport;
+                const paramForm = document.getElementById('param-config-form');
+                const container = paramForm ? paramForm.closest('.param-dynamic-height') : null;
+                if(!vv || !paramForm || !container) return;
+                function applyViewportHeight(){
+                    document.documentElement.style.setProperty('--vvh', vv.height + 'px');
+                    container.style.maxHeight = vv.height + 'px';
+                }
+                function ensureVisible(el){
+                    if(!el) return;
+                    setTimeout(()=>{ try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_){ } }, 40);
+                }
+                function handleResize(){
+                    applyViewportHeight();
+                    const keyboardLikely = vv.height < screen.height * 0.8; // heurística
+                    if(keyboardLikely){ ensureVisible(document.activeElement); }
+                }
+                vv.addEventListener('resize', handleResize);
+                paramForm.querySelectorAll('input,button,select,textarea').forEach(el=>{
+                    el.addEventListener('focus', handleResize);
+                });
+                applyViewportHeight();
+            })();
+        </script>
     {% endblock %}
