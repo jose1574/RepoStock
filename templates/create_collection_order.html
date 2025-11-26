@@ -130,7 +130,17 @@
                      <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-900">{{ p.product_description }}</td>
+                    <td class="px-4 py-3 text-sm text-blue-700 hover:text-blue-900 underline cursor-pointer editable-product"
+                       data-code="{{ p.code }}"
+                       data-description="{{ p.product_description }}"
+                       data-min="{{ p.minimal_stock }}"
+                       data-max="{{ p.maximum_stock }}"
+                       data-stock-dest="{{ p.stock_store_destination }}"
+                       data-stock-origin="{{ p.stock_store_origin }}"
+                       data-store-dest="{{ store_destination.description }}"
+                       data-store-origin="{{ store_origin.description }}">
+                       {{ p.product_description }}
+                    </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.mark }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
@@ -165,6 +175,100 @@
 <!-- Scripts para manejar selección y envío -->
 <script>
    document.addEventListener('DOMContentLoaded', function () {
+            // --- Modal edición de parámetros por producto desde la tabla ---
+            const editModal = document.getElementById('edit-param-modal');
+            const editClose = document.getElementById('edit-param-close');
+            const editForm = document.getElementById('edit-param-form');
+            const editProdCode = document.getElementById('edit-prod-code');
+            const editProdDesc = document.getElementById('edit-prod-desc');
+            const editStoreInfo = document.getElementById('edit-store-info');
+            const editStockValue = document.getElementById('edit-stock-value');
+            const editMinInput = document.getElementById('edit-min-input');
+            const editMaxInput = document.getElementById('edit-max-input');
+
+            function openEditModalFromCell(cell){
+               if(!cell) return;
+               const code = cell.getAttribute('data-code');
+               const desc = cell.getAttribute('data-description');
+               const min = cell.getAttribute('data-min');
+               const max = cell.getAttribute('data-max');
+               const stockDest = cell.getAttribute('data-stock-dest');
+               const stockOrigin = cell.getAttribute('data-stock-origin');
+               const storeDest = cell.getAttribute('data-store-dest');
+               const storeOrigin = cell.getAttribute('data-store-origin');
+               // Usar depósito destino como "seleccionado" para mostrar stock
+               editProdCode.textContent = code || '';
+               editProdDesc.textContent = desc || '';
+               editStoreInfo.textContent = `Depósito destino: ${storeDest || ''}`;
+               editStockValue.textContent = `${stockDest ?? ''}`;
+               editMinInput.value = (min ?? '').toString();
+               editMaxInput.value = (max ?? '').toString();
+               editModal.classList.remove('hidden');
+               editModal.classList.add('flex');
+               setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch(e){} }, 50);
+            }
+
+            document.querySelectorAll('.editable-product').forEach(cell => {
+               cell.addEventListener('click', () => openEditModalFromCell(cell));
+            });
+
+            function closeEditModal(){
+               editModal.classList.add('hidden');
+               editModal.classList.remove('flex');
+            }
+            editClose && editClose.addEventListener('click', closeEditModal);
+            editModal && editModal.addEventListener('click', (e) => {
+               if(e.target === editModal){ closeEditModal(); }
+            });
+
+            editForm && editForm.addEventListener('submit', async function(e){
+               e.preventDefault();
+               const productCode = editProdCode.textContent.trim();
+               const minimalStock = editMinInput.value;
+               const maximumStock = editMaxInput.value;
+               if(!productCode){ alert('Código de producto no válido.'); return; }
+               // Enviar al backend usando la ruta existente para guardar parámetros
+               try{
+                  const resp = await fetch("{{ url_for('save_config_param_product') }}", {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                     body: new URLSearchParams({
+                        product_code: productCode,
+                        minimal_stock: minimalStock,
+                        maximum_stock: maximumStock,
+                        location: '',
+                        store_code: "{{ store_destination.code if store_destination else '' }}"
+                     })
+                  });
+                  const data = await resp.json().catch(() => ({}));
+                  if(!resp.ok || (data && data.ok === false)){
+                     const msg = (data && data.error) ? data.error : 'Error al guardar parámetros';
+                     throw new Error(msg);
+                  }
+                  // Actualizar la fila en la tabla (min/max)
+                  const row = Array.from(document.querySelectorAll('tbody tr')).find(r => {
+                     const codeCell = r.querySelector('td:nth-child(2)');
+                     return codeCell && codeCell.textContent.trim() === productCode;
+                  });
+                  if(row){
+                     const minCell = row.querySelector('.min-stock-cell');
+                     const maxCell = row.querySelector('.max-stock-cell');
+                     if(minCell) minCell.textContent = minimalStock;
+                     if(maxCell) maxCell.textContent = maximumStock;
+                     // actualizar data-* del nombre
+                     const nameCell = row.querySelector('.editable-product');
+                     if(nameCell){
+                        nameCell.setAttribute('data-min', minimalStock);
+                        nameCell.setAttribute('data-max', maximumStock);
+                     }
+                     // Recalcular sugerido "Por trasladar" para la fila tras cambios de min/max
+                     try { recomputeToTransferForRow(row); } catch (e) { }
+                  }
+                  closeEditModal();
+               }catch(err){
+                  alert('No se pudo guardar: ' + (err && err.message ? err.message : err));
+               }
+            });
       const selectAllBtn = document.getElementById('select-all');
       const clearBtn = document.getElementById('clear-selection');
       const form = document.getElementById('collection-form');
@@ -640,4 +744,39 @@
 
 </div>
 </div>
+<!-- Modal edición de existencia mínima y máxima -->
+<div id="edit-param-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+   <div class="absolute inset-0 bg-black opacity-40"></div>
+   <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-md p-4 flex flex-col relative">
+      <button id="edit-param-close" type="button" aria-label="Cerrar"
+         class="absolute top-2 right-2 rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <path fill-rule="evenodd" d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 0 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 0 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+         </svg>
+      </button>
+      <h3 class="text-base font-medium mb-3">Editar parámetros</h3>
+      <div class="text-sm text-gray-700 mb-2">
+         <div><span class="font-mono font-semibold">Código:</span> <span id="edit-prod-code"></span></div>
+         <div class="truncate"><span class="font-semibold">Producto:</span> <span id="edit-prod-desc"></span></div>
+         <div class="mt-1 text-xs text-gray-600" id="edit-store-info"></div>
+      </div>
+      <div class="mb-3">
+         <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Stock: <span id="edit-stock-value"></span></span>
+      </div>
+      <form id="edit-param-form" class="space-y-3">
+         <div>
+            <label for="edit-min-input" class="block text-xs font-medium text-gray-700">Existencia mínima</label>
+            <input id="edit-min-input" type="number" step="any" min="0" class="mt-1 w-full border rounded px-2 py-1 text-sm">
+         </div>
+         <div>
+            <label for="edit-max-input" class="block text-xs font-medium text-gray-700">Existencia máxima</label>
+            <input id="edit-max-input" type="number" step="any" min="0" class="mt-1 w-full border rounded px-2 py-1 text-sm">
+         </div>
+         <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-3 py-1 bg-gray-200 rounded" onclick="document.getElementById('edit-param-close').click()">Cancelar</button>
+            <button type="submit" class="px-3 py-1 bg-teal-600 text-white rounded">Guardar</button>
+         </div>
+      </form>
+   </div>
+   </div>
 {% endblock %}
