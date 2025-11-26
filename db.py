@@ -1010,8 +1010,14 @@ __all__ = [
     "update_inventory_operation_detail_amount",
     "delete_inventory_operation_detail",
     "search_product",
+    "get_product_price_and_unit",
     "update_inventory_operation_type",
     "get_product_stock",
+    "get_product_stock_by_store",
+    "search_products_with_stock_and_price",
+    "insert_product_image",
+    "get_product_images",
+    "delete_product_image",
 ]
 
 def get_product_stock(product_code: str, store_code: str) -> float:
@@ -1041,3 +1047,202 @@ def get_product_stock(product_code: str, store_code: str) -> float:
         raise
     finally:
         close_db_connection(conn)
+
+
+def get_product_stock_by_store(product_code: str):
+    """Obtiene el stock del producto en todos los depósitos.
+    Retorna lista de dicts: {store_code, store_description, stock}.
+    """
+    conn = get_db_connection()
+    sql = """
+        SELECT s.code AS store_code,
+               s.description AS store_description,
+               COALESCE(ps.stock, 0) AS stock
+        FROM store AS s
+        LEFT JOIN products_stock AS ps
+               ON ps.store = s.code AND UPPER(ps.product_code) = UPPER(%s)
+        ORDER BY s.code
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (product_code,))
+            rows = cur.fetchall()
+            # normalizar decimales
+            result = []
+            for r in rows:
+                stock_val = r.get("stock")
+                try:
+                    stock_num = float(stock_val) if stock_val is not None else 0.0
+                except Exception:
+                    stock_num = 0.0
+                result.append({
+                    "store_code": r.get("store_code"),
+                    "store_description": r.get("store_description"),
+                    "stock": float(f"{stock_num:.2f}")
+                })
+            return result
+    finally:
+        close_db_connection(conn)
+
+
+def get_product_price_and_unit(product_code: str):
+    """Obtiene el precio de oferta (offer_price) y la unidad principal del producto.
+    Retorna dict: {offer_price: float|None, unit_description: str|None}.
+    """
+    conn = get_db_connection()
+    sql = """
+        SELECT pu.offer_price,
+               u.description AS unit_description
+        FROM products_units AS pu
+        LEFT JOIN units AS u ON u.code = pu.unit
+        WHERE pu.product_code = %s AND pu.main_unit = true
+        LIMIT 1;
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (product_code,))
+            row = cur.fetchone()
+            if not row:
+                return {"offer_price": None, "unit_description": None}
+            op = row.get("offer_price")
+            try:
+                offer_price = float(f"{float(op):.2f}") if op is not None else None
+            except Exception:
+                offer_price = float(op) if op is not None else None
+            return {
+                "offer_price": offer_price,
+                "unit_description": row.get("unit_description"),
+            }
+    finally:
+        close_db_connection(conn)
+
+
+def search_products_with_stock_and_price(query: str):
+    """Busca productos por código principal, código alterno (other_code) o descripción.
+    Si query está vacío, devuelve todos los productos. Retorna código, descripción,
+    stock total (suma en todos los depósitos) y offer_price (unidad principal).
+    """
+    conn = get_db_connection()
+    sql = """
+        SELECT 
+            p.code AS code,
+            p.description AS description,
+            COALESCE(s.total_stock, 0) AS total_stock,
+            pu.offer_price * 1.16 AS offer_price,
+            u.description AS unit_description
+        FROM products AS p
+        LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
+        LEFT JOIN units AS u ON u.code = pu.unit
+        LEFT JOIN (
+            SELECT product_code, SUM(stock) AS total_stock
+            FROM products_stock
+            GROUP BY product_code
+        ) AS s ON s.product_code = p.code
+        WHERE 
+            p.status = '01'
+            AND p.product_type = 'T'
+            AND (
+            %s = ''
+            OR p.code ILIKE %s
+            OR p.description ILIKE %s
+            OR EXISTS (
+                SELECT 1 FROM products_codes pc
+                WHERE pc.main_code = p.code AND pc.other_code ILIKE %s
+            )
+            )
+        ORDER BY p.code ASC
+    """
+    q = (query or '').strip()
+    like = f"%{q}%" if q != '' else '%'
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (q, like, like, like))
+            rows = cur.fetchall()
+            result = []
+            for r in rows:
+                # Normalizar números a float con 2 decimales
+                ts = r.get("total_stock") or 0
+                try:
+                    total_stock = float(f"{float(ts):.2f}")
+                except Exception:
+                    total_stock = float(ts) if ts is not None else 0.0
+                op = r.get("offer_price")
+                try:
+                    offer_price = float(f"{float(op):.2f}") if op is not None else None
+                except Exception:
+                    offer_price = float(op) if op is not None else None
+                result.append({
+                    "code": r.get("code"),
+                    "description": r.get("description"),
+                    "total_stock": total_stock,
+                    "offer_price": offer_price,
+                    "unit_description": r.get("unit_description"),
+                })
+            return result
+    finally:
+        close_db_connection(conn)
+
+
+def insert_product_image(data: dict):
+    """Inserta una imagen para un producto en rs_products_images.
+    Espera keys: product_code, image_data (bytes), filename, mime_type, size_bytes, is_primary.
+    """
+    conn = get_db_connection()
+    sql = """
+        INSERT INTO rs_products_images (product_code, image_data, filename, mime_type, size_bytes, is_primary)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING image_id;
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (
+                data.get("product_code"),
+                psycopg2.Binary(data.get("image_data")),
+                data.get("filename"),
+                data.get("mime_type"),
+                data.get("size_bytes"),
+                bool(data.get("is_primary", False)),
+            ))
+            row = cur.fetchone()
+            image_id = row[0] if row else None
+        conn.commit()
+        return image_id
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+
+
+def get_product_images(product_code: str = None, image_id: int = None):
+    """Obtiene imágenes por código de producto o por image_id."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if image_id is not None:
+                cur.execute("SELECT * FROM rs_products_images WHERE image_id = %s", (image_id,))
+                rows = cur.fetchall()
+            elif product_code:
+                cur.execute("SELECT image_id, product_code, filename, mime_type, size_bytes, is_primary, created_at FROM rs_products_images WHERE product_code = %s ORDER BY is_primary DESC, created_at DESC", (product_code,))
+                rows = cur.fetchall()
+            else:
+                rows = []
+            # Serializar
+            return [dict(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
+def delete_product_image(image_id: int):
+    """Elimina una imagen de rs_products_images por su ID."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM rs_products_images WHERE image_id = %s", (image_id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        close_db_connection(conn)
+

@@ -75,6 +75,12 @@ from db import (
     search_product,
     # update_inventory_operation_type,  # deprecado: ahora se usa description para validación
     get_product_stock,
+    get_product_stock_by_store,
+    search_products_with_stock_and_price,
+    get_product_price_and_unit,
+    insert_product_image,
+    get_product_images,
+    delete_product_image,
 )
 
 app = Flask(__name__, template_folder=template_folder)
@@ -110,6 +116,149 @@ def get_pdfkit_config():
 @app.route("/")
 def index():
     return render_template("index.html")
+@app.route("/product_images", methods=["GET", "POST"])
+def product_images():
+    product = None
+    store = None
+    images = []
+    stocks_by_store = []
+    # Usar depósito de sesión si existe
+    session_store_code = session.get("store") or session.get("store_code_destination") or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+    if session_store_code:
+        store = get_store_by_code(session_store_code)
+    if request.method == "POST":
+        query = (request.form.get("product_query") or "").strip()
+        if query:
+            try:
+                rows = search_product_failure(query, session_store_code) or []
+                if not rows:
+                    rows = search_product(query) or []
+                if rows:
+                    product = rows[0]
+                    # Enriquecer con precio y unidad principal
+                    try:
+                        price_info = get_product_price_and_unit(product.get("code"))
+                        if price_info:
+                            product["offer_price"] = price_info.get("offer_price")
+                            # No pisar unit_description si ya viene desde search_product
+                            if product.get("unit_description") in (None, ""):
+                                product["unit_description"] = price_info.get("unit_description")
+                    except Exception as e:
+                        print("Error obteniendo precio del producto:", e)
+                    images = get_product_images(product.get("code")) or []
+                    try:
+                        stocks_by_store = get_product_stock_by_store(product.get("code")) or []
+                    except Exception as e:
+                        print("Error obteniendo stock por depósito:", e)
+            except Exception as e:
+                print("Error buscando producto para imágenes:", e)
+    return render_template("product_images.html", product=product, store=store, images=images, stocks_by_store=stocks_by_store)
+
+
+@app.route("/api/products/search", methods=["GET"])
+def api_products_search():
+    """Busca productos y devuelve JSON con código, descripción, stock total y precio (offer_price)."""
+    q = (request.args.get("q") or "").strip()
+    try:
+        rows = search_products_with_stock_and_price(q) or []
+        return jsonify({"ok": True, "items": rows})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/product_images/upload", methods=["POST"])
+def upload_product_image():
+    product_code = (request.form.get("product_code") or "").strip().upper()
+    if not product_code:
+        return redirect(url_for("product_images"))
+    file = request.files.get("camera_file") or request.files.get("image_file")
+    if not file or file.filename == "":
+        return redirect(url_for("product_images"))
+    try:
+        data = file.read()
+        mime_type = file.mimetype or "application/octet-stream"
+        filename = file.filename
+        size_bytes = len(data) if data else 0
+        is_primary = True if (request.form.get("is_primary") in ("1", "true", "on")) else False
+        insert_product_image({
+            "product_code": product_code,
+            "image_data": data,
+            "filename": filename,
+            "mime_type": mime_type,
+            "size_bytes": size_bytes,
+            "is_primary": is_primary,
+        })
+    except Exception as e:
+        print("Error guardando imagen:", e)
+    return redirect(url_for("product_images"))
+
+@app.route("/product_images/raw/<int:image_id>", methods=["GET"])
+def product_image_raw(image_id: int):
+    try:
+        rows = get_product_images(image_id=image_id) or []
+        img = rows[0] if rows else None
+        if not img:
+            return "Imagen no encontrada", 404
+        from flask import make_response
+        payload = img.get("image_data")
+        try:
+            # Asegurar tipo bytes (psycopg2 puede devolver memoryview)
+            if isinstance(payload, memoryview):
+                payload = payload.tobytes()
+        except NameError:
+            # memoryview no definido en algunos runtimes, intentar conversión directa
+            try:
+                payload = bytes(payload) if payload is not None else b""
+            except Exception:
+                payload = payload or b""
+        resp = make_response(payload or b"")
+        resp.headers["Content-Type"] = img.get("mime_type") or "image/jpeg"
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
+    except Exception as e:
+        return f"Error obteniendo imagen: {e}", 500
+
+
+@app.route("/product_images/delete", methods=["POST"])
+def delete_product_images_route():
+    """Elimina una o varias imágenes por ID y redirige o devuelve JSON."""
+    # Aceptar ids desde formulario o JSON
+    ids = []
+    try:
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            raw = data.get("image_ids") or data.get("ids")
+            if isinstance(raw, list):
+                ids = [int(x) for x in raw if str(x).isdigit()]
+            elif raw is not None and str(raw).isdigit():
+                ids = [int(raw)]
+        else:
+            form_ids = request.form.getlist("image_ids")
+            if form_ids:
+                ids = [int(x) for x in form_ids if str(x).isdigit()]
+            else:
+                single = request.form.get("image_id")
+                if single and str(single).isdigit():
+                    ids = [int(single)]
+    except Exception:
+        ids = []
+
+    if not ids:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"ok": False, "error": "No se recibieron IDs"}), 400
+        return redirect(url_for("product_images"))
+
+    deleted = []
+    errors = []
+    for image_id in ids:
+        try:
+            delete_product_image(image_id)
+            deleted.append(image_id)
+        except Exception as e:
+            errors.append({"id": image_id, "error": str(e)})
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"ok": True, "deleted": deleted, "errors": errors})
+    return redirect(url_for("product_images"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -1422,6 +1571,11 @@ def api_collection_order_product_stock():
         return jsonify({"ok": True, "code": code, "store": origin_store, "stock": float(stock or 0.0)})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# de aqui se maneja la logica de negocio de la aplicacion para crear imagenes a los productos 
+
+
 
 
 if __name__ == "__main__":

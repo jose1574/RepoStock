@@ -1,0 +1,804 @@
+{% extends 'base.html' %}
+
+{% block title %}Imágenes de Producto - Repostock{% endblock %}
+
+{% block content %}
+<section class="bg-gray-50 py-4">
+  <div class="container mx-auto px-4">
+    <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
+      <h2 class="text-base sm:text-lg font-semibold text-gray-800">Gestión de Imágenes de Producto</h2>
+      <p class="text-xs sm:text-sm text-gray-600">Busca un producto y adjunta fotos desde el dispositivo o usando la cámara.</p>
+
+      <form id="search-form" method="post" action="{{ url_for('product_images') }}" class="mt-3 space-y-2">
+        <label for="product_query" class="block text-xs font-medium text-gray-700">Código o descripción</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="product_query" name="product_query" type="text" class="w-full sm:flex-1 border rounded px-3 py-2 text-sm" placeholder="Ej: ABC123 o descripción" inputmode="search">
+          <button id="open-products-modal" type="button" class="w-full sm:w-auto px-4 py-2 bg-teal-600 text-white rounded">Productos</button>
+        </div>
+      </form>
+
+      {% if product %}
+      <div class="mt-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm text-gray-700"><span class="font-mono font-semibold">{{ product.code }}</span> — {{ product.description }}</div>
+            <div class="text-xs text-gray-500">Depósito: {{ store.description if store else 'N/A' }}</div>
+            <div class="text-xs text-gray-700 mt-1">
+              Precio: 
+              {% if product.offer_price is not none %}
+                $ {{ ('%.2f' % (product.offer_price)).replace('.', ',') }}{% if product.unit_description %} / {{ product.unit_description }}{% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if stocks_by_store and stocks_by_store|length > 0 %}
+        <div class="mt-3 bg-gray-50 border border-gray-100 rounded p-3">
+          <h3 class="text-sm font-semibold text-gray-800">Stock por depósito</h3>
+          <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {% for s in stocks_by_store %}
+            <div class="border rounded p-2 flex items-center justify-between">
+              <div class="text-xs text-gray-700">
+                <span class="font-mono font-semibold">{{ s.store_code }}</span>
+                — {{ s.store_description or 'Depósito' }}
+              </div>
+              <div class="text-xs font-semibold text-gray-900">{{ ('%.2f' % (s.stock or 0.0)).replace('.', ',') }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <hr class="my-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-gray-800">Agregar imágenes</h3>
+          <button id="open-add-modal" type="button" class="px-3 py-2 text-sm bg-indigo-600 text-white rounded">Abrir modal</button>
+        </div>
+        <div id="staging-controls" class="space-y-3 hidden">
+          <input type="hidden" id="product_code" value="{{ product.code }}">
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Desde archivos del dispositivo</label>
+            <input id="file-device" type="file" accept="image/*" multiple class="mt-1 block w-full text-sm" aria-label="Seleccionar imágenes desde archivos" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700">Tomar foto con la cámara</label>
+            <div class="flex items-center gap-2 mt-1">
+              <input id="file-camera" type="file" accept="image/*" capture="environment" class="hidden" aria-label="Tomar foto con la cámara" />
+              <input id="file-gallery" type="file" accept="image/*" multiple class="hidden" aria-label="Abrir galería" />
+              <button id="btn-open-camera" type="button" class="px-3 py-2 bg-indigo-600 text-white rounded flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 5c-1.1 0-2 .9-2 2H8l-2 2H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V11c0-1.1-.9-2-2-2h-2l-2-2h-2c0-1.1-.9-2-2-2zm0 4a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
+                </svg>
+                Abrir cámara
+              </button>
+              <button id="btn-open-gallery" type="button" class="px-3 py-2 bg-gray-100 text-gray-800 rounded flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM7 9a2 2 0 114 0 2 2 0 01-4 0zm10 8H7l3-4 2 3 3-4 2 5z" />
+                </svg>
+                Abrir galería
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:sticky sm:top-0 sm:bg-white sm:py-2">
+            <button id="save-all" type="button" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-indigo-600 text-white rounded">Guardar todas</button>
+            <button id="clear-staging" type="button" class="w-full sm:w-auto px-4 py-3 sm:py-2 bg-gray-200 text-gray-800 rounded">Limpiar selección</button>
+          </div>
+          <div id="staging-list" class="mt-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-600">Selección temporal</span>
+              <span id="staging-count" class="text-xs text-gray-600">0 archivos</span>
+            </div>
+            <div class="mt-1 text-[11px] text-gray-500">Total: <span id="staging-total-mb">0,00</span> MB (máximo 20,00 MB)</div>
+            <div id="staging-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mt-2"></div>
+          </div>
+        </div>
+
+        <!-- Modal para agregar imágenes -->
+        <div id="add-modal" class="fixed inset-0 bg-black/40 z-40 hidden">
+          <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:m-auto sm:max-w-lg sm:h-auto bg-white rounded-t-lg sm:rounded-lg shadow-lg">
+            <div class="p-3 sm:p-4 border-b flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-800">Agregar imágenes al producto</h4>
+              <button id="close-add-modal" type="button" class="text-gray-600 px-2 py-1">Cerrar</button>
+            </div>
+            <div class="p-3 sm:p-4">
+              <!-- Contenido reutiliza staging-controls -->
+              <div id="modal-staging-wrapper"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal buscador de productos -->
+        <div id="search-modal" class="fixed inset-0 bg-black/40 z-50 hidden">
+          <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:m-auto sm:max-w-3xl sm:h-auto bg-white rounded-t-lg sm:rounded-lg shadow-lg">
+            <div class="p-3 sm:p-4 border-b flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <h4 class="text-sm font-semibold text-gray-800">Listado de productos</h4>
+                <span class="text-xs text-gray-600">Total: <span id="search-total-header">0</span></span>
+              </div>
+              <button id="close-search-modal" type="button" class="text-gray-600 px-2 py-1">Cerrar</button>
+            </div>
+            <div class="p-3 sm:p-4">
+              <div id="search-hint" class="text-xs text-gray-600 mb-2">Toca una fila para seleccionar el producto.</div>
+              <div class="mb-2 flex items-center gap-2">
+                <input id="search-filter" type="text" class="w-full sm:w-64 border rounded px-2 py-1 text-xs" placeholder="Filtrar por código o descripción">
+                <button id="search-filter-clear" type="button" class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Limpiar</button>
+              </div>
+              <div class="overflow-auto max-h-[60vh]">
+                <table class="min-w-full text-xs">
+                  <thead>
+                    <tr class="text-left border-b">
+                      <th class="px-2 py-2">Código</th>
+                      <th class="px-2 py-2">Descripción</th>
+                      <th class="px-2 py-2">Stock total</th>
+                      <th class="px-2 py-2">Precio Oferta $</th>
+                      <th class="px-2 py-2">Unidad</th>
+                    </tr>
+                  </thead>
+                  <tbody id="search-results"></tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <button id="search-prev" type="button" class="px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded">Anterior</button>
+                  <button id="search-next" type="button" class="px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded">Siguiente</button>
+                </div>
+                <div id="search-page-info" class="text-xs text-gray-600">Página 1 de 1</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if images and images|length > 0 %}
+        <hr class="my-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-gray-800">Imágenes guardadas</h3>
+          <div class="flex items-center gap-2">
+              <button id="select-all" type="button" class="px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded">
+                Seleccionar todas
+              </button>
+              <button id="open-share-modal" type="button" class="px-3 py-2 text-sm bg-teal-600 text-white rounded flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 8a3 3 0 10-2.83-4H15a3 3 0 102.83 4H18zm-12 8a3 3 0 100 6 3 3 0 000-6zm12 0a3 3 0 10-2.83 4H15a3 3 0 002.83-4H18zM8.59 13.41l6.82-6.82 1.41 1.41-6.82 6.82-1.41-1.41zm0 3.18l1.41-1.41 6.82 6.82-1.41 1.41-6.82-6.82z"/>
+                </svg>
+                Compartir
+              </button>
+              <div class="relative">
+                <button id="btn-actions" type="button" class="px-3 py-2 text-sm bg-gray-100 text-gray-800 rounded flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.5.5,0,0,0,.12-.64l-2-3.46a.5.5,0,0,0-.6-.22l-2.49,1a7.34,7.34,0,0,0-1.62-.94l-.38-2.65A.5.5,0,0,0,11.73,2H8.27a.5.5,0,0,0-.49.41L7.4,5.06a7.34,7.34,0,0,0-1.62.94l-2.49-1a.5.5,0,0,0-.6.22l-2,3.46a.5.5,0,0,0,.12.64L2.89,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L.78,14.59a.5.5,0,0,0-.12.64l2,3.46a.5.5,0,0,0,.6.22l2.49-1a7.34,7.34,0,0,0,1.62.94l.38,2.65a.5.5,0,0,0,.49.41h3.46a.5.5,0,0,0,.49-.41l.38-2.65a7.34,7.34,0,0,0,1.62-.94l2.49,1a.5.5,0,0,0,.6-.22l2-3.46a.5.5,0,0,0-.12-.64ZM12,15.5A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/>
+                  </svg>
+                  Opciones
+                </button>
+                <div id="actions-menu" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow z-10 hidden">
+                  <button id="delete-selected" type="button" class="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50">
+                    Eliminar seleccionadas
+                  </button>
+                </div>
+              </div>
+            </div>
+        </div>
+        
+        <!-- Modal para compartir -->
+        <div id="share-modal" class="fixed inset-0 bg-black/40 z-40 hidden">
+          <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:m-auto sm:max-w-md sm:h-auto bg-white rounded-t-lg sm:rounded-lg shadow-lg">
+            <div class="p-3 sm:p-4 border-b flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-800">Compartir imágenes</h4>
+              <button id="close-share-modal" type="button" class="text-gray-600 px-2 py-1">Cerrar</button>
+            </div>
+            <div class="p-3 sm:p-4">
+              <p class="text-xs text-gray-600 mb-3">Elige una aplicación para compartir las imágenes seleccionadas.</p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button id="share-whatsapp" type="button" class="flex flex-col items-center gap-2 p-3 border rounded hover:bg-gray-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.6-6.003C.144 5.281 5.42 0 12.003 0 18.58 0 23.86 5.28 23.86 11.833c0 6.554-5.28 11.833-11.857 11.833a11.93 11.93 0 01-6.003-1.6L.057 24zM6.5 20.666c1.676.995 3.27 1.3 5.5 1.3 5.45 0 10.04-4.58 10.04-10.133 0-5.555-4.59-10.128-10.04-10.128-5.555 0-10.128 4.573-10.128 10.128 0 2.23.668 3.913 1.78 5.45l-.988 3.683 3.836-.3zm12.02-5.955c-.2-.1-1.176-.58-1.36-.647-.183-.067-.317-.1-.45.1-.133.2-.516.647-.633.78-.117.133-.233.15-.433.05-.2-.1-.84-.31-1.6-.99-.592-.53-.993-1.18-1.11-1.38-.116-.2-.013-.3.088-.4.09-.09.2-.233.3-.35.1-.117.133-.2.2-.333.067-.133.033-.25-.017-.35-.05-.1-.45-1.083-.616-1.483-.162-.39-.327-.337-.45-.343l-.383-.007c-.133 0-.35.05-.533.25-.183.2-.7.683-.7 1.666 0 .983.716 1.933.816 2.066.1.133 1.4 2.133 3.383 2.993.473.203.84.325 1.126.416.473.15.9.128 1.238.078.378-.057 1.176-.48 1.342-.943.167-.466.167-.866.117-.95-.05-.083-.183-.133-.383-.233z"/>
+                  </svg>
+                  <span class="text-xs">WhatsApp</span>
+                </button>
+                <button id="share-instagram" type="button" class="flex flex-col items-center gap-2 p-3 border rounded hover:bg-gray-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 2C4.243 2 2 4.243 2 7v10c0 2.757 2.243 5 5 5h10c2.757 0 5-2.243 5-5V7c0-2.757-2.243-5-5-5H7zm0 2h10c1.654 0 3 1.346 3 3v10c0 1.654-1.346 3-3 3H7c-1.654 0-3-1.346-3-3V7c0-1.654 1.346-3 3-3zm10 1a1 1 0 100 2 1 1 0 000-2zM12 7a5 5 0 100 10 5 5 0 000-10z"/>
+                  </svg>
+                  <span class="text-xs">Instagram</span>
+                </button>
+                <button id="share-messenger" type="button" class="flex flex-col items-center gap-2 p-3 border rounded hover:bg-gray-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.2 2 1.7 6.1 1.7 11c0 2.8 1.4 5.2 3.7 6.8V22l3.4-1.9c1 .3 2 .4 3.2.4 5.8 0 10.3-4.1 10.3-9.1S17.8 2 12 2zm5.2 9.5l-3.3 3.5-2.2-2.3-4.3 2.3 3.4-3.6 2.3 2.3 4-2.2z"/>
+                  </svg>
+                  <span class="text-xs">Messenger</span>
+                </button>
+                <button id="share-tiktok" type="button" class="flex flex-col items-center gap-2 p-3 border rounded hover:bg-gray-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 8.5a7.5 7.5 0 01-5.6-2.4V17a5 5 0 11-5-5c.3 0 .6 0 .9.1v3.2a2 2 0 10-1.9 2 2 2 0 002-2V2h3.1a7.5 7.5 0 005.5 2.4V8.5z"/>
+                  </svg>
+                  <span class="text-xs">TikTok</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Selecciona imágenes para compartir por WhatsApp. Se enviarán como enlaces.</p>
+        <div id="images-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mt-2">
+          {% for img in images %}
+          <div class="border rounded p-2">
+            <label class="flex items-center gap-2 text-xs">
+              <input type="checkbox" class="select-image" data-url="{{ request.host_url.rstrip('/') }}{{ url_for('product_image_raw', image_id=img.image_id) }}">
+              <span class="truncate">{{ img.filename or 'imagen' }}</span>
+            </label>
+            <div class="text-[11px] text-gray-500">Tamaño: {{ ('%.2f' % (((img.size_bytes or 0) / 1048576))) .replace('.', ',') }} MB</div>
+            <img src="{{ url_for('product_image_raw', image_id=img.image_id) }}" alt="{{ product.description }}" class="mt-1 w-full h-32 object-cover rounded" loading="lazy">
+            {% if img.is_primary %}
+            <span class="mt-1 inline-block text-[11px] px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">Principal</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <script>
+          (function(){
+            // ---- BUSCADOR ----
+            const searchForm = document.getElementById('search-form');
+            const searchInput = document.getElementById('product_query');
+            const searchModal = document.getElementById('search-modal');
+            const closeSearchModalBtn = document.getElementById('close-search-modal');
+            const searchResultsBody = document.getElementById('search-results');
+            const searchTotalEl = document.getElementById('search-total-count');
+            const searchTotalHeaderEl = document.getElementById('search-total-header');
+            const btnPrev = document.getElementById('search-prev');
+            const btnNext = document.getElementById('search-next');
+            const pageInfo = document.getElementById('search-page-info');
+            const filterInput = document.getElementById('search-filter');
+            const filterClearBtn = document.getElementById('search-filter-clear');
+            const openProductsBtn = document.getElementById('open-products-modal');
+
+            let searchItems = [];
+            let filteredItems = [];
+            let currentPage = 1;
+            const PAGE_SIZE = 20;
+            let filterText = '';
+                        function normalize(v){ return String(v || '').toLowerCase(); }
+                        function stripQuotes(v){ return String(v || '').replace(/["']/g, ''); }
+                        function matchesWildcard(text, pattern){
+                          const t = stripQuotes(normalize(text));
+                          const p = stripQuotes(normalize(pattern));
+                          if (!p) return true;
+                          if (!p.includes('*')) {
+                            return t.includes(p);
+                          }
+                          const tokens = p.split('*').filter(tok => tok.length > 0);
+                          let idx = 0;
+                          for (const tok of tokens){
+                            const found = t.indexOf(tok, idx);
+                            if (found === -1) return false;
+                            idx = found + tok.length;
+                          }
+                          return true;
+                        }
+                        function applyFilter(){
+                          const t = normalize(filterText);
+                          if (!t){
+                            filteredItems = searchItems.slice();
+                          } else {
+                            filteredItems = searchItems.filter(it => {
+                              return matchesWildcard(it.code, t) || matchesWildcard(it.description, t);
+                            });
+                          }
+                          currentPage = 1;
+                          renderPage();
+                        }
+            function openSearchModal(){
+              if (!searchModal) return;
+              searchModal.classList.remove('hidden');
+              document.body.style.overflow = 'hidden';
+              // Enfocar input de búsqueda al abrir modal
+              setTimeout(()=>{
+                filterInput && filterInput.focus();
+              }, 50);
+            }
+            function closeSearchModal(){
+              if (!searchModal) return;
+              searchModal.classList.add('hidden');
+              document.body.style.overflow = '';
+              // Limpiar filtro al cerrar el modal
+              if (filterInput) {
+                filterInput.value = '';
+                filterText = '';
+              }
+              // Enfocar input de código principal al cerrar modal
+              setTimeout(()=>{
+                searchInput && searchInput.focus();
+              }, 50);
+            }
+                        // Shortcut F12 para abrir modal de productos
+                        document.addEventListener('keydown', function(e){
+                          if (e.key === 'F12') {
+                            e.preventDefault();
+                            openProductsBtn && openProductsBtn.click();
+                          }
+                          // Escape cierra modal y enfoca input principal
+                          if (e.key === 'Escape' && searchModal && !searchModal.classList.contains('hidden')) {
+                            closeSearchModal();
+                          }
+                        });
+            closeSearchModalBtn && closeSearchModalBtn.addEventListener('click', closeSearchModal);
+            searchModal && searchModal.addEventListener('click', (e)=>{ if (e.target === searchModal) closeSearchModal(); });
+
+            async function performSearch(q){
+              const url = `{{ url_for('api_products_search') }}?q=${encodeURIComponent(q)}`;
+              const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+              const data = await res.json();
+              if (!data.ok) throw new Error(data.error || 'Error en búsqueda');
+              return data.items || [];
+            }
+
+            function fmt(num){
+              try {
+                return Number(num ?? 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              } catch { return '0,00'; }
+            }
+
+            function updateTotals(count){
+              const txt = String(count ?? 0);
+              if (searchTotalEl) searchTotalEl.textContent = txt;
+              if (searchTotalHeaderEl) searchTotalHeaderEl.textContent = txt;
+            }
+
+            function renderPage(){
+              if (!searchResultsBody) return;
+              const total = filteredItems.length;
+              updateTotals(total);
+              const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+              currentPage = Math.min(Math.max(1, currentPage), totalPages);
+              const start = (currentPage - 1) * PAGE_SIZE;
+              const end = start + PAGE_SIZE;
+              const pageItems = filteredItems.slice(start, end);
+              searchResultsBody.innerHTML = '';
+              if (pageItems.length === 0){
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="px-2 py-3 text-center text-gray-500">Sin resultados</td>`;
+                searchResultsBody.appendChild(tr);
+              } else {
+                pageItems.forEach(it => {
+                  const tr = document.createElement('tr');
+                  tr.className = 'border-b hover:bg-gray-50 cursor-pointer';
+                  tr.innerHTML = `
+                    <td class="px-2 py-2 font-mono">${it.code || ''}</td>
+                    <td class="px-2 py-2">${it.description || ''}</td>
+                    <td class="px-2 py-2">${fmt(it.total_stock)}</td>
+                    <td class="px-2 py-2">${it.offer_price != null ? fmt(it.offer_price) : '-'}</td>
+                    <td class="px-2 py-2">${it.unit_description || '-'}</td>
+                  `;
+                  tr.addEventListener('click', ()=>{
+                    if (searchInput){ searchInput.value = it.code || ''; }
+                    closeSearchModal();
+                    searchForm?.submit();
+                  });
+                  searchResultsBody.appendChild(tr);
+                });
+              }
+              if (pageInfo) pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+              if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+              if (btnNext) btnNext.disabled = (currentPage >= totalPages);
+            }
+
+            function renderResults(items){
+              searchItems = Array.isArray(items) ? items : [];
+              filterText = filterInput?.value?.trim() || '';
+              applyFilter();
+            }
+
+            // Submit: resolver por código principal o código alterno (products_codes)
+            searchForm && searchForm.addEventListener('submit', async (e)=>{
+              e.preventDefault();
+              const raw = (searchInput?.value || '').trim();
+              if (!raw) return;
+              try {
+                const url = `{{ url_for('api_collection_order_product_info') }}?query=${encodeURIComponent(raw)}`;
+                const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await res.json();
+                if (data && data.ok && data.code) {
+                  if (searchInput) searchInput.value = data.code;
+                  searchForm.submit();
+                } else {
+                  alert(`no existe el producto con el codigo ${raw}`);
+                }
+              } catch (err) {
+                console.warn('Error resolviendo código:', err);
+                alert(`no existe el producto con el codigo ${raw}`);
+              }
+            });
+
+            // Botón Productos: abre modal y lista todos los productos
+            openProductsBtn && openProductsBtn.addEventListener('click', async ()=>{
+              openSearchModal();
+              searchResultsBody && (searchResultsBody.innerHTML = '');
+              const loader = document.createElement('tr');
+              loader.innerHTML = `<td colspan="5" class="px-2 py-3 text-center text-gray-500">Cargando todos los productos...</td>`;
+              searchResultsBody?.appendChild(loader);
+              if (searchTotalEl) searchTotalEl.textContent = '—';
+              if (searchTotalHeaderEl) searchTotalHeaderEl.textContent = '—';
+              try {
+                const items = await performSearch('');
+                renderResults(items);
+              } catch(err){
+                console.warn('Error cargando productos:', err);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="px-2 py-3 text-center text-red-600">No se pudo cargar productos</td>`;
+                searchResultsBody.innerHTML = '';
+                searchResultsBody.appendChild(tr);
+                if (searchTotalEl) searchTotalEl.textContent = '0';
+                if (searchTotalHeaderEl) searchTotalHeaderEl.textContent = '0';
+              }
+            });
+
+            filterInput && filterInput.addEventListener('input', ()=>{
+              filterText = filterInput.value.trim();
+              applyFilter();
+            });
+            filterClearBtn && filterClearBtn.addEventListener('click', ()=>{
+              filterText = '';
+              if (filterInput) filterInput.value = '';
+              applyFilter();
+            });
+
+            btnPrev && btnPrev.addEventListener('click', ()=>{ currentPage--; renderPage(); });
+            btnNext && btnNext.addEventListener('click', ()=>{ currentPage++; renderPage(); });
+            // ---- MODAL ----
+            const openBtn = document.getElementById('open-add-modal');
+            const modal = document.getElementById('add-modal');
+            const closeBtn = document.getElementById('close-add-modal');
+            const stagingControls = document.getElementById('staging-controls');
+            const modalWrapper = document.getElementById('modal-staging-wrapper');
+            function openModal(){
+              if (!modal || !stagingControls || !modalWrapper) return;
+              modal.classList.remove('hidden');
+              // Mover staging-controls dentro del modal (preserva eventos)
+              stagingControls.classList.remove('hidden');
+              modalWrapper.appendChild(stagingControls);
+              document.body.style.overflow = 'hidden';
+            }
+            function closeModal(){
+              if (!modal || !stagingControls || !modalWrapper) return;
+              modal.classList.add('hidden');
+              // Regresar staging-controls a su lugar original
+              const parent = document.getElementById('staging-controls').parentElement;
+              parent.insertBefore(stagingControls, parent.querySelector('#staging-list'));
+              document.body.style.overflow = '';
+            }
+            openBtn && openBtn.addEventListener('click', openModal);
+            closeBtn && closeBtn.addEventListener('click', closeModal);
+            modal && modal.addEventListener('click', (e)=>{
+              if (e.target === modal) closeModal();
+            });
+
+            // ---- STAGING ----
+            const staging = [];
+            const stagingGrid = document.getElementById('staging-grid');
+            const stagingCount = document.getElementById('staging-count');
+            const stagingTotalMbEl = document.getElementById('staging-total-mb');
+            const MAX_TOTAL_MB = 20.0;
+            const deviceInput = document.getElementById('file-device');
+            const cameraInput = document.getElementById('file-camera');
+            const productCode = document.getElementById('product_code')?.value || '';
+
+            const computeTotalMb = () => staging.reduce((acc, it)=> acc + (it.file?.size || 0), 0) / 1048576;
+            const renderStaging = () => {
+              if (!stagingGrid || !stagingCount) return;
+              stagingGrid.innerHTML = '';
+              stagingCount.textContent = `${staging.length} archivo${staging.length===1?'':'s'}`;
+              const totalMb = computeTotalMb();
+              if (stagingTotalMbEl) stagingTotalMbEl.textContent = totalMb.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const overLimit = totalMb > MAX_TOTAL_MB + 1e-9;
+              const saveBtn = document.getElementById('save-all');
+              if (saveBtn) saveBtn.disabled = overLimit;
+              if (overLimit) {
+                stagingTotalMbEl?.classList.add('text-red-600');
+              } else {
+                stagingTotalMbEl?.classList.remove('text-red-600');
+              }
+              staging.forEach((item, idx) => {
+                const url = URL.createObjectURL(item.file);
+                const card = document.createElement('div');
+                card.className = 'border rounded p-2 relative';
+                card.innerHTML = `
+                  <div class=\"text-xs text-gray-600 truncate\">${item.file.name}</div>
+                  <div class=\"text-[11px] text-gray-500\">Tamaño: ${(item.file.size/1048576).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MB</div>
+                  <img src=\"${url}\" class=\"mt-1 w-full h-32 object-cover rounded\" alt=\"preview\">
+                  <div class=\"mt-1 flex items-center justify-between\">
+                    <label class=\"flex items-center gap-1 text-[11px]\">
+                      <input type=\"radio\" name=\"primary_staging\" ${item.primary?'checked':''} data-idx=\"${idx}\">
+                      Principal
+                    </label>
+                    <button type=\"button\" data-idx=\"${idx}\" class=\"text-[11px] px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200\">Quitar</button>
+                  </div>
+                `;
+                card.querySelector('button').addEventListener('click', (e)=>{
+                  const i = parseInt(e.currentTarget.getAttribute('data-idx'),10);
+                  const [removed] = staging.splice(i,1);
+                  try { URL.revokeObjectURL(url); } catch {}
+                  if (removed && removed.objectUrl) { try { URL.revokeObjectURL(removed.objectUrl); } catch {} }
+                  renderStaging();
+                });
+                card.querySelector('input[type="radio"]').addEventListener('change', (e)=>{
+                  const i = parseInt(e.currentTarget.getAttribute('data-idx'),10);
+                  staging.forEach((s, j)=>{ s.primary = (j===i); });
+                  renderStaging();
+                });
+                stagingGrid.appendChild(card);
+              });
+            };
+
+            const addFilesToStaging = (files) => {
+              const initialLen = staging.length;
+              Array.from(files || []).forEach(f => {
+                if (!f || !f.type || !f.type.startsWith('image/')) return;
+                staging.push({ file: f, primary: false });
+              });
+              if (initialLen === 0 && staging.length > 0) {
+                staging[0].primary = true;
+              }
+              // Si supera el máximo, mostrar alerta y no permitir guardar
+              renderStaging();
+              const totalMb = computeTotalMb();
+              if (totalMb > MAX_TOTAL_MB + 1e-9) {
+                alert('La selección supera el máximo permitido de 20 MB. Quita algunas imágenes.');
+              }
+            };
+
+            deviceInput && deviceInput.addEventListener('change', (e)=>{
+              addFilesToStaging(e.target.files);
+              e.target.value = '';
+            });
+            cameraInput && cameraInput.addEventListener('change', (e)=>{
+              addFilesToStaging(e.target.files);
+              e.target.value = '';
+            });
+            const galleryInput = document.getElementById('file-gallery');
+            galleryInput && galleryInput.addEventListener('change', (e)=>{
+              addFilesToStaging(e.target.files);
+              e.target.value = '';
+            });
+
+            // Botones para abrir cámara/galería
+            const btnOpenCam = document.getElementById('btn-open-camera');
+            const btnOpenGallery = document.getElementById('btn-open-gallery');
+            btnOpenCam && btnOpenCam.addEventListener('click', ()=>{
+              // Forzar capture en algunos navegadores móviles
+              cameraInput?.setAttribute('capture', 'environment');
+              cameraInput?.click();
+            });
+            btnOpenGallery && btnOpenGallery.addEventListener('click', ()=>{
+              galleryInput?.click();
+            });
+
+            document.getElementById('clear-staging') && document.getElementById('clear-staging').addEventListener('click', ()=>{
+              staging.splice(0, staging.length);
+              renderStaging();
+            });
+
+            document.getElementById('save-all') && document.getElementById('save-all').addEventListener('click', async ()=>{
+              if (!productCode) { alert('Producto no determinado.'); return; }
+              if (staging.length === 0) { alert('No hay imágenes seleccionadas.'); return; }
+              const totalMb = computeTotalMb();
+              if (totalMb > MAX_TOTAL_MB + 1e-9) { alert('La selección supera 20 MB. Reduce el tamaño antes de guardar.'); return; }
+              const btn = document.getElementById('save-all');
+              btn.disabled = true;
+              btn.textContent = 'Guardando...';
+              try {
+                await Promise.all(staging.map(async (item) => {
+                  const fd = new FormData();
+                  fd.append('product_code', productCode);
+                  fd.append('is_primary', item.primary ? '1' : '0');
+                  fd.append('image_file', item.file, item.file.name);
+                  const res = await fetch(`{{ url_for('upload_product_image') }}`, { method: 'POST', body: fd });
+                  if (!res.ok) throw new Error('Falló subida de una imagen');
+                }));
+                alert('Imágenes guardadas.');
+                staging.splice(0, staging.length);
+                renderStaging();
+                window.location.href = `{{ url_for('product_images') }}`;
+              } catch (err) {
+                console.warn(err);
+                alert('No se pudieron guardar todas las imágenes.');
+              } finally {
+                btn.disabled = false;
+                btn.textContent = 'Guardar todas';
+              }
+            });
+
+            // ---- SHARE EXISTING GRID ----
+            const getSelectedUrls = () => Array.from(document.querySelectorAll('.select-image'))
+              .filter(b => b.checked)
+              .map(b => b.getAttribute('data-url'));
+            const getSelectedIds = () => Array.from(document.querySelectorAll('.select-image'))
+              .filter(b => b.checked)
+              .map(b => {
+                const url = b.getAttribute('data-url') || '';
+                const m = url.match(/\/(\d+)(?:$|\?)/);
+                return m ? parseInt(m[1], 10) : null;
+              })
+              .filter(v => v !== null);
+
+            const selectAllBtn = document.getElementById('select-all');
+            if (selectAllBtn) {
+              selectAllBtn.addEventListener('click', function(){
+                const boxes = Array.from(document.querySelectorAll('.select-image'));
+                const allChecked = boxes.every(b => b.checked);
+                boxes.forEach(b => { b.checked = !allChecked; });
+              });
+            }
+
+            // Dropdown acciones (engranaje)
+            const actionsBtn = document.getElementById('btn-actions');
+            const actionsMenu = document.getElementById('actions-menu');
+            actionsBtn && actionsBtn.addEventListener('click', (e)=>{
+              e.stopPropagation();
+              actionsMenu && actionsMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e)=>{
+              if (!actionsMenu || actionsMenu.classList.contains('hidden')) return;
+              const target = e.target;
+              if (target !== actionsBtn && !actionsBtn.contains(target) && !actionsMenu.contains(target)) {
+                actionsMenu.classList.add('hidden');
+              }
+            });
+            document.addEventListener('keydown', (e)=>{
+              if (e.key === 'Escape' && actionsMenu && !actionsMenu.classList.contains('hidden')) {
+                actionsMenu.classList.add('hidden');
+              }
+            });
+
+            // ---- SHARE MODAL ----
+            const shareModal = document.getElementById('share-modal');
+            const openShareModalBtn = document.getElementById('open-share-modal');
+            const closeShareModalBtn = document.getElementById('close-share-modal');
+            function openShareModal(){
+              if (!shareModal) return;
+              shareModal.classList.remove('hidden');
+              document.body.style.overflow = 'hidden';
+            }
+            function closeShareModal(){
+              if (!shareModal) return;
+              shareModal.classList.add('hidden');
+              document.body.style.overflow = '';
+            }
+            openShareModalBtn && openShareModalBtn.addEventListener('click', ()=>{
+              const urls = getSelectedUrls();
+              if (urls.length === 0) { alert('Selecciona al menos una imagen.'); return; }
+              openShareModal();
+            });
+            closeShareModalBtn && closeShareModalBtn.addEventListener('click', closeShareModal);
+            shareModal && shareModal.addEventListener('click', (e)=>{ if (e.target === shareModal) closeShareModal(); });
+
+            async function fetchSelectedFiles(urls) {
+              return Promise.all(urls.map(async (u, i) => {
+                const res = await fetch(u, { cache: 'no-cache' });
+                if (!res.ok) throw new Error('Error al descargar imagen');
+                const blob = await res.blob();
+                const type = blob.type || 'image/jpeg';
+                const ext = (type.split('/')[1] || 'jpg');
+                const fname = `${'{{ product.code }}'}_${i+1}.${ext}`;
+                return new File([blob], fname, { type });
+              }));
+            }
+
+            function triggerDownloads(files){
+              files.forEach(file => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(file);
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+              });
+            }
+
+            async function shareViaWebShare(files, text){
+              if (navigator.canShare && navigator.canShare({ files }) && navigator.share) {
+                await navigator.share({ files, title: 'Imágenes de producto', text });
+                return true;
+              }
+              return false;
+            }
+
+            async function handleWhatsAppShare(){
+              const urls = getSelectedUrls();
+              if (urls.length === 0) { alert('Selecciona al menos una imagen.'); return; }
+              try {
+                const files = await fetchSelectedFiles(urls);
+                const header = `${'{{ product.code }}'} — ${'{{ product.description|replace("\n"," ") }}'}`;
+                const done = await shareViaWebShare(files, header);
+                if (!done) {
+                  const text = [header, '', ...urls].join('\n');
+                  const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                  window.open(wa, '_blank');
+                  triggerDownloads(files);
+                }
+              } catch (e) {
+                console.warn(e);
+                alert('No se pudieron preparar las imágenes para compartir por WhatsApp.');
+              } finally {
+                closeShareModal();
+              }
+            }
+
+            async function handleGenericPlatformShare(platform){
+              const urls = getSelectedUrls();
+              if (urls.length === 0) { alert('Selecciona al menos una imagen.'); return; }
+              try {
+                const files = await fetchSelectedFiles(urls);
+                const header = `${'{{ product.code }}'} — ${'{{ product.description|replace("\n"," ") }}'}`;
+                const done = await shareViaWebShare(files, header);
+                if (!done) {
+                  alert('Tu navegador no permite compartir archivos directamente aquí. Descargaremos las imágenes y abriremos la app/website para continuar.');
+                  triggerDownloads(files);
+                  const targets = {
+                    instagram: 'https://www.instagram.com/',
+                    tiktok: 'https://www.tiktok.com/',
+                    messenger: 'https://m.me/'
+                  };
+                  const url = targets[platform] || 'https://www.google.com/';
+                  window.open(url, '_blank');
+                }
+              } catch (e) {
+                console.warn(e);
+                alert('No se pudieron preparar las imágenes para compartir.');
+              } finally {
+                closeShareModal();
+              }
+            }
+
+            const btnWpp = document.getElementById('share-whatsapp');
+            const btnIg = document.getElementById('share-instagram');
+            const btnMsgr = document.getElementById('share-messenger');
+            const btnTt = document.getElementById('share-tiktok');
+            btnWpp && btnWpp.addEventListener('click', handleWhatsAppShare);
+            btnIg && btnIg.addEventListener('click', ()=>handleGenericPlatformShare('instagram'));
+            btnMsgr && btnMsgr.addEventListener('click', ()=>handleGenericPlatformShare('messenger'));
+            btnTt && btnTt.addEventListener('click', ()=>handleGenericPlatformShare('tiktok'));
+
+            const deleteBtn = document.getElementById('delete-selected');
+            if (deleteBtn) {
+              deleteBtn.addEventListener('click', async function(){
+                const ids = getSelectedIds();
+                if (ids.length === 0) {
+                  alert('Selecciona al menos una imagen.');
+                  return;
+                }
+                if (!confirm(`¿Eliminar ${ids.length} imagen(es)?`)) return;
+                try {
+                  const res = await fetch(`{{ url_for('delete_product_images_route') }}`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ image_ids: ids }),
+                  });
+                  const data = await res.json();
+                  if (!data.ok) throw new Error(data.error || 'Error al eliminar');
+                  // Eliminar del DOM
+                  const grid = document.getElementById('images-grid');
+                  ids.forEach(id => {
+                    const card = Array.from(grid.children).find(div => {
+                      const cb = div.querySelector('.select-image');
+                      return cb && (cb.getAttribute('data-url') || '').includes(`/${id}`);
+                    });
+                    if (card) card.remove();
+                  });
+                  alert('Imágenes eliminadas.');
+                } catch (e) {
+                  alert('No se pudieron eliminar las imágenes.');
+                  console.warn(e);
+                }
+              });
+            }
+          })();
+        </script>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
