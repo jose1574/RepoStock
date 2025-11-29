@@ -31,7 +31,7 @@
                             rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 
                             md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white 
                             md:dark:hover:text-blue-500 dark:focus:text-white dark:border-gray-700 
-                            dark:hover:bg-gray-700 md:dark:hover:bg-transparent">Operaciones
+                            dark:hover:bg-gray-700 md:dark:hover:bg-transparent">Operaciones de Inventarios
                             <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                                 fill="none" viewBox="0 0 10 6">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -44,23 +44,64 @@
                                 aria-labelledby="dropdownLargeButton">
                                 <li>
                                     <a href="{{ url_for('select_store_destination_collection_order')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Crear Orden de Recolección</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Recolección</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('check_order_collection')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo de Orden de Recolección</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo de orden de recolección</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('check_transfer_reception')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo de Recepción de Traslados</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Recepción de Traslado</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('config_param_product_store')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Parámetros de Productos</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Productos</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('form_destination_store_for_location')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ubicación de Productos</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Asignar Ubicación Productos</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="relative">
+                        <button id="dropdownSalesLink" data-dropdown-toggle="dropdownSales"
+                            class="flex items-center justify-between w-full py-2 px-3 text-gray-900 
+                            rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 
+                            md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white 
+                            md:dark:hover:text-blue-500 dark:focus:text-white dark:border-gray-700 
+                            dark:hover:bg-gray-700 md:dark:hover:bg-transparent">Ventas
+                            <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                            </svg>
+                        </button>
+                        <div id="dropdownSales"
+                            class="absolute left-0 top-full mt-2 z-[9999] hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-56 dark:bg-gray-700 dark:divide-gray-600">
+                            <ul class="py-2 text-sm text-gray-700 dark:text-gray-400" aria-labelledby="dropdownSalesLink">
+                                <li>
+                                    <a href="{{ url_for('product_images') }}"
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Presupuestos</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="relative">
+                        <button id="dropdownReportsLink" data-dropdown-toggle="dropdownReports"
+                            class="flex items-center justify-between w-full py-2 px-3 text-gray-900 
+                            rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 
+                            md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white 
+                            md:dark:hover:text-blue-500 dark:focus:text-white dark:border-gray-700 
+                            dark:hover:bg-gray-700 md:dark:hover:bg-transparent">Informes
+                            <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                            </svg>
+                        </button>
+                        <div id="dropdownReports"
+                            class="absolute left-0 top-full mt-2 z-[9999] hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-56 dark:bg-gray-700 dark:divide-gray-600">
+                            <ul class="py-2 text-sm text-gray-700 dark:text-gray-400" aria-labelledby="dropdownReportsLink">
+                                <li>
+                                    <span class="block px-4 py-2 text-gray-400 dark:text-gray-500">Próximamente</span>
                                 </li>
                             </ul>
                         </div>

@@ -152,7 +152,7 @@ def product_images():
                         print("Error obteniendo stock por depósito:", e)
             except Exception as e:
                 print("Error buscando producto para imágenes:", e)
-    return render_template("product_images.html", product=product, store=store, images=images, stocks_by_store=stocks_by_store)
+    return render_template("sales/budget.html", product=product, store=store, images=images, stocks_by_store=stocks_by_store)
 
 
 @app.route("/api/products/search", methods=["GET"])
@@ -329,7 +329,7 @@ def destination_store_selection_param_product():
 @app.route("/config_param_product_store")
 def config_param_product_store():
     stores = get_stores()
-    return render_template("config_param_product_store.html", stores=stores)
+    return render_template("inventory/config_param_product_store.html", stores=stores)
 
 
 @app.route("/config_param_product", methods=["POST"])
@@ -375,7 +375,7 @@ def config_param_product():
 
     # El store persiste en la sesión y se recupera en GET o POST
     return render_template(
-        "config_param_product.html",
+        "inventory/config_param_product.html",
         products=product,
         store=search_store,
         product_not_found=product_not_found,
@@ -554,7 +554,7 @@ def save_config_param_product():
 @app.route("/select_store_destinatSion_collection_order", methods=["POST", "GET"])
 def select_store_destination_collection_order():
     stores = get_stores()
-    return render_template("form_destination_store.html", stores=stores)
+    return render_template("inventory/form_destination_store.html", stores=stores)
 
 
 # ruta para crear orden de recoleccion
@@ -610,7 +610,7 @@ def create_collection_order():
             seen_b.add(b)
             brands.append(b)
     return render_template(
-        "create_collection_order.html",
+        "inventory/create_collection_order.html",
         products=products,
         departments=departments,
         store_origin=search_store_origin,
@@ -825,7 +825,7 @@ def update_locations_products_failures_products(store_code=None):
 
     # GET: mostrar siempre el depósito y la ubicación actual (si existe)
     return render_template(
-        "form_location.html",
+        "inventory/form_location.html",
         store=store,
         location=session.get("location", ""),
     )
@@ -850,7 +850,7 @@ def delete_item_product_session(code):
 @app.route("/form_destination_store_for_location", methods=["POST", "GET"])
 def form_destination_store_for_location():
     stores = get_stores()
-    return render_template("form_destination_store_for_location.html", stores=stores )
+    return render_template("inventory/form_destination_store_for_location.html", stores=stores )
 
 
 #ruta para guardar en sesion el deposito de destino seleccionado para la actualizacion de ubicacion de los productos con fallas
@@ -940,7 +940,7 @@ def update_locations_products_failures():
                 print("Error buscando productos:", e)
                 last_search_empty = True
     return render_template(
-        "update_locations_products_failures.html",
+        "inventory/update_locations_products_failures.html",
         products=session_products,
         location=location,
         last_search_empty=last_search_empty,
@@ -953,7 +953,7 @@ def update_locations_products_failures():
 def document_manager():
     inventory_operations = get_inventory_operations()
     print("Inventory Operations:", inventory_operations[0])
-    return render_template("document_manager.html", inventory_operations=inventory_operations)
+    return render_template("manager/document_manager.html", inventory_operations=inventory_operations)
 
 
 @app.route("/document_manager/delete", methods=["POST"])
@@ -1091,7 +1091,7 @@ def check_order_collection():
                 validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
-    return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
+    return render_template("inventory/check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
 
 
 @app.route("/api/collection_order/update_count", methods=["POST"])
@@ -1153,7 +1153,7 @@ def check_transfer_reception():
                     # No cargamos detalles destino porque aún no está procesada
         except Exception as e:
             print("Error cargando TRANSFER procesada:", e)
-    return render_template("check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated, pending_wait=pending_wait)
+    return render_template("inventory/check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated, pending_wait=pending_wait)
 
 
 @app.route("/api/reception/update_count", methods=["POST"])

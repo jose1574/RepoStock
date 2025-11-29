@@ -23,6 +23,7 @@
     <table class="min-w-full table-auto">
         <thead class="bg-gray-50">
             <tr>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Correlativo</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Documento</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Fecha</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Descripción</th>
@@ -34,6 +35,16 @@
         <tbody>
             {% for operation in inventory_operations %}
             <tr class="hover:bg-gray-50">
+                <td class="py-2 px-4 border-b border-gray-100">
+                    <form action="{{ url_for('collection_preview_pdf') }}" method="post" target="_blank">
+                        <input type="hidden" name="correlative" value="{{ operation.correlative }}">
+                        <input type="hidden" name="operation_type" value="{{ operation.operation_type or 'TRANSFER' }}">
+                        <input type="hidden" name="wait" value="true">
+                        <button type="submit" class="text-blue-600 hover:underline font-mono">
+                            {{ operation.correlative }}
+                        </button>
+                    </form>
+                </td>
                 <td class="py-2 px-4 border-b border-gray-100">
                     <form action="{{ url_for('collection_preview_pdf') }}" method="post" target="_blank">
                         <input type="hidden" name="correlative" value="{{ operation.correlative }}">
@@ -57,7 +68,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="6" class="py-4 px-4 text-center text-gray-500">No se encontraron operaciones.</td>
+                <td colspan="7" class="py-4 px-4 text-center text-gray-500">No se encontraron operaciones.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -91,17 +102,19 @@ document.addEventListener('DOMContentLoaded', function () {
         rows.forEach(row => {
             // Evitar tocar filas vacías del "else" de Jinja (cuando no hay datos)
             const cells = row.querySelectorAll('td');
-            if (!cells || cells.length < 5) {
+            if (!cells || cells.length < 6) {
                 row.style.display = '';
                 return;
             }
 
-            // Columna 1: Documento (tiene un botón dentro de un form)
-            const docText = normalize(cells[0].textContent);
-            // Columna 3: Descripción
-            const descText = normalize(cells[2].textContent);
+            // Columna 1: Correlativo (botón dentro de form)
+            const corrText = normalize(cells[0].textContent);
+            // Columna 2: Documento
+            const docText = normalize(cells[1].textContent);
+            // Columna 4: Descripción
+            const descText = normalize(cells[3].textContent);
 
-            const match = docText.includes(q) || descText.includes(q);
+            const match = corrText.includes(q) || docText.includes(q) || descText.includes(q);
             row.style.display = match ? '' : 'none';
         });
     }
