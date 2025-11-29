@@ -94,6 +94,10 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\macros\\store_select_form.html',
    'DATA'),
+  ('templates\\product_images.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\templates\\product_images.html',
+   'DATA'),
   ('templates\\update_locations_products_failures.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\update_locations_products_failures.html',
@@ -108,13 +112,13 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
    'PYSOURCE'),
-  ('pyi_rth_setuptools',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
-   'PYSOURCE'),
   ('pyi_rth_pkgutil',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
+   'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
    'PYSOURCE'),
   ('pyi_rth_multiprocessing',
    'C:\\Users\\Jose '
@@ -339,14 +343,6 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\email\\_encoded_words.py',
    'PYMODULE'),
-  ('base64',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\base64.py',
-   'PYMODULE'),
-  ('getopt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\getopt.py',
-   'PYMODULE'),
   ('email.charset',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\email\\charset.py',
@@ -386,6 +382,10 @@
   ('quopri',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\quopri.py',
+   'PYMODULE'),
+  ('getopt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\getopt.py',
    'PYMODULE'),
   ('importlib.abc',
    'C:\\Users\\Jose '
@@ -1856,6 +1856,78 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\_distutils_hack\\override.py',
    'PYMODULE'),
+  ('waitress',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\__init__.py',
+   'PYMODULE'),
+  ('pstats',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pstats.py',
+   'PYMODULE'),
+  ('cmd',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\cmd.py',
+   'PYMODULE'),
+  ('profile',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\profile.py',
+   'PYMODULE'),
+  ('optparse',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\optparse.py',
+   'PYMODULE'),
+  ('waitress.server',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\server.py',
+   'PYMODULE'),
+  ('waitress.proxy_headers',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\proxy_headers.py',
+   'PYMODULE'),
+  ('waitress.task',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\task.py',
+   'PYMODULE'),
+  ('waitress.buffers',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\buffers.py',
+   'PYMODULE'),
+  ('waitress.compat',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\compat.py',
+   'PYMODULE'),
+  ('waitress.channel',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\channel.py',
+   'PYMODULE'),
+  ('waitress.parser',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\parser.py',
+   'PYMODULE'),
+  ('waitress.rfc7230',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\rfc7230.py',
+   'PYMODULE'),
+  ('waitress.receiver',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\receiver.py',
+   'PYMODULE'),
+  ('waitress.adjustments',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\adjustments.py',
+   'PYMODULE'),
+  ('waitress.trigger',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\trigger.py',
+   'PYMODULE'),
+  ('waitress.wasyncore',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\wasyncore.py',
+   'PYMODULE'),
+  ('waitress.utilities',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\utilities.py',
+   'PYMODULE'),
   ('markupsafe',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe\\__init__.py',
@@ -1960,85 +2032,17 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tracemalloc.py',
    'PYMODULE'),
-  ('_py_abc',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_py_abc.py',
-   'PYMODULE'),
   ('stringprep',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\stringprep.py',
    'PYMODULE'),
-  ('waitress',
+  ('_py_abc',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\__init__.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_py_abc.py',
    'PYMODULE'),
-  ('pstats',
+  ('base64',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pstats.py',
-   'PYMODULE'),
-  ('cmd',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\cmd.py',
-   'PYMODULE'),
-  ('profile',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\profile.py',
-   'PYMODULE'),
-  ('optparse',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\optparse.py',
-   'PYMODULE'),
-  ('waitress.server',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\server.py',
-   'PYMODULE'),
-  ('waitress.proxy_headers',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\proxy_headers.py',
-   'PYMODULE'),
-  ('waitress.task',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\task.py',
-   'PYMODULE'),
-  ('waitress.buffers',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\buffers.py',
-   'PYMODULE'),
-  ('waitress.compat',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\compat.py',
-   'PYMODULE'),
-  ('waitress.channel',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\channel.py',
-   'PYMODULE'),
-  ('waitress.parser',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\parser.py',
-   'PYMODULE'),
-  ('waitress.rfc7230',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\rfc7230.py',
-   'PYMODULE'),
-  ('waitress.receiver',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\receiver.py',
-   'PYMODULE'),
-  ('waitress.adjustments',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\adjustments.py',
-   'PYMODULE'),
-  ('waitress.trigger',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\trigger.py',
-   'PYMODULE'),
-  ('waitress.wasyncore',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\wasyncore.py',
-   'PYMODULE'),
-  ('waitress.utilities',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\waitress\\utilities.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\base64.py',
    'PYMODULE'),
   ('db',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment programing\\RepoStock\\db.py',
@@ -2644,57 +2648,57 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2\\_psycopg.cp313-win_amd64.pyd',
    'EXTENSION'),
-  ('VCRUNTIME140.dll',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140.dll',
-   'BINARY'),
-  ('api-ms-win-crt-string-l1-1-0.dll',
+  ('api-ms-win-crt-environment-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-string-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-conio-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-conio-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-process-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-process-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-math-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-math-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-heap-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-heap-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-locale-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-locale-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-stdio-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-stdio-l1-1-0.dll',
+   'Toolkit\\api-ms-win-crt-environment-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-crt-time-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-time-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-crt-environment-l1-1-0.dll',
+  ('api-ms-win-crt-math-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-environment-l1-1-0.dll',
+   'Toolkit\\api-ms-win-crt-math-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-crt-runtime-l1-1-0.dll',
+  ('api-ms-win-crt-conio-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-runtime-l1-1-0.dll',
+   'Toolkit\\api-ms-win-crt-conio-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-crt-convert-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-convert-l1-1-0.dll',
    'BINARY'),
+  ('api-ms-win-crt-string-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-string-l1-1-0.dll',
+   'BINARY'),
   ('api-ms-win-crt-filesystem-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-crt-filesystem-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-stdio-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-stdio-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-process-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-process-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-locale-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-locale-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-runtime-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-runtime-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-crt-heap-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-crt-heap-l1-1-0.dll',
+   'BINARY'),
+  ('VCRUNTIME140.dll',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140.dll',
    'BINARY'),
   ('libcrypto-3.dll',
    'C:\\Users\\Jose '
@@ -2724,37 +2728,65 @@
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\ucrtbase.dll',
    'BINARY'),
-  ('psycopg2_binary.libs\\libcrypto-3-x64-e57e1a41cc5d7f9b741c935f04fe4f2f.dll',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libcrypto-3-x64-e57e1a41cc5d7f9b741c935f04fe4f2f.dll',
-   'BINARY'),
   ('psycopg2_binary.libs\\libssl-3-x64-6b7807fd98efdd91c677351cd0a9f2d8.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libssl-3-x64-6b7807fd98efdd91c677351cd0a9f2d8.dll',
    'BINARY'),
-  ('api-ms-win-core-interlocked-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-interlocked-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-debug-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-debug-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-memory-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-memory-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-string-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-string-l1-1-0.dll',
+  ('psycopg2_binary.libs\\libcrypto-3-x64-e57e1a41cc5d7f9b741c935f04fe4f2f.dll',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libcrypto-3-x64-e57e1a41cc5d7f9b741c935f04fe4f2f.dll',
    'BINARY'),
   ('api-ms-win-core-file-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-file-l1-1-0.dll',
    'BINARY'),
+  ('api-ms-win-core-string-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-string-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l2-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-file-l2-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processenvironment-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-processenvironment-l1-1-0.dll',
+   'BINARY'),
   ('api-ms-win-core-console-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-console-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-file-l1-2-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-file-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-timezone-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-timezone-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-interlocked-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-interlocked-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-heap-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-heap-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-synch-l1-2-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-synch-l1-2-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-namedpipe-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-namedpipe-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-processthreads-l1-1-1.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-processthreads-l1-1-1.dll',
+   'BINARY'),
+  ('api-ms-win-core-errorhandling-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-errorhandling-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-profile-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
@@ -2764,77 +2796,49 @@
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-localization-l1-2-0.dll',
    'BINARY'),
-  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-rtlsupport-l1-1-0.dll',
-   'BINARY'),
   ('api-ms-win-core-synch-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-synch-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-memory-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-memory-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-libraryloader-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-libraryloader-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-errorhandling-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-errorhandling-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processenvironment-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processenvironment-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l2-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l2-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-sysinfo-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-sysinfo-l1-1-0.dll',
-   'BINARY'),
   ('api-ms-win-core-fibers-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-fibers-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-util-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-util-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processthreads-l1-1-1.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processthreads-l1-1-1.dll',
-   'BINARY'),
-  ('api-ms-win-core-synch-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-synch-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-heap-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-heap-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-datetime-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-datetime-l1-1-0.dll',
    'BINARY'),
   ('api-ms-win-core-processthreads-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-processthreads-l1-1-0.dll',
    'BINARY'),
-  ('api-ms-win-core-namedpipe-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-namedpipe-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-timezone-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-timezone-l1-1-0.dll',
-   'BINARY'),
   ('api-ms-win-core-handle-l1-1-0.dll',
    'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
    'Toolkit\\api-ms-win-core-handle-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-util-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-util-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-datetime-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-datetime-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-rtlsupport-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-sysinfo-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-sysinfo-l1-1-0.dll',
+   'BINARY'),
+  ('api-ms-win-core-debug-l1-1-0.dll',
+   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
+   'Toolkit\\api-ms-win-core-debug-l1-1-0.dll',
    'BINARY')],
  [],
  [],
@@ -2913,6 +2917,10 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\macros\\store_select_form.html',
    'DATA'),
+  ('templates\\product_images.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\templates\\product_images.html',
+   'DATA'),
   ('templates\\update_locations_products_failures.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\update_locations_products_failures.html',
@@ -2921,206 +2929,198 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\users.html',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
-   'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
    'DATA'),
   ('setuptools\\_vendor\\jaraco\\text\\Lorem ipsum.txt',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\jaraco\\text\\Lorem '
    'ipsum.txt',
    'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\METADATA',
+  ('click-8.2.1.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
-   'DATA'),
-  ('click-8.2.1.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
-   'DATA'),
-  ('click-8.2.1.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
    'DATA'),
   ('click-8.2.1.dist-info\\WHEEL',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\WHEEL',
    'DATA'),
-  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
   ('werkzeug-3.1.3.dist-info\\WHEEL',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
    'DATA'),
   ('itsdangerous-2.2.0.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
    'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\RECORD',
+  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\WHEEL',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\REQUESTED',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'DATA'),
   ('werkzeug-3.1.3.dist-info\\METADATA',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\METADATA',
    'DATA'),
-  ('werkzeug-3.1.3.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
-   'DATA'),
   ('itsdangerous-2.2.0.dist-info\\METADATA',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
-   'DATA'),
-  ('click-8.2.1.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\RECORD',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\entry_points.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
    'DATA'),
   ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
    'DATA'),
+  ('flask-3.1.1.dist-info\\entry_points.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
+   'DATA'),
+  ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\REQUESTED',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
+   'DATA'),
+  ('click-8.2.1.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\INSTALLER',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\WHEEL',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\RECORD',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'DATA'),
   ('base_library.zip',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\build\\app\\base_library.zip',
    'DATA')],
- [('operator',
+ [('types',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\operator.py',
-   'PYMODULE'),
-  ('reprlib',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\reprlib.py',
-   'PYMODULE'),
-  ('enum',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\enum.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\types.py',
    'PYMODULE'),
   ('stat',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\stat.py',
    'PYMODULE'),
-  ('copyreg',
+  ('posixpath',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copyreg.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\posixpath.py',
    'PYMODULE'),
-  ('locale',
+  ('traceback',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\locale.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\traceback.py',
    'PYMODULE'),
-  ('warnings',
+  ('linecache',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\warnings.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\linecache.py',
    'PYMODULE'),
   ('ntpath',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ntpath.py',
    'PYMODULE'),
-  ('abc',
+  ('copyreg',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\abc.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copyreg.py',
    'PYMODULE'),
-  ('posixpath',
+  ('sre_parse',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\posixpath.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_parse.py',
    'PYMODULE'),
-  ('_collections_abc',
+  ('warnings',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_collections_abc.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\warnings.py',
    'PYMODULE'),
-  ('types',
+  ('weakref',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\types.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\weakref.py',
    'PYMODULE'),
-  ('genericpath',
+  ('heapq',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\genericpath.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\heapq.py',
    'PYMODULE'),
   ('encodings.zlib_codec',
    'C:\\Users\\Jose '
@@ -3610,57 +3610,9 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\__init__.py',
    'PYMODULE'),
-  ('keyword',
+  ('locale',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\keyword.py',
-   'PYMODULE'),
-  ('io',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\io.py',
-   'PYMODULE'),
-  ('traceback',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\traceback.py',
-   'PYMODULE'),
-  ('functools',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\functools.py',
-   'PYMODULE'),
-  ('linecache',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\linecache.py',
-   'PYMODULE'),
-  ('heapq',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\heapq.py',
-   'PYMODULE'),
-  ('codecs',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\codecs.py',
-   'PYMODULE'),
-  ('sre_parse',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_parse.py',
-   'PYMODULE'),
-  ('_weakrefset',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_weakrefset.py',
-   'PYMODULE'),
-  ('weakref',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\weakref.py',
-   'PYMODULE'),
-  ('collections',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\collections\\__init__.py',
-   'PYMODULE'),
-  ('sre_compile',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_compile.py',
-   'PYMODULE'),
-  ('sre_constants',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_constants.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\locale.py',
    'PYMODULE'),
   ('re._parser',
    'C:\\Users\\Jose '
@@ -3681,6 +3633,62 @@
   ('re',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\re\\__init__.py',
+   'PYMODULE'),
+  ('enum',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\enum.py',
+   'PYMODULE'),
+  ('collections',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\collections\\__init__.py',
+   'PYMODULE'),
+  ('io',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\io.py',
+   'PYMODULE'),
+  ('reprlib',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\reprlib.py',
+   'PYMODULE'),
+  ('_collections_abc',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_collections_abc.py',
+   'PYMODULE'),
+  ('genericpath',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\genericpath.py',
+   'PYMODULE'),
+  ('abc',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\abc.py',
+   'PYMODULE'),
+  ('sre_constants',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_constants.py',
+   'PYMODULE'),
+  ('codecs',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\codecs.py',
+   'PYMODULE'),
+  ('sre_compile',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_compile.py',
+   'PYMODULE'),
+  ('functools',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\functools.py',
+   'PYMODULE'),
+  ('_weakrefset',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_weakrefset.py',
+   'PYMODULE'),
+  ('operator',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\operator.py',
+   'PYMODULE'),
+  ('keyword',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\keyword.py',
    'PYMODULE'),
   ('os',
    'C:\\Users\\Jose '

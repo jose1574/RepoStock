@@ -227,12 +227,23 @@
               <span class="truncate">{{ img.filename or 'imagen' }}</span>
             </label>
             <div class="text-[11px] text-gray-500">Tamaño: {{ ('%.2f' % (((img.size_bytes or 0) / 1048576))) .replace('.', ',') }} MB</div>
-            <img src="{{ url_for('product_image_raw', image_id=img.image_id) }}" alt="{{ product.description }}" class="mt-1 w-full h-32 object-cover rounded" loading="lazy">
+            <img src="{{ url_for('product_image_raw', image_id=img.image_id) }}" alt="{{ product.description }}" class="mt-1 w-full h-32 object-cover rounded cursor-zoom-in" loading="lazy" data-fullscreen="true">
             {% if img.is_primary %}
             <span class="mt-1 inline-block text-[11px] px-2 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">Principal</span>
             {% endif %}
           </div>
           {% endfor %}
+        </div>
+
+        <!-- Overlay visor pantalla completa -->
+        <div id="fullscreen-viewer" class="fixed inset-0 bg-black/90 z-[60] hidden">
+          <button id="fs-close" type="button" class="absolute top-3 right-3 px-3 py-2 text-sm bg-white/20 hover:bg-white/30 text-white rounded">Cerrar (Esc)</button>
+          <a id="fs-open-new" href="#" target="_blank" class="absolute top-3 left-3 px-3 py-2 text-sm bg-white/20 hover:bg-white/30 text-white rounded">Abrir en nueva pestaña</a>
+          <button id="fs-prev" type="button" class="absolute left-3 top-1/2 -translate-y-1/2 px-3 py-2 text-sm bg-white/20 hover:bg-white/30 text-white rounded">◀</button>
+          <button id="fs-next" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-2 text-sm bg-white/20 hover:bg-white/30 text-white rounded">▶</button>
+          <div class="w-full h-full flex items-center justify-center p-4">
+            <img id="fs-image" src="" alt="imagen" class="max-w-[95vw] max-h-[90vh] object-contain select-none" />
+          </div>
         </div>
         {% endif %}
         <script>
@@ -794,6 +805,65 @@
                 }
               });
             }
+
+            // ---- FULLSCREEN VIEWER ----
+            const fs = document.getElementById('fullscreen-viewer');
+            const fsImg = document.getElementById('fs-image');
+            const fsClose = document.getElementById('fs-close');
+            const fsOpenNew = document.getElementById('fs-open-new');
+            const fsPrev = document.getElementById('fs-prev');
+            const fsNext = document.getElementById('fs-next');
+            let fsList = [];
+            let fsIndex = -1;
+            function openFullscreen(src){
+              if (!fs || !fsImg) return;
+              fsImg.src = src;
+              fs.classList.remove('hidden');
+              document.body.style.overflow = 'hidden';
+              if (fsOpenNew) fsOpenNew.href = src;
+            }
+            function openFullscreenAt(index){
+              if (!fsList || index < 0 || index >= fsList.length) return;
+              fsIndex = index;
+              openFullscreen(fsList[fsIndex]);
+              updateNavButtons();
+            }
+            function closeFullscreen(){
+              if (!fs || !fsImg) return;
+              fs.classList.add('hidden');
+              document.body.style.overflow = '';
+              fsImg.src = '';
+              fsIndex = -1;
+            }
+            function updateNavButtons(){
+              if (!fsPrev || !fsNext) return;
+              fsPrev.disabled = (fsIndex <= 0);
+              fsNext.disabled = (fsIndex >= fsList.length - 1);
+              fsPrev.classList.toggle('opacity-50', fsPrev.disabled);
+              fsNext.classList.toggle('opacity-50', fsNext.disabled);
+            }
+            fsClose && fsClose.addEventListener('click', closeFullscreen);
+            fs && fs.addEventListener('click', (e)=>{
+              if (e.target === fs) closeFullscreen();
+            });
+            document.addEventListener('keydown', (e)=>{
+              if (e.key === 'Escape' && fs && !fs.classList.contains('hidden')) closeFullscreen();
+              if (e.key === 'ArrowLeft' && fs && !fs.classList.contains('hidden')) { if (fsIndex > 0) openFullscreenAt(fsIndex - 1); }
+              if (e.key === 'ArrowRight' && fs && !fs.classList.contains('hidden')) { if (fsIndex < fsList.length - 1) openFullscreenAt(fsIndex + 1); }
+            });
+            fsPrev && fsPrev.addEventListener('click', ()=>{ if (fsIndex > 0) openFullscreenAt(fsIndex - 1); });
+            fsNext && fsNext.addEventListener('click', ()=>{ if (fsIndex < fsList.length - 1) openFullscreenAt(fsIndex + 1); });
+            // Delegación: click en miniatura abre pantalla completa
+            const grid = document.getElementById('images-grid');
+            grid && grid.addEventListener('click', (e)=>{
+              const t = e.target;
+              if (t && t.tagName === 'IMG' && t.dataset.fullscreen === 'true'){
+                // Construir lista ordenada de URLs del grid
+                fsList = Array.from(grid.querySelectorAll('img[data-fullscreen="true"]')).map(img => img.src);
+                const idx = fsList.indexOf(t.src);
+                openFullscreenAt(idx >= 0 ? idx : 0);
+              }
+            });
           })();
         </script>
       </div>

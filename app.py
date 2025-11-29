@@ -210,6 +210,52 @@ def product_image_raw(image_id: int):
                 payload = bytes(payload) if payload is not None else b""
             except Exception:
                 payload = payload or b""
+
+        # Detección y decodificación de contenido base64 almacenado como texto en bytea
+        # Esto permite mostrar imágenes importadas erróneamente como cadena base64.
+        def _looks_like_base64(b: bytes) -> bool:
+            if not b or len(b) < 32:
+                return False
+            # Evitar datos ya binarios (cabeceras típicas de archivos de imagen)
+            if b[:2] in (b"\xFF\xD8", b"\x89P") or b[:4] in (b"GIF8", b"RIFF"):
+                return False
+            try:
+                txt = b.decode("ascii")
+            except Exception:
+                return False
+            # Solo caracteres base64 permitidos + '='
+            for ch in txt.strip():
+                if ch not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\n\r":
+                    return False
+            # Longitud múltiplo de 4 tras eliminar saltos
+            core = "".join([c for c in txt if c not in "\n\r"])
+            if len(core) % 4 != 0:
+                return False
+            # Debe terminar con '=', '==', o sin padding pero decodable
+            return True
+
+        if isinstance(payload, bytes) and _looks_like_base64(payload):
+            import base64
+            # Normalizar: quitar saltos de línea
+            cleaned = b"".join(line for line in payload.splitlines())
+            try:
+                decoded = base64.b64decode(cleaned, validate=False)
+                # Heurística de tipo MIME si el existente es genérico
+                mime = (img.get("mime_type") or "application/octet-stream").lower()
+                if mime in ("text/plain", "application/octet-stream", "binary/octet-stream"):
+                    if decoded.startswith(b"\xFF\xD8\xFF"):
+                        mime = "image/jpeg"
+                    elif decoded.startswith(b"\x89PNG\r\n\x1a\n"):
+                        mime = "image/png"
+                    elif decoded.startswith(b"GIF89a") or decoded.startswith(b"GIF87a"):
+                        mime = "image/gif"
+                    elif decoded.startswith(b"RIFF") and b"WEBP" in decoded[:32]:
+                        mime = "image/webp"
+                payload = decoded
+                img["mime_type"] = mime
+            except Exception as e:
+                print(f"Fallo al decodificar base64 imagen_id={image_id}: {e}")
+
         resp = make_response(payload or b"")
         resp.headers["Content-Type"] = img.get("mime_type") or "image/jpeg"
         resp.headers["Cache-Control"] = "public, max-age=86400"
@@ -1579,25 +1625,25 @@ def api_collection_order_product_stock():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    try:
-        port = int(os.environ.get("APP_PORT", "5001"))
-    except Exception:
-        port = 5001
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("APP_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
 
-    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    if use_waitress:
-        try:
-            from waitress import serve
-            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-            serve(app, host=host, port=port, threads=threads)
-        except Exception as e:
-            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-            app.run(debug=False, host=host, port=port)
-    else:
-        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-        app.run(debug=debug, host=host, port=port)
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)
