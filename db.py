@@ -15,7 +15,7 @@ os.environ.setdefault("PGCLIENTENCODING", "UTF8")
 
 
 DB_CONFIG = {
-    "host":  os.environ.get("DB_HOST", "localhost"),
+    "host": os.environ.get("DB_HOST", "localhost"),
     "database": os.environ.get("DB_NAME"),
     "user": os.environ.get("DB_USER", "postgres"),
     "password": os.environ.get("DB_PASSWORD", "root"),
@@ -117,6 +117,37 @@ def get_store_by_code(store_code):
         close_db_connection(conn)
 
 
+def get_coins():
+    """Obtiene la lista de monedas desde la tabla coin.
+
+    Retorna una lista de dicts con claves: code, description.
+    Serializa tipos Decimal y fechas si aparecen.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT code, description FROM coin")
+            rows = cur.fetchall()
+
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            return [_serialize_row(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+
 def get_store_by_code(store_code):
     """Obtiene la información de un deposito por su código."""
     conn = get_db_connection()
@@ -144,10 +175,6 @@ def get_store_by_code(store_code):
             return None
     finally:
         close_db_connection(conn)
-
-
-
-
 
 
 def search_product_failure(code_product, store_code):
@@ -185,6 +212,7 @@ def search_product_failure(code_product, store_code):
     finally:
         close_db_connection(conn)
 
+
 def search_product(code_product):
     """Busca un producto por código alterno (other_code) y devuelve datos principales.
 
@@ -200,7 +228,7 @@ def search_product(code_product):
         p.code, 
         p.description,
         u.description AS unit_description,
-        pu.correlative AS unit_correlative
+        pu.correlative AS unit_correlative,
     FROM products_codes AS pc
     INNER JOIN products AS p ON pc.main_code = p.code
     LEFT JOIN products_units AS pu ON pu.product_code = p.code AND pu.main_unit = true
@@ -232,6 +260,87 @@ def search_product(code_product):
             cur.execute(sql_fallback, (code_product,))
             rows2 = cur.fetchall()
             return [dict(r) for r in rows2]
+    finally:
+        close_db_connection(conn)
+
+
+def search_products_for_sales():
+    """Busca todos los productos disponibles en la base de datos.
+
+    Retorna una lista de dicts con las claves:
+      - code (código principal)
+      - description
+      - unit_description (si existe unidad principal)
+      - unit_correlative (correlativo de la unidad principal, si existe)
+    """
+
+    sql = """
+        SELECT
+        p.code,
+        p.description,
+        p.mark,
+        p.model,
+        -- Precios (se mantienen sin cambios importantes)
+        pu.offer_price * pc.sales_aliquot * 1.16 AS offer_price_01,
+        pu.higher_price * 1.16 AS higher_price_01,
+        pu.minimum_price * 1.16 AS minimum_price_01,
+        
+        -- Precios con conversión/impuestos (se mantiene la lógica original)
+        -- NOTA: El sub-select es necesario para el convert_value_to_coin
+        CASE
+            WHEN p.extract_net_from_unit_price_plus_tax THEN
+                (SELECT convert_value_to_coin(
+                    p.coin,
+                    '<P_COIN>',
+                    ROUND(CAST((pu.offer_price + (pu.offer_price * t.aliquot / 100)) AS NUMERIC), p.rounding_type),
+                    'SALES',
+                        TRUE
+                    ))
+                ELSE
+                    (SELECT convert_value_to_coin(
+                        p.coin,
+                        '<P_COIN>',
+                        pu.offer_price + (pu.offer_price * t.aliquot / 100),
+                        'SALES',
+                        TRUE
+                    ))
+            END AS offer_price,
+            SUM(ps.stock) AS stock            
+        FROM products p
+        JOIN products_units pu ON (pu.product_code = p.code)
+        -- LEFT JOIN es clave para incluir productos sin stock, pero que cumplen las condiciones de WHERE
+        LEFT JOIN products_stock ps ON (p.code = ps.product_code)
+        JOIN coin pc ON (p.coin = pc.code)
+        JOIN taxes t ON (t.code = p.sale_tax)
+
+        WHERE
+            pu.main_unit
+            AND p.code <> 'SERVGAST'
+            AND p.status = '01'
+            OR p.product_type = 'S'
+
+        GROUP BY
+            p.code,
+            pc.code,
+            p.description,
+            p.mark,
+            p.model,
+            pu.offer_price,
+            offer_price_01,
+            higher_price_01,
+            minimum_price_01,
+            t.aliquot
+            
+        ORDER BY
+            p.description
+    """
+    conn = get_db_connection()
+
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
     finally:
         close_db_connection(conn)
 
@@ -360,7 +469,12 @@ def get_collection_products(
         close_db_connection(conn)
 
 
-def update_minmax_product_failure(store_code: str, product_code: str, minimal_stock: int | None, maximum_stock: int | None):
+def update_minmax_product_failure(
+    store_code: str,
+    product_code: str,
+    minimal_stock: int | None,
+    maximum_stock: int | None,
+):
     """Actualiza únicamente los campos minimal_stock y maximum_stock en products_failures.
     Si no existe el registro, lo inserta (location queda NULL por defecto).
     """
@@ -377,9 +491,13 @@ def update_minmax_product_failure(store_code: str, product_code: str, minimal_st
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute(sql_update, (minimal_stock, maximum_stock, product_code, store_code))
+            cur.execute(
+                sql_update, (minimal_stock, maximum_stock, product_code, store_code)
+            )
             if cur.rowcount == 0:
-                cur.execute(sql_insert, (product_code, store_code, minimal_stock, maximum_stock))
+                cur.execute(
+                    sql_insert, (product_code, store_code, minimal_stock, maximum_stock)
+                )
         conn.commit()
     except Exception as e:
         print(f"Error al actualizar min/max en products_failures: {e}")
@@ -405,7 +523,6 @@ def get_products_by_codes(codes):
             return [dict(r) for r in rows]
     finally:
         close_db_connection(conn)
-
 
 
 def update_description_inventory_operations(correlative: int, description: str):
@@ -714,8 +831,10 @@ def get_inventory_operations_by_correlative(
             return [_serialize_row(r) for r in rows]
     finally:
         close_db_connection(conn)
-#funcion que devuelve todas las operaciones de inventario
-def get_inventory_operations(wait: bool = True, operation_type: str = 'TRANSFER'):
+
+
+# funcion que devuelve todas las operaciones de inventario
+def get_inventory_operations(wait: bool = True, operation_type: str = "TRANSFER"):
     """Obtiene todas las operaciones de inventario que están en espera."""
     conn = get_db_connection()
 
@@ -760,7 +879,7 @@ def get_inventory_operations(wait: bool = True, operation_type: str = 'TRANSFER'
         close_db_connection(conn)
 
 
-#para eliminar operaciones de inventario por su codigo correlativo
+# para eliminar operaciones de inventario por su codigo correlativo
 def delete_inventory_operation_by_correlative(correlative: int):
     """Elimina una operación de inventario y sus detalles por correlativo.
     Primero elimina los detalles para evitar violaciones de FK y luego el encabezado.
@@ -787,7 +906,10 @@ def delete_inventory_operation_by_correlative(correlative: int):
     finally:
         close_db_connection(conn)
 
-def get_inventory_operations_details_by_correlative(main_correlative: int, product_failure_store: str = None):
+
+def get_inventory_operations_details_by_correlative(
+    main_correlative: int, product_failure_store: str = None
+):
     """Obtiene las operaciones de inventario por su código correlativo y tipo de operación."""
     conn = get_db_connection()
     print("este es el correlavito que recibo: ", main_correlative)
@@ -838,7 +960,9 @@ def get_inventory_operations_details_by_correlative(main_correlative: int, produ
         close_db_connection(conn)
 
 
-def update_inventory_operation_detail_amount(main_correlative: int, code_product: str, amount: float) -> int:
+def update_inventory_operation_detail_amount(
+    main_correlative: int, code_product: str, amount: float
+) -> int:
     """Actualiza la cantidad (amount) de una o varias líneas de detalle por correlativo y código de producto.
     Devuelve el número de filas afectadas. Normaliza el código a mayúsculas en la comparación.
     """
@@ -861,7 +985,10 @@ def update_inventory_operation_detail_amount(main_correlative: int, code_product
     finally:
         close_db_connection(conn)
 
-def update_locations_products_failures(store_code: str, product_code: str, location: str):
+
+def update_locations_products_failures(
+    store_code: str, product_code: str, location: str
+):
     """Actualiza únicamente el campo location en products_failures.
     Si no existe el registro, lo inserta (minimal_stock y maximum_stock quedan NULL por defecto).
     """
@@ -888,12 +1015,14 @@ def update_locations_products_failures(store_code: str, product_code: str, locat
     finally:
         close_db_connection(conn)
 
-#para devolver operaciones de inventario 
+
+# para devolver operaciones de inventario
 
 
 def delete_inventory_operation_detail(main_correlative: int, code_product: str):
     """Elimina líneas de detalle de una operación por correlativo y código de producto.
-    Si hay varias líneas con el mismo producto, elimina todas (comportamiento consistente con update)."""
+    Si hay varias líneas con el mismo producto, elimina todas (comportamiento consistente con update).
+    """
     conn = get_db_connection()
     sql = """
         DELETE FROM inventory_operation_details
@@ -911,7 +1040,9 @@ def delete_inventory_operation_detail(main_correlative: int, code_product: str):
         close_db_connection(conn)
 
 
-def update_inventory_operation_type(correlative: int, new_operation_type: str, description: str = ""):
+def update_inventory_operation_type(
+    correlative: int, new_operation_type: str, description: str = ""
+):
     """Actualiza el campo operation_type de inventory_operation para un correlativo dado."""
     conn = get_db_connection()
     sql = """
@@ -931,7 +1062,8 @@ def update_inventory_operation_type(correlative: int, new_operation_type: str, d
     finally:
         close_db_connection(conn)
 
-def search_product(code: str ):
+
+def search_product(code: str):
     """Busca un producto por código alterno (other_code) y devuelve datos principales.
 
     Retorna una lista de dicts con las claves:
@@ -1020,6 +1152,7 @@ __all__ = [
     "delete_product_image",
 ]
 
+
 def get_product_stock(product_code: str, store_code: str) -> float:
     """Obtiene el stock actual para un producto en un depósito específico.
     Devuelve 0.0 si no hay registro.
@@ -1075,11 +1208,13 @@ def get_product_stock_by_store(product_code: str):
                     stock_num = float(stock_val) if stock_val is not None else 0.0
                 except Exception:
                     stock_num = 0.0
-                result.append({
-                    "store_code": r.get("store_code"),
-                    "store_description": r.get("store_description"),
-                    "stock": float(f"{stock_num:.2f}")
-                })
+                result.append(
+                    {
+                        "store_code": r.get("store_code"),
+                        "store_description": r.get("store_description"),
+                        "stock": float(f"{stock_num:.2f}"),
+                    }
+                )
             return result
     finally:
         close_db_connection(conn)
@@ -1152,8 +1287,8 @@ def search_products_with_stock_and_price(query: str):
             )
         ORDER BY p.code ASC
     """
-    q = (query or '').strip()
-    like = f"%{q}%" if q != '' else '%'
+    q = (query or "").strip()
+    like = f"%{q}%" if q != "" else "%"
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (q, like, like, like))
@@ -1171,13 +1306,15 @@ def search_products_with_stock_and_price(query: str):
                     offer_price = float(f"{float(op):.2f}") if op is not None else None
                 except Exception:
                     offer_price = float(op) if op is not None else None
-                result.append({
-                    "code": r.get("code"),
-                    "description": r.get("description"),
-                    "total_stock": total_stock,
-                    "offer_price": offer_price,
-                    "unit_description": r.get("unit_description"),
-                })
+                result.append(
+                    {
+                        "code": r.get("code"),
+                        "description": r.get("description"),
+                        "total_stock": total_stock,
+                        "offer_price": offer_price,
+                        "unit_description": r.get("unit_description"),
+                    }
+                )
             return result
     finally:
         close_db_connection(conn)
@@ -1195,14 +1332,17 @@ def insert_product_image(data: dict):
     """
     try:
         with conn.cursor() as cur:
-            cur.execute(sql, (
-                data.get("product_code"),
-                psycopg2.Binary(data.get("image_data")),
-                data.get("filename"),
-                data.get("mime_type"),
-                data.get("size_bytes"),
-                bool(data.get("is_primary", False)),
-            ))
+            cur.execute(
+                sql,
+                (
+                    data.get("product_code"),
+                    psycopg2.Binary(data.get("image_data")),
+                    data.get("filename"),
+                    data.get("mime_type"),
+                    data.get("size_bytes"),
+                    bool(data.get("is_primary", False)),
+                ),
+            )
             row = cur.fetchone()
             image_id = row[0] if row else None
         conn.commit()
@@ -1220,10 +1360,15 @@ def get_product_images(product_code: str = None, image_id: int = None):
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             if image_id is not None:
-                cur.execute("SELECT * FROM rs_products_images WHERE image_id = %s", (image_id,))
+                cur.execute(
+                    "SELECT * FROM rs_products_images WHERE image_id = %s", (image_id,)
+                )
                 rows = cur.fetchall()
             elif product_code:
-                cur.execute("SELECT image_id, product_code, filename, mime_type, size_bytes, is_primary, created_at FROM rs_products_images WHERE product_code = %s ORDER BY is_primary DESC, created_at DESC", (product_code,))
+                cur.execute(
+                    "SELECT image_id, product_code, filename, mime_type, size_bytes, is_primary, created_at FROM rs_products_images WHERE product_code = %s ORDER BY is_primary DESC, created_at DESC",
+                    (product_code,),
+                )
                 rows = cur.fetchall()
             else:
                 rows = []
@@ -1238,7 +1383,9 @@ def delete_product_image(image_id: int):
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM rs_products_images WHERE image_id = %s", (image_id,))
+            cur.execute(
+                "DELETE FROM rs_products_images WHERE image_id = %s", (image_id,)
+            )
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -1246,3 +1393,5 @@ def delete_product_image(image_id: int):
     finally:
         close_db_connection(conn)
 
+
+# Busca productos

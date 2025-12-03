@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-screen-xl mx-auto p-4 text-sm">
+    <h1 class="text-xl font-semibold mb-3">Crear Presupuesto</h1>
+
+    <form id="budget-form" method="post" action="#" onsubmit="return false;" class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+        <!-- Encabezado del Presupuesto -->
+        <div class="mb-4 border rounded-lg p-3 bg-white shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-base font-semibold">Encabezado</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium mb-1">Cliente (Cédula)</label>
+                <input type="text" name="client_id" class="w-full border rounded px-2 py-1" placeholder="V-00000000" />
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">Vendedor</label>
+                <input type="text" name="seller" class="w-full border rounded px-2 py-1" placeholder="Código/Nombre" />
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium mb-1">Tipo de precio</label>
+                <select name="price_type" class="w-full border rounded px-2 py-1">
+                    {% for pt in price_types %}
+                    <option value="{{ pt.code }}">{{ pt.description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium mb-1">Depósito</label>
+                <select name="store_code" class="w-full border rounded px-2 py-1">
+                    {% for s in stores %}
+                    <option value="{{ s.code }}">{{ s.code }} — {{ s.description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium mb-1">Moneda</label>
+                <select name="coin_code" class="w-full border rounded px-2 py-1">
+                    {% for c in coins %}
+                    <option value="{{ c.code }}">{{ c.code }} — {{ c.description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Barra lateral: Detalles del Presupuesto -->
+        <aside class="space-y-3 border rounded-lg p-3 bg-white shadow-sm lg:sticky lg:top-4 h-fit">
+            <div class="mb-2 flex items-center justify-between">
+                <h2 class="text-base font-semibold">Detalles</h2>
+            </div>
+            <div class="flex gap-2 items-center">
+                <input id="product-search" type="text" class="flex-1 border rounded px-2 py-1" placeholder="Buscar producto por nombre o código" />
+                <button id="open-search" type="button" class="bg-blue-600 text-white px-3 py-1 rounded">Buscar</button>
+                <button id="add-product" type="button" class="bg-green-600 text-white px-3 py-1 rounded">Agregar rápido</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-xs border">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-2 py-2 border">Código</th>
+                            <th class="px-2 py-2 border">Nombre</th>
+                            <th class="px-2 py-2 border">Cantidad</th>
+                            <th class="px-2 py-2 border">Unidad</th>
+                            <th class="px-2 py-2 border">Precio</th>
+                            <th class="px-2 py-2 border">Subtotal</th>
+                            <th class="px-2 py-2 border">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-body"></tbody>
+                </table>
+            </div>
+        </aside>
+
+        <div class="mt-2">
+            <button type="button" class="bg-blue-600 text-white px-3 py-1 rounded">Guardar (próximamente)</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Estado simple de detalles
+const details = [];
+
+function renderDetails(){
+    const tbody = document.getElementById('details-body');
+    tbody.innerHTML = '';
+    details.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        // Subtotal = cantidad * precio
+        const subtotal = (Number(item.qty||0) * Number(item.price||0));
+        tr.innerHTML = `
+            <td class="px-3 py-2 border">${item.code}</td>
+            <td class="px-3 py-2 border">${item.description}</td>
+            <td class="px-3 py-2 border">
+                <input type="number" min="0" step="0.01" value="${item.qty||''}" class="w-24 border rounded px-2 py-1" data-idx="${idx}" data-field="qty" />
+            </td>
+            <td class="px-3 py-2 border">
+                <select class="border rounded px-2 py-1" data-idx="${idx}" data-field="unit">
+                    <option value="${item.unit_correlative||''}">${item.unit_description||'Unidad'}</option>
+                    <!-- Más unidades alternas se cargarán luego -->
+                </select>
+            </td>
+            <td class="px-3 py-2 border">
+                <input type="number" min="0" step="0.01" value="${item.price||''}" class="w-24 border rounded px-2 py-1" data-idx="${idx}" data-field="price" />
+            </td>
+            <td class="px-3 py-2 border">${subtotal.toFixed(2)}</td>
+            <td class="px-3 py-2 border">
+                <button type="button" class="text-red-600" data-action="remove" data-idx="${idx}">Quitar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function addDetailFromProduct(p){
+    // p: { code, description, unit_description, unit_correlative }
+    const exists = details.find(d => d.code === p.code);
+    if (exists) return;
+    details.push({
+        code: p.code,
+        description: p.description || '',
+        qty: 1,
+        unit_description: p.unit_description || 'Unidad',
+        unit_correlative: p.unit_correlative || '',
+        price: 0, // se ajustará según tipo de precio seleccionado más adelante
+    });
+    renderDetails();
+}
+
+async function addItemViaAPI(p, quantity=1){
+    try {
+        const payload = {
+            code: p.code,
+            description: p.description,
+            unit_description: p.unit_description,
+            unit_correlative: p.unit_correlative,
+            offer_price: Number(p.offer_price || 0),
+            quantity: Number(quantity || 1)
+        };
+        const resp = await fetch('/sales/api/budget/add_item', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!data || !data.ok) throw new Error(data && data.error || 'Error al añadir item');
+        const item = data.item;
+        addDetailFromProduct({
+            code: item.code,
+            description: item.description,
+            unit_description: item.unit_description,
+            unit_correlative: item.unit_correlative,
+        });
+        // actualizar precio y cantidad según respuesta
+        const d = details.find(x => x.code === item.code);
+        if (d){
+            d.qty = item.quantity;
+            d.price = item.offer_price;
+            renderDetails();
+        }
+    } catch(e){
+        console.error('addItemViaAPI error', e);
+        alert('No se pudo añadir el producto al detalle');
+    }
+}
+
+document.getElementById('add-product').addEventListener('click', async () => {
+    const q = document.getElementById('product-search').value.trim();
+    if (!q) return;
+    try {
+        // Usamos el endpoint global para buscar productos con precio/stock si está disponible
+            const resp = await fetch(`/sales/api/products/search?q=${encodeURIComponent(q)}`);
+        const data = await resp.json();
+        if (data && data.ok && Array.isArray(data.items) && data.items.length > 0){
+            // Elegimos el primer resultado como simplificación inicial
+            const p = data.items[0];
+            await addItemViaAPI(p, 1);
+        } else {
+            alert('Producto no encontrado');
+        }
+    } catch(e){
+        console.error('Error buscando producto', e);
+        alert('Error buscando producto');
+    }
+});
+
+// Delegación de eventos para actualizar campos y quitar
+document.getElementById('details-body').addEventListener('input', (e) => {
+    const idx = e.target.getAttribute('data-idx');
+    const field = e.target.getAttribute('data-field');
+    if (idx === null || !field) return;
+    const item = details[Number(idx)];
+    if (!item) return;
+    let val = e.target.value;
+    if (field === 'qty' || field === 'price') val = Number(val);
+    item[field] = val;
+    renderDetails();
+});
+
+document.getElementById('details-body').addEventListener('click', (e) => {
+    const action = e.target.getAttribute('data-action');
+    if (action === 'remove'){
+        const idx = Number(e.target.getAttribute('data-idx'));
+        if (!Number.isNaN(idx)){
+            details.splice(idx, 1);
+            renderDetails();
+        }
+    }
+});
+</script>
+<script>
+// Modal de búsqueda de productos
+const modal = (() => {
+    const overlay = document.createElement('div');
+    overlay.id = 'product-modal-overlay';
+    overlay.className = 'fixed inset-0 bg-black/50 hidden z-40';
+
+    const panel = document.createElement('div');
+    panel.id = 'product-modal-panel';
+    panel.className = 'fixed top-12 left-1/2 -translate-x-1/2 w-[90%] max-w-3xl bg-white rounded shadow-lg hidden z-50';
+    panel.innerHTML = `
+        <div class="p-3 border-b flex items-center justify-between">
+            <h3 class="text-base font-semibold">Buscar productos</h3>
+            <button id="product-modal-close" class="text-gray-600">✕</button>
+        </div>
+        <div class="p-3 space-y-3 text-sm">
+            <div class="flex gap-2">
+                <input id="product-modal-query" type="text" class="flex-1 border rounded px-2 py-1" placeholder="Nombre o código" />
+                <button id="product-modal-search" class="bg-blue-600 text-white px-3 py-1 rounded">Buscar</button>
+            </div>
+            <div id="product-modal-results" class="max-h-80 overflow-y-auto border rounded">
+                <table class="min-w-full text-xs">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-2 py-2 border">Código</th>
+                            <th class="px-2 py-2 border">Nombre</th>
+                            <th class="px-2 py-2 border">Existencia Depósito</th>
+                            <th class="px-2 py-2 border">Precio Oferta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-modal-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(panel);
+
+    function open(){ overlay.classList.remove('hidden'); panel.classList.remove('hidden'); }
+    function close(){ overlay.classList.add('hidden'); panel.classList.add('hidden'); }
+
+    overlay.addEventListener('click', close);
+    panel.querySelector('#product-modal-close').addEventListener('click', close);
+
+    async function search(){
+        const q = panel.querySelector('#product-modal-query').value.trim();
+        const tbody = panel.querySelector('#product-modal-tbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="px-2 py-2 text-gray-600">Buscando...</td></tr>';
+        try {
+                const resp = await fetch(`/sales/api/products/search?q=${encodeURIComponent(q)}`);
+            const data = await resp.json();
+            if (!(data && data.ok && Array.isArray(data.items))) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-2 py-2 text-red-600">Sin resultados</td></tr>';
+                return;
+            }
+            if (data.items.length === 0){
+                tbody.innerHTML = '<tr><td colspan="6" class="px-2 py-2 text-gray-600">No se encontraron productos</td></tr>';
+                return;
+            }
+            const rowsHtml = data.items.map(p => {
+                const stock = (p.stock != null ? Number(p.stock): 0).toFixed(2);
+                const offer = (p.offer_price != null ? Number(p.offer_price).toFixed(2) : '');
+                return `
+                  <tr class="hover:bg-gray-50 cursor-pointer" data-code="${p.code}">
+                    <td class="px-2 py-2 border">${p.code}</td>
+                    <td class="px-2 py-2 border">${p.description || ''}</td>
+                    <td class="px-2 py-2 border text-right">${stock}</td>
+                    <td class="px-2 py-2 border text-right">${offer}</td>
+                  </tr>`;
+            }).join('');
+            tbody.innerHTML = rowsHtml;
+            // click para agregar producto
+            Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
+              tr.addEventListener('click', () => {
+                const idx = Array.from(tbody.children).indexOf(tr);
+                const p = data.items[idx];
+                                addItemViaAPI(p, 1);
+                close();
+              })
+            });
+        } catch(e){
+            console.error('Error buscando', e);
+            tbody.innerHTML = '<tr><td colspan="6" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
+        }
+    }
+
+    panel.querySelector('#product-modal-search').addEventListener('click', search);
+    return { open, close, search, panel };
+})();
+
+document.getElementById('open-search').addEventListener('click', () => {
+    // Abrir modal y ejecutar búsqueda con el texto del input principal
+    const q = document.getElementById('product-search').value.trim();
+    modal.open();
+    try {
+        modal.panel.querySelector('#product-modal-query').value = q;
+    } catch(e) {}
+    modal.search();
+});
+</script>
+{% endblock %}
