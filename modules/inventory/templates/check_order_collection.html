@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
          if (!row){
             // Intentar resolver como other_code
             try {
-               const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin);
+               const url = new URL('{{ url_for("inventory.api_collection_order_product_info") }}', window.location.origin);
                url.searchParams.set('query', code);
                const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
                if (res.ok){
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.set('correlative', correlative);
             formData.set('product_code', code);
          formData.set('counted', countedVal);
-         const res = await fetch('{{ url_for("api_collection_order_update_count") }}', {
+         const res = await fetch('{{ url_for("inventory.api_collection_order_update_count") }}', {
             method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString()
          });
          const data = await res.json();
@@ -431,16 +431,16 @@ document.addEventListener('DOMContentLoaded', () => {
          const formData = new URLSearchParams();
          formData.set('correlative', correlative);
          formData.set('counted_codes', countedCodes.join(','));
-         const res = await fetch('{{ url_for("api_collection_order_confirm_transfer") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString()});
+         const res = await fetch('{{ url_for("inventory.api_collection_order_confirm_transfer") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'}, body: formData.toString()});
          const data = await res.json();
          if (!res.ok || !data.ok) throw new Error(data.error || 'Error generando TRANSFER');
          setStatus('TRANSFER creada correlativo ' + data.transfer_correlative, 'success');
          // Abrir PDF de la TRANSFER en nueva pestaña
-         const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=true';
+         const pdfUrl = '{{ url_for("inventory.collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=true';
          window.open(pdfUrl, '_blank');
          // Redireccionar a la pantalla de chequeo de orden para mostrar estado actualizado
          setTimeout(() => {
-            window.location.href = '{{ url_for("check_order_collection") }}' + '?correlative=' + data.transfer_correlative;
+            window.location.href = '{{ url_for("inventory.check_order_collection") }}' + '?correlative=' + data.transfer_correlative;
          }, 600);
       } catch(e){ setStatus(e.message, 'error'); }
       finally { finalizeBtn.disabled = false; }
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let row = findRowByCode(code);
       if (!row) {
          try {
-            const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin);
+            const url = new URL('{{ url_for("inventory.api_collection_order_product_info") }}', window.location.origin);
             url.searchParams.set('query', code);
             const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
             if (res.ok) {
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
          if (!result.row) {
             // Consultar info del producto y abrir modal poblado
             try {
-               const url = new URL('{{ url_for("api_collection_order_product_info") }}', window.location.origin);
+               const url = new URL('{{ url_for("inventory.api_collection_order_product_info") }}', window.location.origin);
                url.searchParams.set('query', code);
                const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
                const data = await res.json();
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
                try {
                   if (stockInput) {
                      stockInput.value = 'Consultando...';
-                     const sUrl = new URL('{{ url_for("api_collection_order_product_stock") }}', window.location.origin);
+                     const sUrl = new URL('{{ url_for("inventory.api_collection_order_product_stock") }}', window.location.origin);
                      sUrl.searchParams.set('correlative', correlative ?? '');
                      sUrl.searchParams.set('code', data.code || '');
                      const sRes = await fetch(sUrl.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!code) return;
       if (!confirm(`¿Eliminar producto ${code} de la orden?`)) return;
       try {
-         const res = await fetch('{{ url_for("api_collection_order_delete_item") }}', {
+         const res = await fetch('{{ url_for("inventory.api_collection_order_delete_item") }}', {
             method:'POST',
             headers:{'Content-Type':'application/x-www-form-urlencoded','X-Requested-With':'XMLHttpRequest'},
             body: new URLSearchParams({ correlative: String(correlative), product_code: code }).toString(),
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
          } catch(_){}
       try {
          addStatus.textContent='Agregando...'; addStatus.className='text-sm text-gray-600';
-         const res = await fetch('{{ url_for("api_collection_order_add_item") }}', {
+         const res = await fetch('{{ url_for("inventory.api_collection_order_add_item") }}', {
             method:'POST',
             headers:{'X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'},
             body: new URLSearchParams({

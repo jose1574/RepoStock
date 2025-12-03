@@ -33,7 +33,7 @@
                 </style>
 
         <section id="searchPanel" class="mb-4">
-            <form action="{{ url_for('update_locations_products_failures') }}" method="post" id="search-form" class="flex gap-2">
+            <form action="{{ url_for('inventory.update_locations_products_failures') }}" method="post" id="search-form" class="flex gap-2">
                 <input type="text" id="code_product" name="code_product" placeholder="Código de producto"
                     autocomplete="off" autofocus
                     class="flex-1 border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -55,14 +55,14 @@
                 <input type="hidden" name="product_code" value="{{ product.code }}">
                 {% endfor %}
                 {% endif %}
-                <button type="submit" id="btnClear" name="clear" formaction="{{ url_for('clear') }}" formmethod="post"
+                <button type="submit" id="btnClear" name="clear" formaction="{{ url_for('inventory.clear') }}" formmethod="post"
                     onclick="return confirm('¿Seguro que desea quitar todos los productos de la lista?');"
                     class="bg-red-100 text-red-700 border border-red-200 px-3 py-2 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-300">
                     Quitar todo
                 </button>
 
                 <button type="submit" id="btnUpdateLocation" name="update"
-                    formaction="{{ url_for('update_location_products') }}" formmethod="post"
+                    formaction="{{ url_for('inventory.update_location_products') }}" formmethod="post"
                     class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
                     onclick="return confirm('¿Seguro que desea actualizar el campo ubicación en los productos listados?');">
                     Actualizar ubicaciones
@@ -91,7 +91,7 @@
                             <td class="px-4 py-2 text-sm text-gray-800" data-label="Descripción">{{ product.description }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800" data-label="Ubicación">{{ product.location }}</td>
                             <td class="px-4 py-2 text-sm text-gray-800 action-cell" data-label="Opciones">
-                                <form action="{{ url_for('delete_product', code=product.code) }}" method="post">
+                                <form action="{{ url_for('inventory.delete_product', code=product.code) }}" method="post">
                                      <button type="submit"
                                         class="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-md hover:bg-red-500 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-300 text-sm"
                                         aria-label="Eliminar {{ product.code }}">

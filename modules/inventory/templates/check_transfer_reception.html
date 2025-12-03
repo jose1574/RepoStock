@@ -101,26 +101,43 @@
     }
 
     /* --- MinMax modal: estilos adaptativos móviles para evitar que el teclado lo cubra --- */
-    #minmax-modal .modal-panel { /* estilos base desktop */ }
+    /* estilos base aplicados en media queries; se eliminó regla vacía para evitar errores */
+
     @media (max-width:640px) {
-      #minmax-modal.flex { align-items: flex-end; }
-      #minmax-modal .modal-panel {
-        width:100%;
-        max-width:100%;
-        border-radius:0.75rem 0.75rem 0 0;
-        margin:0;
-        padding:0.9rem 1rem 1.3rem;
-        box-shadow:0 -2px 12px rgba(0,0,0,0.25);
-        max-height:75vh;
-        overflow-y:auto;
-        -webkit-overflow-scrolling:touch;
+      #minmax-modal.flex {
+        align-items: flex-end;
       }
-      #minmax-modal .modal-panel h2 { font-size:1rem; margin-bottom:.25rem; }
-      #minmax-modal .modal-panel .text-sm { font-size:.75rem; }
-      #minmax-modal .modal-panel input { font-size:.85rem; }
+
+      #minmax-modal .modal-panel {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0.75rem 0.75rem 0 0;
+        margin: 0;
+        padding: 0.9rem 1rem 1.3rem;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+        max-height: 75vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #minmax-modal .modal-panel h2 {
+        font-size: 1rem;
+        margin-bottom: .25rem;
+      }
+
+      #minmax-modal .modal-panel .text-sm {
+        font-size: .75rem;
+      }
+
+      #minmax-modal .modal-panel input {
+        font-size: .85rem;
+      }
     }
+
     @supports (padding: max(0px)) {
-      #minmax-modal .modal-panel { padding-bottom: max(env(safe-area-inset-bottom), 1.2rem); }
+      #minmax-modal .modal-panel {
+        padding-bottom: max(env(safe-area-inset-bottom), 1.2rem);
+      }
     }
   </style>
 
@@ -210,8 +227,10 @@
           class="font-mono"></span></div>
       <div class="text-sm text-gray-600"><span class="font-medium">Descripción:</span> <span
           id="mm-product-desc"></span></div>
-      <div class="text-sm text-gray-600"><span class="font-medium">Unidad:</span> <span id="mm-product-unit"></span></div>
-        <div class="text-sm text-gray-600"><span class="font-medium">Cant. Orden:</span> <span id="mm-order-amount"></span></div>
+      <div class="text-sm text-gray-600"><span class="font-medium">Unidad:</span> <span id="mm-product-unit"></span>
+      </div>
+      <div class="text-sm text-gray-600"><span class="font-medium">Cant. Orden:</span> <span
+          id="mm-order-amount"></span></div>
       <div class="flex items-center gap-3">
         <label for="mm-min" class="w-32 text-sm text-gray-700">Existencia mínima</label>
         <input id="mm-min" type="number" min="0" step="1" class="border rounded px-2 py-1 w-40 text-right" />
@@ -235,7 +254,8 @@
     <div class="absolute inset-0 bg-black/40"></div>
     <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-red-600">
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
+        <span
+          class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
         <h3 class="text-lg font-semibold text-red-700">Diferencia en conteo</h3>
       </div>
       <p class="text-sm text-red-700" id="mmw-message"></p>
@@ -249,7 +269,8 @@
     <div class="absolute inset-0 bg-black/40"></div>
     <div class="relative bg-white rounded shadow-lg w-full max-w-md p-4 flex flex-col gap-4 border-2 border-red-600">
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
+        <span
+          class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold">!</span>
         <h3 class="text-lg font-semibold text-red-700">Código no encontrado</h3>
       </div>
       <p class="text-sm text-red-700" id="nf-message"></p>
@@ -263,7 +284,8 @@
     <div class="absolute inset-0 bg-black/40"></div>
     <div class="relative bg-white rounded shadow-lg w-full max-w-md p-5 flex flex-col gap-4 border-2 border-indigo-600">
       <h3 class="text-lg font-semibold text-indigo-700">¿Desea imprimir la validación?</h3>
-      <p class="text-sm text-gray-700">Se han contado todos los productos del traslado. Puede generar el PDF o continuar sin imprimir.</p>
+      <p class="text-sm text-gray-700">Se han contado todos los productos del traslado. Puede generar el PDF o continuar
+        sin imprimir.</p>
       <div class="flex justify-end gap-3">
         <button type="button" id="pv-no" class="px-4 py-1 rounded bg-gray-200 text-gray-800">No</button>
         <button type="button" id="pv-si" class="px-4 py-1 rounded bg-indigo-600 text-white">Sí</button>
@@ -324,7 +346,7 @@
         mmwDetail.textContent = `Cant. traslado: ${Number(original).toFixed(3)} | Cant. contada: ${Number(counted).toFixed(3)} | Diferencia: ${diff.toFixed(3)}`;
         mismatchModal.classList.remove('hidden');
         mismatchModal.classList.add('flex');
-        try { mmwClose.focus(); } catch (_) {}
+        try { mmwClose.focus(); } catch (_) { }
       }
       function closeMismatchModal() {
         if (!mismatchModal) return;
@@ -345,7 +367,7 @@
         nfDetail.textContent = `Ingresado: ${String(code || '').toUpperCase()}`;
         notFoundModal.classList.remove('hidden');
         notFoundModal.classList.add('flex');
-        try { nfClose.focus(); } catch (_) {}
+        try { nfClose.focus(); } catch (_) { }
       }
       function closeNotFoundModal() {
         if (!notFoundModal) return;
@@ -382,7 +404,7 @@
         mmModal.classList.remove('hidden');
         mmModal.classList.add('flex');
         try {
-          const url = new URL('{{ url_for("api_get_minmax_product_failure") }}', window.location.origin);
+          const url = new URL('{{ url_for("inventory.api_get_minmax_product_failure") }}', window.location.origin);
           url.searchParams.set('product_code', code.toUpperCase());
           if (rowDestStore) { url.searchParams.set('store_code', rowDestStore); }
           fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -392,7 +414,7 @@
               if (res.data.minimal_stock !== null && res.data.minimal_stock !== undefined) mmMinInput.value = res.data.minimal_stock;
               if (res.data.maximum_stock !== null && res.data.maximum_stock !== undefined) mmMaxInput.value = res.data.maximum_stock;
               console.log('esto es lo que recibo de data: ', res.data);
-              
+
               mmMinInput.focus(); try { mmMinInput.select(); } catch (e) { }
               ensureFocusVisible(mmMinInput);
             })
@@ -400,12 +422,12 @@
         } catch (_) { mmStatus.textContent = 'Error iniciando consulta'; mmStatus.className = 'text-sm text-red-600'; }
       }
       function closeMinMaxModal() { mmModal.classList.add('hidden'); mmModal.classList.remove('flex'); }
-      function ensureFocusVisible(el){
-        if(!el) return;
-        if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
-        setTimeout(()=>{ try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_){ } },120);
+      function ensureFocusVisible(el) {
+        if (!el) return;
+        if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+        setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { } }, 120);
       }
-      [mmMinInput, mmMaxInput, countedInput].forEach(inp=>{ if(inp){ inp.addEventListener('focus',()=>ensureFocusVisible(inp)); }});
+      [mmMinInput, mmMaxInput, countedInput].forEach(inp => { if (inp) { inp.addEventListener('focus', () => ensureFocusVisible(inp)); } });
       mmCancel && mmCancel.addEventListener('click', () => { closeMinMaxModal(); });
       mmSave && mmSave.addEventListener('click', async () => {
         const code = mmCodeEl.textContent.trim().toUpperCase();
@@ -423,7 +445,7 @@
           formData.set('maximum_stock', vMaxRaw);
           const destStoreToSave = (window.__currentMinMaxDestStore || destinationStore || '').toUpperCase();
           if (destStoreToSave) formData.set('store_code', destStoreToSave);
-          const res = await fetch('{{ url_for("api_update_minmax_product_failure") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
+          const res = await fetch('{{ url_for("inventory.api_update_minmax_product_failure") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || 'Error guardando');
           // Guardado correcto de min/max
@@ -453,7 +475,7 @@
           // Preparar siguiente escaneo: limpiar códigos
           if (searchInput) { searchInput.value = ''; }
           if (manualInput) { manualInput.value = ''; }
-          try { searchInput && searchInput.focus(); } catch (_) {}
+          try { searchInput && searchInput.focus(); } catch (_) { }
         } catch (e) { mmStatus.textContent = e.message; mmStatus.className = 'text-sm text-red-600'; }
       });
 
@@ -495,7 +517,7 @@
         let row = findRowByCode(code);
         if (!row) {
           try {
-            const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin);
+            const url = new URL('{{ url_for("inventory.api_reception_resolve_code") }}', window.location.origin);
             url.searchParams.set('correlative', correlative ?? '');
             url.searchParams.set('query', code);
             const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -518,7 +540,7 @@
         } catch (e) { setStatus(e.message, 'error'); }
       });
 
-      async function finalizeReception(printPdf = true){
+      async function finalizeReception(printPdf = true) {
         if (correlative === null) { setStatus('Sin correlativo', 'error'); return; }
         finalizeBtn && (finalizeBtn.disabled = true);
         setStatus('Validando recepción ...');
@@ -534,16 +556,16 @@
           formData.set('correlative', correlative);
           formData.set('counted_codes', countedCodes.join(','));
           formData.set('counts', JSON.stringify(counts));
-          const res = await fetch('{{ url_for("api_reception_confirm") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
+          const res = await fetch('{{ url_for("inventory.api_reception_confirm") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' }, body: formData.toString() });
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.error || 'Error en validación de recepción');
           setStatus(data.message || 'Recepción validada', 'success');
           if (printPdf) {
-            const pdfUrl = '{{ url_for("collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
+            const pdfUrl = '{{ url_for("inventory.collection_preview_pdf") }}' + '?correlative=' + data.transfer_correlative + '&operation_type=TRANSFER&wait=false';
             window.open(pdfUrl, '_blank');
           }
           // Redirigir siempre a la ruta base tras validación
-          setTimeout(()=>{ window.location.href = '{{ url_for("check_transfer_reception") }}'; }, 600);
+          setTimeout(() => { window.location.href = '{{ url_for("inventory.check_transfer_reception") }}'; }, 600);
         } catch (e) { setStatus(e.message, 'error'); }
         finally { finalizeBtn && (finalizeBtn.disabled = false); }
       }
@@ -610,7 +632,7 @@
         }
       });
 
-      async function resolveToRow(code) { let row = findRowByCode(code); if (!row) { try { const url = new URL('{{ url_for("api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } }); if (res.ok) { const data = await res.json(); if (data && data.ok && data.product_code) { code = String(data.product_code); row = findRowByCode(code); if (row) { searchInput.value = code; } } } } catch (e) { } } return { row, code }; }
+      async function resolveToRow(code) { let row = findRowByCode(code); if (!row) { try { const url = new URL('{{ url_for("inventory.api_reception_resolve_code") }}', window.location.origin); url.searchParams.set('correlative', correlative ?? ''); url.searchParams.set('query', code); const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } }); if (res.ok) { const data = await res.json(); if (data && data.ok && data.product_code) { code = String(data.product_code); row = findRowByCode(code); if (row) { searchInput.value = code; } } } } catch (e) { } } return { row, code }; }
 
       searchInput && searchInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
@@ -638,7 +660,7 @@
         if (e.key === 'Enter') {
           e.preventDefault();
           // Avanzar a cantidad contada (no guardar todavía)
-          if (countedInput) { countedInput.focus(); try { countedInput.select(); } catch (_) {} }
+          if (countedInput) { countedInput.focus(); try { countedInput.select(); } catch (_) { } }
           ensureFocusVisible(countedInput);
         }
       });

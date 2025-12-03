@@ -6,55 +6,65 @@
 <div class="container mx-auto px-4 pt-6 pb-12">
    <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
    <div class="mb-4 flex items-center gap-3 sticky top-0 z-40 bg-white border-b border-gray-200 py-2">
-         <!-- Dropdown multi-filtro Departamentos -->
-         <div class="relative" id="dept-dropdown">
-            <button type="button" class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="dept-toggle" aria-haspopup="true" aria-expanded="false">
-               <span class="font-medium">Departamentos</span>
-               <span id="dept-selected-summary" class="text-xs text-gray-500">Todos</span>
-               <svg width="14" height="14" fill="currentColor" class="text-gray-500"><path d="M4 5l3 3 3-3"/></svg>
-            </button>
-            <div id="dept-panel" class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
-               <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-600">Filtrar departamentos</span>
-                  <button type="button" id="dept-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
-               </div>
-               <div class="space-y-1" id="dept-options">
-                  {% if departments %}
-                  {% for d in departments %}
-                  <label class="flex items-center gap-2 text-xs cursor-pointer">
-                     <input type="checkbox" class="dept-check" value="{{ d }}">
-                     <span>{{ d }}</span>
-                  </label>
-                  {% endfor %}
-                  {% endif %}
-               </div>
+      <!-- Dropdown multi-filtro Departamentos -->
+      <div class="relative" id="dept-dropdown">
+         <button type="button"
+            class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="dept-toggle"
+            aria-haspopup="true" aria-expanded="false">
+            <span class="font-medium">Departamentos</span>
+            <span id="dept-selected-summary" class="text-xs text-gray-500">Todos</span>
+            <svg width="14" height="14" fill="currentColor" class="text-gray-500">
+               <path d="M4 5l3 3 3-3" />
+            </svg>
+         </button>
+         <div id="dept-panel"
+            class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+            <div class="flex items-center justify-between mb-1">
+               <span class="text-xs text-gray-600">Filtrar departamentos</span>
+               <button type="button" id="dept-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+            </div>
+            <div class="space-y-1" id="dept-options">
+               {% if departments %}
+               {% for d in departments %}
+               <label class="flex items-center gap-2 text-xs cursor-pointer">
+                  <input type="checkbox" class="dept-check" value="{{ d }}">
+                  <span>{{ d }}</span>
+               </label>
+               {% endfor %}
+               {% endif %}
             </div>
          </div>
-         <!-- Dropdown multi-filtro Marcas -->
-         <div class="relative" id="brand-dropdown">
-            <button type="button" class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="brand-toggle" aria-haspopup="true" aria-expanded="false">
-               <span class="font-medium">Marcas</span>
-               <span id="brand-selected-summary" class="text-xs text-gray-500">Todas</span>
-               <svg width="14" height="14" fill="currentColor" class="text-gray-500"><path d="M4 5l3 3 3-3"/></svg>
-            </button>
-            <div id="brand-panel" class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
-               <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-600">Filtrar marcas</span>
-                  <button type="button" id="brand-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
-               </div>
-               <div class="space-y-1" id="brand-options">
-                  {% if brands %}
-                  {% for b in brands %}
-                  <label class="flex items-center gap-2 text-xs cursor-pointer">
-                     <input type="checkbox" class="brand-check" value="{{ b }}">
-                     <span>{{ b }}</span>
-                  </label>
-                  {% endfor %}
-                  {% endif %}
-               </div>
+      </div>
+      <!-- Dropdown multi-filtro Marcas -->
+      <div class="relative" id="brand-dropdown">
+         <button type="button"
+            class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1" id="brand-toggle"
+            aria-haspopup="true" aria-expanded="false">
+            <span class="font-medium">Marcas</span>
+            <span id="brand-selected-summary" class="text-xs text-gray-500">Todas</span>
+            <svg width="14" height="14" fill="currentColor" class="text-gray-500">
+               <path d="M4 5l3 3 3-3" />
+            </svg>
+         </button>
+         <div id="brand-panel"
+            class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+            <div class="flex items-center justify-between mb-1">
+               <span class="text-xs text-gray-600">Filtrar marcas</span>
+               <button type="button" id="brand-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+            </div>
+            <div class="space-y-1" id="brand-options">
+               {% if brands %}
+               {% for b in brands %}
+               <label class="flex items-center gap-2 text-xs cursor-pointer">
+                  <input type="checkbox" class="brand-check" value="{{ b }}">
+                  <span>{{ b }}</span>
+               </label>
+               {% endfor %}
+               {% endif %}
             </div>
          </div>
-         <span id="selected-count" class="text-xs text-gray-600 ml-2"></span>
+      </div>
+      <span id="selected-count" class="text-xs text-gray-600 ml-2"></span>
 
       <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
       <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
@@ -62,7 +72,7 @@
 
 
       <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
-      <form id="server-filter-form" method="post" action="{{ url_for('create_collection_order') }}">
+      <form id="server-filter-form" method="post" action="{{ url_for('inventory.create_collection_order') }}">
          <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
          <input type="hidden" name="store_stock_destination"
             value="{{ store_destination.code if store_destination else '' }}">
@@ -73,7 +83,7 @@
    </div>
 
    <!-- Form que envía la selección de productos -->
-<form id="collection-form" action="{{ url_for('save_collection_order')}}" method="post">
+   <form id="collection-form" action="{{ url_for('inventory.save_collection_order')}}" method="post">
       <!-- Barra flotante de acciones -->
       <div id="action-bar"
          class="fixed top-4 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
@@ -130,17 +140,14 @@
                      <input type="checkbox" name="selected_products" value="{{ p.code }}" class="product-checkbox">
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.code }}</td>
-                    <td class="px-4 py-3 text-sm text-blue-700 hover:text-blue-900 underline cursor-pointer editable-product"
-                       data-code="{{ p.code }}"
-                       data-description="{{ p.product_description }}"
-                       data-min="{{ p.minimal_stock }}"
-                       data-max="{{ p.maximum_stock }}"
-                       data-stock-dest="{{ p.stock_store_destination }}"
-                       data-stock-origin="{{ p.stock_store_origin }}"
-                       data-store-dest="{{ store_destination.description }}"
-                       data-store-origin="{{ store_origin.description }}">
-                       {{ p.product_description }}
-                    </td>
+                  <td class="px-4 py-3 text-sm text-blue-700 hover:text-blue-900 underline cursor-pointer editable-product"
+                     data-code="{{ p.code }}" data-description="{{ p.product_description }}"
+                     data-min="{{ p.minimal_stock }}" data-max="{{ p.maximum_stock }}"
+                     data-stock-dest="{{ p.stock_store_destination }}" data-stock-origin="{{ p.stock_store_origin }}"
+                     data-store-dest="{{ store_destination.description }}"
+                     data-store-origin="{{ store_origin.description }}">
+                     {{ p.product_description }}
+                  </td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.unit_description }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.mark }}</td>
                   <td class="px-4 py-3 text-sm text-gray-900">{{ p.department_description }}</td>
@@ -175,100 +182,100 @@
 <!-- Scripts para manejar selección y envío -->
 <script>
    document.addEventListener('DOMContentLoaded', function () {
-            // --- Modal edición de parámetros por producto desde la tabla ---
-            const editModal = document.getElementById('edit-param-modal');
-            const editClose = document.getElementById('edit-param-close');
-            const editForm = document.getElementById('edit-param-form');
-            const editProdCode = document.getElementById('edit-prod-code');
-            const editProdDesc = document.getElementById('edit-prod-desc');
-            const editStoreInfo = document.getElementById('edit-store-info');
-            const editStockValue = document.getElementById('edit-stock-value');
-            const editMinInput = document.getElementById('edit-min-input');
-            const editMaxInput = document.getElementById('edit-max-input');
+      // --- Modal edición de parámetros por producto desde la tabla ---
+      const editModal = document.getElementById('edit-param-modal');
+      const editClose = document.getElementById('edit-param-close');
+      const editForm = document.getElementById('edit-param-form');
+      const editProdCode = document.getElementById('edit-prod-code');
+      const editProdDesc = document.getElementById('edit-prod-desc');
+      const editStoreInfo = document.getElementById('edit-store-info');
+      const editStockValue = document.getElementById('edit-stock-value');
+      const editMinInput = document.getElementById('edit-min-input');
+      const editMaxInput = document.getElementById('edit-max-input');
 
-            function openEditModalFromCell(cell){
-               if(!cell) return;
-               const code = cell.getAttribute('data-code');
-               const desc = cell.getAttribute('data-description');
-               const min = cell.getAttribute('data-min');
-               const max = cell.getAttribute('data-max');
-               const stockDest = cell.getAttribute('data-stock-dest');
-               const stockOrigin = cell.getAttribute('data-stock-origin');
-               const storeDest = cell.getAttribute('data-store-dest');
-               const storeOrigin = cell.getAttribute('data-store-origin');
-               // Usar depósito destino como "seleccionado" para mostrar stock
-               editProdCode.textContent = code || '';
-               editProdDesc.textContent = desc || '';
-               editStoreInfo.textContent = `Depósito destino: ${storeDest || ''}`;
-               editStockValue.textContent = `${stockDest ?? ''}`;
-               editMinInput.value = (min ?? '').toString();
-               editMaxInput.value = (max ?? '').toString();
-               editModal.classList.remove('hidden');
-               editModal.classList.add('flex');
-               setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch(e){} }, 50);
-            }
+      function openEditModalFromCell(cell) {
+         if (!cell) return;
+         const code = cell.getAttribute('data-code');
+         const desc = cell.getAttribute('data-description');
+         const min = cell.getAttribute('data-min');
+         const max = cell.getAttribute('data-max');
+         const stockDest = cell.getAttribute('data-stock-dest');
+         const stockOrigin = cell.getAttribute('data-stock-origin');
+         const storeDest = cell.getAttribute('data-store-dest');
+         const storeOrigin = cell.getAttribute('data-store-origin');
+         // Usar depósito destino como "seleccionado" para mostrar stock
+         editProdCode.textContent = code || '';
+         editProdDesc.textContent = desc || '';
+         editStoreInfo.textContent = `Depósito destino: ${storeDest || ''}`;
+         editStockValue.textContent = `${stockDest ?? ''}`;
+         editMinInput.value = (min ?? '').toString();
+         editMaxInput.value = (max ?? '').toString();
+         editModal.classList.remove('hidden');
+         editModal.classList.add('flex');
+         setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch (e) { } }, 50);
+      }
 
-            document.querySelectorAll('.editable-product').forEach(cell => {
-               cell.addEventListener('click', () => openEditModalFromCell(cell));
+      document.querySelectorAll('.editable-product').forEach(cell => {
+         cell.addEventListener('click', () => openEditModalFromCell(cell));
+      });
+
+      function closeEditModal() {
+         editModal.classList.add('hidden');
+         editModal.classList.remove('flex');
+      }
+      editClose && editClose.addEventListener('click', closeEditModal);
+      editModal && editModal.addEventListener('click', (e) => {
+         if (e.target === editModal) { closeEditModal(); }
+      });
+
+      editForm && editForm.addEventListener('submit', async function (e) {
+         e.preventDefault();
+         const productCode = editProdCode.textContent.trim();
+         const minimalStock = editMinInput.value;
+         const maximumStock = editMaxInput.value;
+         if (!productCode) { alert('Código de producto no válido.'); return; }
+         // Enviar al backend usando la ruta existente para guardar parámetros
+         try {
+            const resp = await fetch("{{ url_for('inventory.save_config_param_product') }}", {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+               body: new URLSearchParams({
+                  product_code: productCode,
+                  minimal_stock: minimalStock,
+                  maximum_stock: maximumStock,
+                  location: '',
+                  store_code: "{{ store_destination.code if store_destination else '' }}"
+               })
             });
-
-            function closeEditModal(){
-               editModal.classList.add('hidden');
-               editModal.classList.remove('flex');
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || (data && data.ok === false)) {
+               const msg = (data && data.error) ? data.error : 'Error al guardar parámetros';
+               throw new Error(msg);
             }
-            editClose && editClose.addEventListener('click', closeEditModal);
-            editModal && editModal.addEventListener('click', (e) => {
-               if(e.target === editModal){ closeEditModal(); }
+            // Actualizar la fila en la tabla (min/max)
+            const row = Array.from(document.querySelectorAll('tbody tr')).find(r => {
+               const codeCell = r.querySelector('td:nth-child(2)');
+               return codeCell && codeCell.textContent.trim() === productCode;
             });
-
-            editForm && editForm.addEventListener('submit', async function(e){
-               e.preventDefault();
-               const productCode = editProdCode.textContent.trim();
-               const minimalStock = editMinInput.value;
-               const maximumStock = editMaxInput.value;
-               if(!productCode){ alert('Código de producto no válido.'); return; }
-               // Enviar al backend usando la ruta existente para guardar parámetros
-               try{
-                  const resp = await fetch("{{ url_for('save_config_param_product') }}", {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                     body: new URLSearchParams({
-                        product_code: productCode,
-                        minimal_stock: minimalStock,
-                        maximum_stock: maximumStock,
-                        location: '',
-                        store_code: "{{ store_destination.code if store_destination else '' }}"
-                     })
-                  });
-                  const data = await resp.json().catch(() => ({}));
-                  if(!resp.ok || (data && data.ok === false)){
-                     const msg = (data && data.error) ? data.error : 'Error al guardar parámetros';
-                     throw new Error(msg);
-                  }
-                  // Actualizar la fila en la tabla (min/max)
-                  const row = Array.from(document.querySelectorAll('tbody tr')).find(r => {
-                     const codeCell = r.querySelector('td:nth-child(2)');
-                     return codeCell && codeCell.textContent.trim() === productCode;
-                  });
-                  if(row){
-                     const minCell = row.querySelector('.min-stock-cell');
-                     const maxCell = row.querySelector('.max-stock-cell');
-                     if(minCell) minCell.textContent = minimalStock;
-                     if(maxCell) maxCell.textContent = maximumStock;
-                     // actualizar data-* del nombre
-                     const nameCell = row.querySelector('.editable-product');
-                     if(nameCell){
-                        nameCell.setAttribute('data-min', minimalStock);
-                        nameCell.setAttribute('data-max', maximumStock);
-                     }
-                     // Recalcular sugerido "Por trasladar" para la fila tras cambios de min/max
-                     try { recomputeToTransferForRow(row); } catch (e) { }
-                  }
-                  closeEditModal();
-               }catch(err){
-                  alert('No se pudo guardar: ' + (err && err.message ? err.message : err));
+            if (row) {
+               const minCell = row.querySelector('.min-stock-cell');
+               const maxCell = row.querySelector('.max-stock-cell');
+               if (minCell) minCell.textContent = minimalStock;
+               if (maxCell) maxCell.textContent = maximumStock;
+               // actualizar data-* del nombre
+               const nameCell = row.querySelector('.editable-product');
+               if (nameCell) {
+                  nameCell.setAttribute('data-min', minimalStock);
+                  nameCell.setAttribute('data-max', maximumStock);
                }
-            });
+               // Recalcular sugerido "Por trasladar" para la fila tras cambios de min/max
+               try { recomputeToTransferForRow(row); } catch (e) { }
+            }
+            closeEditModal();
+         } catch (err) {
+            alert('No se pudo guardar: ' + (err && err.message ? err.message : err));
+         }
+      });
       const selectAllBtn = document.getElementById('select-all');
       const clearBtn = document.getElementById('clear-selection');
       const form = document.getElementById('collection-form');
@@ -291,10 +298,10 @@
          return Array.from(document.querySelectorAll('.product-checkbox'));
       }
 
-      function updateSelectedCount(){
+      function updateSelectedCount() {
          const totalChecked = getCheckboxes().filter(cb => cb.checked).length;
          const elem = document.getElementById('selected-count');
-         if(elem){ elem.textContent = totalChecked ? (totalChecked + ' seleccionados') : 'Sin selección'; }
+         if (elem) { elem.textContent = totalChecked ? (totalChecked + ' seleccionados') : 'Sin selección'; }
       }
 
       selectAllBtn && selectAllBtn.addEventListener('click', function () {
@@ -508,16 +515,16 @@
       // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
 
       function normalizeText(s) { return (s || '').toString().toLowerCase(); }
-      function getCheckedValues(containerSelector){
+      function getCheckedValues(containerSelector) {
          return Array.from(document.querySelectorAll(containerSelector)).filter(c => c.checked).map(c => normalizeText(c.value));
       }
-      function updateDropdownSummary(){
+      function updateDropdownSummary() {
          const dVals = getCheckedValues('.dept-check');
          deptSummary.textContent = dVals.length ? (dVals.length === 1 ? dVals[0] : dVals.length + ' seleccionados') : 'Todos';
          const bVals = getCheckedValues('.brand-check');
          brandSummary.textContent = bVals.length ? (bVals.length === 1 ? bVals[0] : bVals.length + ' seleccionadas') : 'Todas';
       }
-      function filterRows(){
+      function filterRows() {
          const q = normalizeText(searchInput && searchInput.value);
          const depts = getCheckedValues('.dept-check');
          const brands = getCheckedValues('.brand-check');
@@ -535,24 +542,24 @@
       }
       searchInput && searchInput.addEventListener('input', filterRows);
       // Toggle handlers
-      function togglePanel(panel, btn){
+      function togglePanel(panel, btn) {
          const isOpen = !panel.classList.contains('hidden');
          document.querySelectorAll('#dept-panel,#brand-panel').forEach(p => p.classList.add('hidden'));
-         if(!isOpen){ panel.classList.remove('hidden'); btn.setAttribute('aria-expanded','true'); } else { panel.classList.add('hidden'); btn.setAttribute('aria-expanded','false'); }
+         if (!isOpen) { panel.classList.remove('hidden'); btn.setAttribute('aria-expanded', 'true'); } else { panel.classList.add('hidden'); btn.setAttribute('aria-expanded', 'false'); }
       }
       deptToggle && deptToggle.addEventListener('click', () => togglePanel(deptPanel, deptToggle));
       brandToggle && brandToggle.addEventListener('click', () => togglePanel(brandPanel, brandToggle));
       document.addEventListener('click', (e) => {
-         if(!e.target.closest('#dept-dropdown') && !e.target.closest('#brand-dropdown')){
+         if (!e.target.closest('#dept-dropdown') && !e.target.closest('#brand-dropdown')) {
             deptPanel.classList.add('hidden'); brandPanel.classList.add('hidden');
          }
       });
       // Clear buttons
-      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked=false); updateDropdownSummary(); filterRows(); });
-      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked=false); updateDropdownSummary(); filterRows(); });
+      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked = false); updateDropdownSummary(); filterRows(); });
+      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked = false); updateDropdownSummary(); filterRows(); });
       // Change event on checkboxes
       document.addEventListener('change', (e) => {
-         if(e.target.classList.contains('dept-check') || e.target.classList.contains('brand-check')){
+         if (e.target.classList.contains('dept-check') || e.target.classList.contains('brand-check')) {
             updateDropdownSummary();
             filterRows();
          }
@@ -681,7 +688,7 @@
          if (prevTarget !== null) form.setAttribute('target', prevTarget); else form.removeAttribute('target');
 
          // 2) Redirigir la pestaña actual a la selección de depósito de destino
-         window.location.href = "{{ url_for('select_store_destination_collection_order') }}";
+         window.location.href = "{{ url_for('inventory.select_store_destination_collection_order') }}";
       });
       previewPdfBtn && previewPdfBtn.addEventListener('click', function () {
          if (!currentPreviewItems || currentPreviewItems.length === 0) {
@@ -691,7 +698,7 @@
          // Construir un formulario POST a /collection/preview.pdf para abrir en nueva pestaña
          const formPdf = document.createElement('form');
          formPdf.method = 'POST';
-         formPdf.action = "{{ url_for('collection_preview_pdf') }}";
+         formPdf.action = "{{ url_for('inventory.collection_preview_pdf') }}";
          formPdf.target = '_blank';
          const input = document.createElement('input');
          input.type = 'hidden';
@@ -751,7 +758,9 @@
       <button id="edit-param-close" type="button" aria-label="Cerrar"
          class="absolute top-2 right-2 rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-            <path fill-rule="evenodd" d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 0 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 0 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414Z" clip-rule="evenodd" />
+            <path fill-rule="evenodd"
+               d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 0 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 0 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414Z"
+               clip-rule="evenodd" />
          </svg>
       </button>
       <h3 class="text-base font-medium mb-3">Editar parámetros</h3>
@@ -761,22 +770,27 @@
          <div class="mt-1 text-xs text-gray-600" id="edit-store-info"></div>
       </div>
       <div class="mb-3">
-         <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Stock: <span id="edit-stock-value"></span></span>
+         <span
+            class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Stock:
+            <span id="edit-stock-value"></span></span>
       </div>
       <form id="edit-param-form" class="space-y-3">
          <div>
             <label for="edit-min-input" class="block text-xs font-medium text-gray-700">Existencia mínima</label>
-            <input id="edit-min-input" type="number" step="any" min="0" class="mt-1 w-full border rounded px-2 py-1 text-sm">
+            <input id="edit-min-input" type="number" step="any" min="0"
+               class="mt-1 w-full border rounded px-2 py-1 text-sm">
          </div>
          <div>
             <label for="edit-max-input" class="block text-xs font-medium text-gray-700">Existencia máxima</label>
-            <input id="edit-max-input" type="number" step="any" min="0" class="mt-1 w-full border rounded px-2 py-1 text-sm">
+            <input id="edit-max-input" type="number" step="any" min="0"
+               class="mt-1 w-full border rounded px-2 py-1 text-sm">
          </div>
          <div class="flex justify-end gap-2 pt-2">
-            <button type="button" class="px-3 py-1 bg-gray-200 rounded" onclick="document.getElementById('edit-param-close').click()">Cancelar</button>
+            <button type="button" class="px-3 py-1 bg-gray-200 rounded"
+               onclick="document.getElementById('edit-param-close').click()">Cancelar</button>
             <button type="submit" class="px-3 py-1 bg-teal-600 text-white rounded">Guardar</button>
          </div>
       </form>
    </div>
-   </div>
+</div>
 {% endblock %}

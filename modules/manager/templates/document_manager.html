@@ -23,6 +23,7 @@
     <table class="min-w-full table-auto">
         <thead class="bg-gray-50">
             <tr>
+                <th class="py-2 px-4 border-b border-gray-200 text-left">Correlativo</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Documento</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Fecha</th>
                 <th class="py-2 px-4 border-b border-gray-200 text-left">Descripción</th>
@@ -35,7 +36,17 @@
             {% for operation in inventory_operations %}
             <tr class="hover:bg-gray-50">
                 <td class="py-2 px-4 border-b border-gray-100">
-                    <form action="{{ url_for('collection_preview_pdf') }}" method="post" target="_blank">
+                    <form action="{{ url_for('manager.collection_preview_pdf') }}" method="post" target="_blank">
+                        <input type="hidden" name="correlative" value="{{ operation.correlative }}">
+                        <input type="hidden" name="operation_type" value="{{ operation.operation_type or 'TRANSFER' }}">
+                        <input type="hidden" name="wait" value="true">
+                        <button type="submit" class="text-blue-600 hover:underline">
+                            {{ operation.correlative }}
+                        </button>
+                    </form>
+                </td> 
+                <td class="py-2 px-4 border-b border-gray-100">
+                    <form action="{{ url_for('manager.collection_preview_pdf') }}" method="post" target="_blank">
                         <input type="hidden" name="correlative" value="{{ operation.correlative }}">
                         <input type="hidden" name="operation_type" value="{{ operation.operation_type or 'TRANSFER' }}">
                         <input type="hidden" name="wait" value="true">
@@ -49,7 +60,7 @@
                 <td class="py-2 px-4 border-b border-gray-100">{{ operation.origin_store_description }}</td>
                 <td class="py-2 px-4 border-b border-gray-100">{{ operation.destination_store_description }}</td>
                 <td class="py-2 px-4 border-b border-gray-100">
-                    <form action="{{ url_for('delete_inventory_operation') }}" method="post" onsubmit="return confirm('¿Eliminar la orden {{ operation.document_no }} ({{ operation.correlative }})? Esta acción no se puede deshacer.');">
+                    <form action="{{ url_for('manager.delete_inventory_operation') }}" method="post" onsubmit="return confirm('¿Eliminar la orden {{ operation.document_no }} ({{ operation.correlative }})? Esta acción no se puede deshacer.');">
                         <input type="hidden" name="correlative" value="{{ operation.correlative }}">
                         <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
                     </form>

@@ -11,7 +11,7 @@
                 <span class="font-medium text-teal-800 truncate text-xs sm:text-sm">{{ store.description }}</span>
             </p>
             <p class="mt-2 text-gray-600 text-xs sm:text-sm">Ingresa el código del producto para editar parámetros.</p>
-            <form id="product-config-form" action="{{ url_for('config_param_product') }}" method="POST" class="mt-4 space-y-2.5">
+            <form id="product-config-form" action="{{ url_for('inventory.config_param_product') }}" method="POST" class="mt-4 space-y-2.5">
                 <div>
                     <label for="product_code" class="block text-[11px] font-medium text-gray-700 tracking-wide">Código del Producto</label>
                     <input type="text" id="product_code" name="product_code" required
@@ -48,7 +48,7 @@
                             {% endif %}
                         </div>
                     </div>
-                        <form id="param-config-form" action="{{ url_for('save_config_param_product') }}" method="POST" class="space-y-4">
+                        <form id="param-config-form" action="{{ url_for('inventory.save_config_param_product') }}" method="POST" class="space-y-4">
                 <input type="hidden" name="store_code" value="{{ store.code if store else '' }}">
                 <input type="hidden" name="product_code" value="{{ product.code if product else '' }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -73,7 +73,7 @@
                         class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-700 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1 transition">
                         Guardar Parámetros
                     </button>
-                    <a href="{{ url_for('config_param_product_store') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-2 px-3 rounded-md border border-gray-200 shadow-sm transition">
+                    <a href="{{ url_for('inventory.config_param_product_store') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium py-2 px-3 rounded-md border border-gray-200 shadow-sm transition">
                         Cambiar Depósito
                     </a>
                 </div>
@@ -140,7 +140,7 @@
                 paramForm.style.display = 'none';
                 const fd = new FormData(paramForm);
                 try {
-                    const res = await fetch("{{ url_for('save_config_param_product') }}", {
+                    const res = await fetch("{{ url_for('inventory.save_config_param_product') }}", {
                         method: 'POST',
                         body: fd,
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
