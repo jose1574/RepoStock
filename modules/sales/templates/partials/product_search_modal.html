@@ -1,0 +1,77 @@
+<div id="product-modal-overlay" class="fixed inset-0 bg-black/40 z-50 hidden"></div>
+<div id="product-modal-panel" class="fixed inset-0 z-50 flex items-start justify-center p-4 hidden">
+  <div class="w-full max-w-4xl bg-white rounded shadow border">
+    <div class="flex items-center justify-between p-2 border-b">
+      <h3 class="text-sm font-semibold">Buscar productos</h3>
+      <button type="button" class="text-xs px-2 py-1" onclick="closeProductModal()">Cerrar</button>
+    </div>
+    <div class="p-2 space-y-2">
+      <div class="flex gap-2">
+        <input id="product-modal-query" type="text" class="border rounded px-2 py-1 text-xs w-full" placeholder="Código o nombre">
+        <button id="product-modal-search" class="px-3 py-1 text-xs rounded bg-teal-600 text-white">Buscar</button>
+      </div>
+      <div class="overflow-auto max-h-[60vh] border rounded">
+        <table class="w-full text-xs">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-2 py-1 text-left">Código</th>
+              <th class="px-2 py-1 text-left">Nombre</th>
+              <th class="px-2 py-1 text-right">Stock</th>
+              <th class="px-2 py-1 text-right">Precio Oferta</th>
+            </tr>
+          </thead>
+          <tbody id="product-modal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function openProductModal(initialQuery='') {
+  document.getElementById('product-modal-overlay').classList.remove('hidden');
+  document.getElementById('product-modal-panel').classList.remove('hidden');
+  const q = document.getElementById('product-modal-query');
+  q.value = initialQuery || '';
+  runProductSearch();
+}
+function closeProductModal() {
+  document.getElementById('product-modal-overlay').classList.add('hidden');
+  document.getElementById('product-modal-panel').classList.add('hidden');
+}
+async function runProductSearch() {
+  const q = document.getElementById('product-modal-query').value.trim();
+  const url = '{{ url_for("sales.api_products_search") }}' + '?q=' + encodeURIComponent(q || '*');
+  const res = await fetch(url);
+  const data = await res.json();
+  const tbody = document.getElementById('product-modal-tbody');
+  tbody.innerHTML = '';
+  if (!data.ok) {
+    tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
+    return;
+  }
+  if (!Array.isArray(data.items) || data.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-gray-600">Sin resultados</td></tr>';
+    return;
+  }
+  for (const p of data.items) {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 cursor-pointer';
+    tr.onclick = () => addItemViaAPI(p, 1);
+    const stock = Number(p.stock || p.total_stock || 0).toFixed(2);
+    const offer = Number(p.offer_price || 0).toFixed(2);
+    tr.innerHTML = `
+      <td class="px-2 py-1">${p.code || ''}</td>
+      <td class="px-2 py-1">${p.description || ''}</td>
+      <td class="px-2 py-1 text-right">${stock}</td>
+      <td class="px-2 py-1 text-right">${offer}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+// Botón Buscar dentro del modal
+document.addEventListener('click', (ev) => {
+  if (ev.target && ev.target.id === 'product-modal-search') {
+    runProductSearch();
+  }
+});
+</script>
