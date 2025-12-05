@@ -9,12 +9,22 @@
     <!-- Columna izquierda -->
     <div class="space-y-4">
         <!-- Detalles del cliente -->
+        <div id="searc">
+
+        </div>
+        <div id="search-client-container">
+            <label for="search-client">
+                <span class="block text-sm font-semibold mb-1">Buscar Cliente</span>
+                <input type="text" id="search-client" name="search-client"
+                    placeholder="Ingrese el nombre o código del cliente" class="border rounded px-2 py-1 w-full">
+                <button id="search-client-button" class="mt-2 bg-blue-600 text-white px-3 py-1 rounded">Buscar
+                    Cliente</button>
+            </label>
+        </div>
         <section id="client-info" class="border rounded-lg bg-white p-4 shadow-sm">
             <h2 class="text-lg font-semibold mb-2">Detalles del Cliente</h2>
             <div class="text-sm space-y-1">
-                <p>Nombre: Juan Pérez</p>
-                <p>Empresa: ACME Corp</p>
-                <p>Contacto: juan.perez@acmecorp.com</p>
+
             </div>
         </section>
 
@@ -23,11 +33,15 @@
             <h3 class="text-sm font-semibold mb-2">Buscador de Productos</h3>
             <label class="block text-xs mb-1" for="search-product">Buscar Producto</label>
             <div class="flex gap-2">
-                <input type="text" id="search-product" name="search-product" placeholder="Ingrese el nombre o código del producto" class="border rounded px-2 py-1 w-full">
+                <input type="text" id="search-product" name="search-product"
+                    placeholder="Ingrese el nombre o código del producto" class="border rounded px-2 py-1 w-full">
                 <button id="search-product-button" class="bg-green-600 text-white px-3 py-1 rounded">Buscar</button>
             </div>
             <div id="modal-host"></div>
         </section>
+
+        <!-- Host para modal de clientes -->
+        <div id="client-modal-host"></div>
 
         <!-- Sección detalles de producto y stocks -->
         <section id="section-product-detail" class="border rounded-lg bg-white p-4 shadow-sm">
@@ -54,8 +68,10 @@
 
                 <div class="flex items-center gap-2">
                     <label class="text-sm" for="quantity">Cantidad:</label>
-                    <input type="number" id="quantity" name="quantity" value="1" min="1" class="border rounded px-2 py-1 w-24">
-                    <button id="add-to-budget" class="bg-blue-600 text-white px-3 py-1 rounded">Agregar al Presupuesto</button>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1"
+                        class="border rounded px-2 py-1 w-24">
+                    <button id="add-to-budget" class="bg-blue-600 text-white px-3 py-1 rounded">Agregar al
+                        Presupuesto</button>
                 </div>
             </div>
         </section>
@@ -64,9 +80,12 @@
         <section id="product-images" class="border rounded-lg bg-white p-4 shadow-sm">
             <h3 class="text-sm font-semibold mb-3">Imágenes de productos</h3>
             <div class="flex gap-3">
-                <img src="/static/images/product_sample.jpg" alt="Imagen 1" class="w-24 h-24 object-cover rounded border">
-                <img src="/static/images/product_sample.jpg" alt="Imagen 2" class="w-24 h-24 object-cover rounded border">
-                <img src="/static/images/product_sample.jpg" alt="Imagen 3" class="w-24 h-24 object-cover rounded border">
+                <img src="/static/images/product_sample.jpg" alt="Imagen 1"
+                    class="w-24 h-24 object-cover rounded border">
+                <img src="/static/images/product_sample.jpg" alt="Imagen 2"
+                    class="w-24 h-24 object-cover rounded border">
+                <img src="/static/images/product_sample.jpg" alt="Imagen 3"
+                    class="w-24 h-24 object-cover rounded border">
             </div>
         </section>
     </div>
@@ -84,7 +103,7 @@
                         <th class="px-3 py-2 text-right">Precio</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="budget-items-body">
                     <tr class="border-t">
                         <td class="px-3 py-2">PRD001</td>
                         <td class="px-3 py-2">Producto A</td>
@@ -105,75 +124,227 @@
 {% endblock %}
 {% block scripts %}
 <script>
-async function ensureProductModalLoaded() {
-    const host = document.getElementById('modal-host');
-    if (host.dataset.loaded === '1') return;
-    const res = await fetch('{{ url_for("sales.product_search_modal") }}');
-    const html = await res.text();
-    // Inserta HTML y ejecuta scripts del parcial manualmente
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    // Append non-script nodes
-    Array.from(doc.body.children).forEach(el => {
-        if (el.tagName !== 'SCRIPT') host.appendChild(el);
-    });
-    // Ejecuta scripts creando nodos script nuevos
-    Array.from(doc.querySelectorAll('script')).forEach(s => {
-        const script = document.createElement('script');
-        if (s.src) {
-            script.src = s.src;
-        } else {
-            script.textContent = s.textContent || '';
-        }
-        document.body.appendChild(script);
-    });
-    host.dataset.loaded = '1';
-}
-document.getElementById('search-product-button').addEventListener('click', async () => {
-    try {
-        await ensureProductModalLoaded();
-        const q = document.getElementById('search-product')?.value || '';
-        if (typeof openProductModal === 'function') {
-            openProductModal(q);
-        } else {
-            // reintenta una vez tras breve demora por scripts insertados dinámicamente
-            setTimeout(() => {
-                if (typeof openProductModal === 'function') {
-                    openProductModal(q);
-                } else {
-                    alert('No se pudo abrir el buscador de productos.');
-                }
-            }, 50);
-        }
-    } catch (e) {
-        console.error('Error abriendo modal de productos', e);
-        alert('Error cargando el buscador de productos');
-    }
-});
+    // Estado global sencillo para el producto seleccionado
+    let selectedProduct = null;
 
-// Implementación base de addItemViaAPI; ajusta según tus necesidades
-async function addItemViaAPI(p, quantity=1) {
-    try {
-        const form = new URLSearchParams({
-            code: p.code || '',
-            description: p.description || '',
-            unit_description: p.unit_description || '',
-            unit_correlative: String(p.unit_correlative || ''),
-            offer_price: String(p.offer_price || 0),
-            quantity: String(quantity || 1),
-        });
-        const res = await fetch('{{ url_for("sales.api_budget_add_item") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: form.toString()
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Error al añadir');
-        // TODO: inserta data.item en tu tabla de detalles y recalcula subtotal
-        if (typeof closeProductModal === 'function') closeProductModal();
-    } catch (e) {
-        alert(e.message);
+    // Mostrar datos del producto seleccionado en la sección de detalles
+    function setSelectedProduct(p) {
+        selectedProduct = p || null;
+        const codeEl = document.getElementById('product-code');
+        const nameEl = document.getElementById('product-name');
+        const offerEl = document.getElementById('product-offer-price');
+        const minEl = document.getElementById('product-minimum-price');
+        const higherEl = document.getElementById('product-higher-price');
+        const maxEl = document.getElementById('product-maximum-price');
+        if (!p) return;
+        if (codeEl) codeEl.textContent = `Código: ${p.code || ''}`;
+        if (nameEl) nameEl.textContent = `Nombre: ${p.description || ''}`;
+        if (offerEl) offerEl.textContent = `Precio Unitario: $${Number(p.offer_price || 0).toFixed(2)}`;
+        if (minEl) minEl.textContent = `Precio Mínimo: $${Number(p.minimum_price || p.min_price || 0).toFixed(2)}`;
+        if (higherEl) higherEl.textContent = `Precio Máximo: $${Number(p.higher_price || p.max_price || 0).toFixed(2)}`;
+        if (maxEl) maxEl.textContent = `Precio Máximo: $${Number(p.maximum_price || p.max_price || 0).toFixed(2)}`;
     }
-}
+    // Actualiza la sección de información del cliente cuando se selecciona en el modal
+    function updateClientInfo(client) {
+        const section = document.getElementById('client-info');
+        if (!section) return;
+        const name = client.description || client.name || '';
+        const company = client.company || client.business || '';
+        const contact = client.email || client.contact || client.ruc || '';
+        const phone = client.phone || '';
+        const balance = typeof client.balance !== 'undefined' ? Number(client.balance || 0).toFixed(2) : null;
+        section.innerHTML = `
+        <h2 class="text-lg font-semibold mb-2">Detalles del Cliente</h2>
+        <div class="text-sm space-y-1">
+            <p>Código: ${client.code || ''}</p>
+            <p>Nombre: ${name}</p>
+            ${company ? `<p>Empresa: ${company}</p>` : ''}
+            ${contact ? `<p>Contacto: ${contact}</p>` : ''}
+            ${phone ? `<p>Teléfono: ${phone}</p>` : ''}
+            ${balance !== null ? `<p>Saldo: ${balance}</p>` : ''}
+        </div>
+    `;
+    }
+    async function ensureProductModalLoaded() {
+        const host = document.getElementById('modal-host');
+        if (host.dataset.loaded === '1') return;
+        const res = await fetch('{{ url_for("sales.product_search_modal") }}');
+        const html = await res.text();
+        // Inserta HTML y ejecuta scripts del parcial manualmente
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        // Append non-script nodes
+        Array.from(doc.body.children).forEach(el => {
+            if (el.tagName !== 'SCRIPT') host.appendChild(el);
+        });
+        // Ejecuta scripts creando nodos script nuevos
+        Array.from(doc.querySelectorAll('script')).forEach(s => {
+            const script = document.createElement('script');
+            if (s.src) {
+                script.src = s.src;
+            } else {
+                script.textContent = s.textContent || '';
+            }
+            document.body.appendChild(script);
+        });
+        host.dataset.loaded = '1';
+    }
+    async function ensureClientModalLoaded() {
+        const host = document.getElementById('client-modal-host');
+        if (host.dataset.loaded === '1') return;
+        const res = await fetch('{{ url_for("sales.clients_search_modal") }}');
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        Array.from(doc.body.children).forEach(el => {
+            if (el.tagName !== 'SCRIPT') host.appendChild(el);
+        });
+        Array.from(doc.querySelectorAll('script')).forEach(s => {
+            const script = document.createElement('script');
+            if (s.src) { script.src = s.src; } else { script.textContent = s.textContent || ''; }
+            document.body.appendChild(script);
+        });
+        host.dataset.loaded = '1';
+    }
+    document.getElementById('search-product-button').addEventListener('click', async () => {
+        try {
+            await ensureProductModalLoaded();
+            const q = document.getElementById('search-product')?.value || '';
+            if (typeof openProductModal === 'function') {
+                openProductModal(q);
+            } else {
+                // reintenta una vez tras breve demora por scripts insertados dinámicamente
+                setTimeout(() => {
+                    if (typeof openProductModal === 'function') {
+                        openProductModal(q);
+                    } else {
+                        alert('No se pudo abrir el buscador de productos.');
+                    }
+                }, 50);
+            }
+        } catch (e) {
+            console.error('Error abriendo modal de productos', e);
+            alert('Error cargando el buscador de productos');
+        }
+    });
+
+    // Agregar al presupuesto usando el producto seleccionado y la cantidad indicada
+    document.getElementById('add-to-budget').addEventListener('click', async () => {
+        try {
+            if (!selectedProduct) {
+                alert('Seleccione un producto primero desde el buscador.');
+                return;
+            }
+            const qtyInput = document.getElementById('quantity');
+            const qty = Number(qtyInput?.value || 1);
+            if (Number.isNaN(qty) || qty <= 0) {
+                alert('Cantidad inválida');
+                return;
+            }
+            await addItemViaAPI(selectedProduct, qty);
+        } catch (e) {
+            console.error('No se pudo agregar al presupuesto', e);
+            alert('Error al agregar al presupuesto');
+        }
+    });
+
+    // Abrir modal de clientes al buscar
+    async function trySelectClientByCode(code) {
+        if (!code) return false;
+        try {
+            const upper = String(code).toUpperCase();
+            const url = '{{ url_for("sales.api_get_client_by_code", code="__CODE__") }}'.replace('__CODE__', encodeURIComponent(upper));
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data && data.ok && data.client) {
+                updateClientInfo(data.client);
+                return true;
+            }
+        } catch (e) {
+            console.warn('Búsqueda directa por código falló', e);
+        }
+        return false;
+    }
+    async function handleClientSearch() {
+        try {
+            let q = document.getElementById('search-client')?.value?.trim() || '';
+            q = q.toUpperCase();
+            // Primero intenta búsqueda directa por código/cedula
+            const found = await trySelectClientByCode(q);
+            if (found) return;
+
+            // Si no se encontró directo, abre el modal con la consulta
+            await ensureClientModalLoaded();
+            if (typeof openClientModal === 'function') {
+                openClientModal(q);
+            } else {
+                setTimeout(() => {
+                    if (typeof openClientModal === 'function') {
+                        openClientModal(q);
+                    } else {
+                        alert('No se pudo abrir el buscador de clientes.');
+                    }
+                }, 50);
+            }
+        } catch (e) {
+            console.error('Error abriendo modal de clientes', e);
+            alert('Error cargando el buscador de clientes');
+        }
+    }
+
+    document.getElementById('search-client-button').addEventListener('click', handleClientSearch);
+    document.getElementById('search-client').addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            handleClientSearch();
+        }
+    });
+
+    // Fuerza que el input de búsqueda se mantenga en mayúsculas mientras se escribe
+    document.getElementById('search-client').addEventListener('input', (ev) => {
+        const el = ev.target;
+        const pos = el.selectionStart;
+        el.value = (el.value || '').toUpperCase();
+        // restaura posición del cursor
+        try { el.setSelectionRange(pos, pos); } catch { }
+    });
+
+    // Implementación base de addItemViaAPI; ajusta según tus necesidades
+    async function addItemViaAPI(p, quantity = 1) {
+        try {
+            const form = new URLSearchParams({
+                code: p.code || '',
+                description: p.description || '',
+                unit_description: p.unit_description || '',
+                unit_correlative: String(p.unit_correlative || ''),
+                offer_price: String(p.offer_price || 0),
+                quantity: String(quantity || 1),
+            });
+            const res = await fetch('{{ url_for("sales.api_budget_add_item") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: form.toString()
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Error al añadir');
+            // Inserta el item en la tabla de presupuesto
+            const item = data.item;
+            const tbody = document.getElementById('budget-items-body');
+            if (tbody) {
+                const tr = document.createElement('tr');
+                tr.className = 'border-t';
+                tr.innerHTML = `
+                <td class="px-3 py-2">${item.code || ''}</td>
+                <td class="px-3 py-2">${item.description || ''}</td>
+                <td class="px-3 py-2">${item.unit_description || ''}</td>
+                <td class="px-3 py-2 text-right">$${Number(item.offer_price || 0).toFixed(2)}</td>
+            `;
+                tbody.appendChild(tr);
+            }
+            if (typeof closeProductModal === 'function') closeProductModal();
+        } catch (e) {
+            alert(e.message);
+        }
+    }
 </script>
 {% endblock %}

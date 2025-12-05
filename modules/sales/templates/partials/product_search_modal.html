@@ -56,7 +56,14 @@ async function runProductSearch() {
   for (const p of data.items) {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-gray-50 cursor-pointer';
-    tr.onclick = () => addItemViaAPI(p, 1);
+    tr.onclick = () => {
+      try {
+        if (typeof window.setSelectedProduct === 'function') {
+          window.setSelectedProduct(p);
+        }
+      } catch (e) { console.warn('No se pudo establecer producto seleccionado', e); }
+      closeProductModal();
+    };
     const stock = Number(p.stock || p.total_stock || 0).toFixed(2);
     const offer = Number(p.offer_price || 0).toFixed(2);
     tr.innerHTML = `

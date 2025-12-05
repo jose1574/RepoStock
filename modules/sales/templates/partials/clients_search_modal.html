@@ -1,0 +1,94 @@
+<div id="client-modal-overlay" class="fixed inset-0 bg-black/40 z-50 hidden"></div>
+<div id="client-modal-panel" class="fixed inset-0 z-50 flex items-start justify-center p-4 hidden">
+  <div class="w-full max-w-3xl bg-white rounded shadow border">
+    <div class="flex items-center justify-between p-2 border-b">
+      <h3 class="text-sm font-semibold">Buscar clientes</h3>
+      <button type="button" class="text-xs px-2 py-1" onclick="closeClientModal()">Cerrar</button>
+    </div>
+    <div class="p-2 space-y-2" style="max-height: 80vh; overflow-y: auto;">
+      <div class="flex gap-2">
+        <input id="client-modal-query" type="text" class="border rounded px-2 py-1 text-xs w-full" placeholder="Cédula, nombre o código">
+        <button id="client-modal-search" class="px-3 py-1 text-xs rounded bg-blue-600 text-white">Buscar</button>
+      </div>
+      <div class="border rounded" style="max-height: 70vh; overflow-y: auto;">
+        <table class="min-w-full text-xs">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-2 py-1 text-left">Código</th>
+              <th class="px-2 py-1 text-left">Descripción</th>
+            </tr>
+          </thead>
+          <tbody id="client-modal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function openClientModal(initialQuery='') {
+  document.getElementById('client-modal-overlay').classList.remove('hidden');
+  document.getElementById('client-modal-panel').classList.remove('hidden');
+  const q = document.getElementById('client-modal-query');
+  q.value = (initialQuery || '').toUpperCase();
+  runClientSearch();
+}
+function closeClientModal() {
+  document.getElementById('client-modal-overlay').classList.add('hidden');
+  document.getElementById('client-modal-panel').classList.add('hidden');
+}
+async function runClientSearch() {
+  const q = document.getElementById('client-modal-query').value.trim().toUpperCase();
+  const url = '{{ url_for("sales.api_clients_search") }}' + '?q=' + encodeURIComponent(q || '*');
+  const res = await fetch(url);
+  const data = await res.json();
+  const tbody = document.getElementById('client-modal-tbody');
+  tbody.innerHTML = '';
+    if (!data.ok) {
+      tbody.innerHTML = '<tr><td colspan="3" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
+      return;
+    }
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="px-2 py-2 text-gray-600">Sin resultados</td></tr>';
+      return;
+    }
+  for (const c of data.items) {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 cursor-pointer';
+    tr.onclick = () => selectClient(c);
+      const balance = Number(c.balance || 0).toFixed(2);
+      tr.innerHTML = `
+        <td class="px-2 py-1">${c.code || ''}</td>
+        <td class="px-2 py-1">${c.description || ''}</td>
+      `;
+    tbody.appendChild(tr);
+  }
+}
+// Placeholder para selección de cliente
+function selectClient(c) {
+  try {
+    if (typeof window.updateClientInfo === 'function') {
+      window.updateClientInfo(c);
+    }
+  } catch (e) {
+    console.error('No se pudo actualizar client-info', e);
+  }
+  closeClientModal();
+}
+// Botón Buscar dentro del modal
+// Delegado para que funcione tras inyección dinámica
+document.addEventListener('click', (ev) => {
+  if (ev.target && ev.target.id === 'client-modal-search') {
+    runClientSearch();
+  }
+});
+
+// Mantener el input del modal en mayúsculas mientras se escribe
+document.addEventListener('input', (ev) => {
+  if (ev.target && ev.target.id === 'client-modal-query') {
+    const el = ev.target;
+    const pos = el.selectionStart;
+    el.value = (el.value || '').toUpperCase();
+    try { el.setSelectionRange(pos, pos); } catch {}
+  }
+});
+</script>

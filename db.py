@@ -1115,42 +1115,6 @@ def search_product(code: str):
 
 
 # export functions
-__all__ = [
-    "get_db_connection",
-    "close_db_connection",
-    "login_user",
-    "get_stores",
-    "get_store_by_code",
-    "save_product_failure",
-    "get_collection_products",
-    "save_transfer_order_in_wait",
-    "save_transfer_order_items",
-    "get_products_by_codes",
-    "get_correlative_product_unit",
-    "get_store_by_code",
-    "get_departments",
-    "search_product_failure",
-    "get_inventory_operations_by_correlative",
-    "get_inventory_operations_details_by_correlative",
-    "get_document_no_inventory_operation",
-    "update_description_inventory_operations",
-    "update_minmax_product_failure",
-    "update_locations_products_failures",
-    "get_inventory_operations",
-    "delete_inventory_operation_by_correlative",
-    "save_collection_order",
-    "update_inventory_operation_detail_amount",
-    "delete_inventory_operation_detail",
-    "search_product",
-    "get_product_price_and_unit",
-    "update_inventory_operation_type",
-    "get_product_stock",
-    "get_product_stock_by_store",
-    "search_products_with_stock_and_price",
-    "insert_product_image",
-    "get_product_images",
-    "delete_product_image",
-]
 
 
 def get_product_stock(product_code: str, store_code: str) -> float:
@@ -1394,4 +1358,84 @@ def delete_product_image(image_id: int):
         close_db_connection(conn)
 
 
-# Busca productos
+# operaciones de cleintes 
+# para obtener todos los clientes activos
+def get_clients():
+    """Obtiene todos los clientes activos."""
+    conn = get_db_connection()
+    sql = """
+        select 
+        c.*,
+        coalesce( (select balance from clients_balance cb where cb.client = c.code order by emission_date desc limit 1 ),0) as balance
+        from clients c
+        where c.client_classification = 'C'
+        order by c.description
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        close_db_connection(conn)
+
+# para obtener un cleinte por su codigo
+def get_client_by_code(client_code: str):
+    """Obtiene un cliente activo por su código."""
+    conn = get_db_connection()
+    sql = """
+        select 
+        c.*,
+        coalesce( (select balance from clients_balance cb where cb.client = c.code order by emission_date desc limit 1 ),0) as balance
+        from clients c
+        where c.client_classification = 'C' and c.code = %s
+        order by c.description
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (client_code,))
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            return None
+    finally:
+        close_db_connection(conn)
+
+__all__ = [
+    "get_db_connection",
+    "close_db_connection",
+    "login_user",
+    "get_stores",
+    "get_store_by_code",
+    "save_product_failure",
+    "get_collection_products",
+    "save_transfer_order_in_wait",
+    "save_transfer_order_items",
+    "get_products_by_codes",
+    "get_correlative_product_unit",
+    "get_store_by_code",
+    "get_departments",
+    "search_product_failure",
+    "get_inventory_operations_by_correlative",
+    "get_inventory_operations_details_by_correlative",
+    "get_document_no_inventory_operation",
+    "update_description_inventory_operations",
+    "update_minmax_product_failure",
+    "update_locations_products_failures",
+    "get_inventory_operations",
+    "delete_inventory_operation_by_correlative",
+    "save_collection_order",
+    "update_inventory_operation_detail_amount",
+    "delete_inventory_operation_detail",
+    "search_product",
+    "get_product_price_and_unit",
+    "update_inventory_operation_type",
+    "get_product_stock",
+    "get_product_stock_by_store",
+    "search_products_with_stock_and_price",
+    "insert_product_image",
+    "get_product_images",
+    "delete_product_image",
+    "get_clients",  
+    "get_client_by_code"
+]
