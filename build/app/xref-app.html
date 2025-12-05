@@ -157,11 +157,14 @@ imports:
  &#8226;   <a href="#heapq">heapq</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#jinja2">jinja2</a>
- &#8226;   <a href="#json">json</a>
  &#8226;   <a href="#keyword">keyword</a>
  &#8226;   <a href="#linecache">linecache</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#markupsafe">markupsafe</a>
+ &#8226;   <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.inventory">modules.inventory</a>
+ &#8226;   <a href="#modules.manager">modules.manager</a>
+ &#8226;   <a href="#modules.sales">modules.sales</a>
  &#8226;   <a href="#ntpath">ntpath</a>
  &#8226;   <a href="#operator">operator</a>
  &#8226;   <a href="#os">os</a>
@@ -184,7 +187,6 @@ imports:
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
- &#8226;   <a href="#typing">typing</a>
  &#8226;   <a href="#waitress">waitress</a>
  &#8226;   <a href="#warnings">warnings</a>
  &#8226;   <a href="#weakref">weakref</a>
@@ -5404,6 +5406,8 @@ imported by:
  &#8226;   <a href="#http.server">http.server</a>
  &#8226;   <a href="#itsdangerous.exc">itsdangerous.exc</a>
  &#8226;   <a href="#itsdangerous.timed">itsdangerous.timed</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#setuptools._vendor.tomli._re">setuptools._vendor.tomli._re</a>
  &#8226;   <a href="#setuptools.warnings">setuptools.warnings</a>
  &#8226;   <a href="#tomllib._re">tomllib._re</a>
@@ -5440,6 +5444,9 @@ imports:
   <div class="import">
 imported by:
     <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
+ &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
 
   </div>
 
@@ -8814,6 +8821,9 @@ imported by:
  &#8226;   <a href="#flask.testing">flask.testing</a>
  &#8226;   <a href="#flask.typing">flask.typing</a>
  &#8226;   <a href="#flask.wrappers">flask.wrappers</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
+ &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
 
   </div>
 
@@ -11966,8 +11976,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#app.py">app.py</a>
- &#8226;   <a href="#flask.config">flask.config</a>
+    <a href="#flask.config">flask.config</a>
  &#8226;   <a href="#flask.json">flask.json</a>
  &#8226;   <a href="#flask.json.provider">flask.json.provider</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
@@ -11977,6 +11986,7 @@ imported by:
  &#8226;   <a href="#json.decoder">json.decoder</a>
  &#8226;   <a href="#json.encoder">json.encoder</a>
  &#8226;   <a href="#json.scanner">json.scanner</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
  &#8226;   <a href="#psycopg2._json">psycopg2._json</a>
  &#8226;   <a href="#setuptools._vendor.importlib_metadata">setuptools._vendor.importlib_metadata</a>
  &#8226;   <a href="#setuptools.config._validate_pyproject.error_reporting">setuptools.config._validate_pyproject.error_reporting</a>
@@ -12345,6 +12355,146 @@ imported by:
 imported by:
     <a href="#multiprocessing.heap">multiprocessing.heap</a>
  &#8226;   <a href="#multiprocessing.shared_memory">multiprocessing.shared_memory</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules"></a>
+  <a target="code" href="-" type="text/plain"><tt>modules</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#modules.inventory">modules.inventory</a>
+ &#8226;   <a href="#modules.manager">modules.manager</a>
+ &#8226;   <a href="#modules.sales">modules.sales</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules.inventory">modules.inventory</a>
+ &#8226;   <a href="#modules.manager">modules.manager</a>
+ &#8226;   <a href="#modules.sales">modules.sales</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/inventory/__init__.py" type="text/plain"><tt>modules.inventory</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.routes"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/inventory/routes.py" type="text/plain"><tt>modules.inventory.routes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#datetime">datetime</a>
+ &#8226;   <a href="#db">db</a>
+ &#8226;   <a href="#flask">flask</a>
+ &#8226;   <a href="#json">json</a>
+ &#8226;   <a href="#modules.inventory">modules.inventory</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pdfkit">pdfkit</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory">modules.inventory</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.manager"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/manager/__init__.py" type="text/plain"><tt>modules.manager</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.manager.routes"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/manager/routes.py" type="text/plain"><tt>modules.manager.routes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#datetime">datetime</a>
+ &#8226;   <a href="#db">db</a>
+ &#8226;   <a href="#flask">flask</a>
+ &#8226;   <a href="#modules.manager">modules.manager</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pdfkit">pdfkit</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.manager">modules.manager</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.sales"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/sales/__init__.py" type="text/plain"><tt>modules.sales</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.sales.routes"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/sales/routes.py" type="text/plain"><tt>modules.sales.routes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#db">db</a>
+ &#8226;   <a href="#flask">flask</a>
+ &#8226;   <a href="#modules.sales">modules.sales</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.sales">modules.sales</a>
 
   </div>
 
@@ -13486,6 +13636,8 @@ imported by:
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#lzma">lzma</a>
  &#8226;   <a href="#mimetypes">mimetypes</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#multiprocessing.connection">multiprocessing.connection</a>
  &#8226;   <a href="#multiprocessing.context">multiprocessing.context</a>
  &#8226;   <a href="#multiprocessing.forkserver">multiprocessing.forkserver</a>
@@ -14143,6 +14295,8 @@ imports:
   <div class="import">
 imported by:
     <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#pdfkit.api">pdfkit.api</a>
  &#8226;   <a href="#pdfkit.configuration">pdfkit.configuration</a>
  &#8226;   <a href="#pdfkit.pdfkit">pdfkit.pdfkit</a>
@@ -20165,6 +20319,7 @@ imported by:
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#mimetypes">mimetypes</a>
+ &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#multiprocessing">multiprocessing</a>
  &#8226;   <a href="#multiprocessing.connection">multiprocessing.connection</a>
  &#8226;   <a href="#multiprocessing.context">multiprocessing.context</a>
@@ -20997,7 +21152,6 @@ imported by:
  &#8226;   <a href="#_pyrepl.trace">_pyrepl.trace</a>
  &#8226;   <a href="#_pyrepl.unix_console">_pyrepl.unix_console</a>
  &#8226;   <a href="#_pyrepl.windows_console">_pyrepl.windows_console</a>
- &#8226;   <a href="#app.py">app.py</a>
  &#8226;   <a href="#asgiref.current_thread_executor">asgiref.current_thread_executor</a>
  &#8226;   <a href="#asgiref.local">asgiref.local</a>
  &#8226;   <a href="#asgiref.sync">asgiref.sync</a>

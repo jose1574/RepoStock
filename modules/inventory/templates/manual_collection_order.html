@@ -257,6 +257,7 @@
                   const data = await resp.json();
                   if(data && data.ok && data.product){
                      populateUnitSelect(data.product.units || []);
+                     try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
                      return;
                   }
                }
@@ -268,6 +269,7 @@
          })();
       } else {
          populateUnitSelect(incomingUnits);
+         try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
       }
 
       // También obtener y mostrar el stock por depósito (lista de stores)
@@ -301,12 +303,16 @@
                   }
                   left.textContent = (s.store_description || s.store_code || 'N/D');
                   const right = document.createElement('div');
+                  // Guardar el stock en unidades principales como dato para poder recalcular según unidad seleccionada
+                  right.dataset.mainStock = (s.stock === null || s.stock === undefined) ? '0' : String(s.stock);
                   right.className = s.is_origin || String(s.store_code) === String(originCode) ? 'text-lg font-bold text-gray-900' : 'text-sm font-medium text-gray-800';
-                  right.textContent = (s.stock === null || s.stock === undefined) ? '0' : String(s.stock);
+                  right.textContent = right.dataset.mainStock;
                   div.appendChild(left);
                   div.appendChild(right);
                   listEl.appendChild(div);
                });
+               // Después de poblar la lista, recalcular la visualización del stock según la unidad seleccionada
+               try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
             } else {
                listEl.innerHTML = '<div class="text-xs text-gray-600">Sin datos</div>';
             }
@@ -346,11 +352,25 @@
                if(t !== null && t !== undefined) available = Number(t);
             }
             const wanted = parseFloat(String(qty).replace(',', '.')) || 0;
-            if(available !== null && !Number.isNaN(available)){
-               if(wanted > available){
-                  return alert(`Cantidad inválida: la cantidad no puede ser mayor a el stock disponible hay (${available}) en el depósito origen.`);
+            // Tener en cuenta la unidad seleccionada: si la opción tiene conversion_factor, el stock disponible
+            // debe mostrarse y compararse en la unidad alterna (stock_alt = stock_main / conversion_factor)
+            try{
+               const unitSel = document.getElementById('product-unit-select');
+               const selOpt = unitSel ? unitSel.options[unitSel.selectedIndex] : null;
+               const conv = selOpt && selOpt.dataset && selOpt.dataset.conv ? parseFloat(selOpt.dataset.conv) : 1;
+               if(available !== null && !Number.isNaN(available) && conv && !Number.isNaN(conv) && conv > 0){
+                  const availableAlt = available / conv;
+                  if(wanted > availableAlt){
+                     return alert(`Cantidad inválida: la cantidad no puede ser mayor al stock disponible (${availableAlt}) en el depósito origen para la unidad seleccionada.`);
+                  }
+               } else {
+                  if(available !== null && !Number.isNaN(available)){
+                     if(wanted > available){
+                        return alert(`Cantidad inválida: la cantidad no puede ser mayor a el stock disponible hay (${available}) en el depósito origen.`);
+                     }
+                  }
                }
-            }
+            }catch(e){ console.error('Error aplicando conversion en validación:', e); }
             if(wanted <= 0){
                return alert('La cantidad debe ser mayor a 0');
             }
@@ -440,6 +460,45 @@
       if(qtyInput) qtyInput.value = 1;
       updateDetailsCount();
    });
+
+   // Función que aplica la conversión de unidad a los elementos de stock mostrados
+   function applyUnitConversionToStocks(){
+      const unitSel = document.getElementById('product-unit-select');
+      const selOpt = unitSel ? unitSel.options[unitSel.selectedIndex] : null;
+      const conv = selOpt && selOpt.dataset && selOpt.dataset.conv ? parseFloat(selOpt.dataset.conv) : 1;
+      const stockLabelEl = document.getElementById('product-stock');
+      // Actualizar lista por depósitos
+      const listEl = document.getElementById('product-stock-stores-list');
+      if(listEl){
+         Array.from(listEl.children).forEach(row => {
+            try{
+               const right = row.children[1];
+               const main = right && right.dataset && right.dataset.mainStock ? parseFloat(right.dataset.mainStock) : 0;
+               let display = main;
+               if(conv && !Number.isNaN(conv) && conv > 0){ display = main / conv; }
+               // Mostrar sin muchos decimales si es entero, sino con hasta 3 decimales
+               const txt = (Math.abs(display - Math.round(display)) < 1e-9) ? String(Math.round(display)) : String(Number(display.toFixed(3)));
+               right.textContent = txt;
+            }catch(e){/* ignore */}
+         });
+      }
+      // Actualizar label de stock total (usar _currentSelectedProduct.total_stock si existe)
+      if(_currentSelectedProduct){
+         const mainTotal = Number(_currentSelectedProduct.total_stock ?? _currentSelectedProduct.stock ?? 0);
+         let displayTotal = mainTotal;
+         if(conv && !Number.isNaN(conv) && conv > 0){ displayTotal = mainTotal / conv; }
+         const txt = (Math.abs(displayTotal - Math.round(displayTotal)) < 1e-9) ? String(Math.round(displayTotal)) : String(Number(displayTotal.toFixed(3)));
+         if(stockLabelEl) stockLabelEl.textContent = txt;
+      }
+   }
+
+   // Escuchar cambios de unidad para recalcular el stock mostrado
+   const unitSelectEl = document.getElementById('product-unit-select');
+   if(unitSelectEl){
+      unitSelectEl.addEventListener('change', function(e){
+         try{ applyUnitConversionToStocks(); }catch(er){ console.error(er); }
+      });
+   }
 
    function updateDetailsCount(){
       const cnt = document.querySelectorAll('#details-products-tbody tr').length;

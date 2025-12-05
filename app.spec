@@ -15,6 +15,15 @@ datas = [
     (os.path.join(project_root, '.env'), '.'),
 ]
 
+# Incluir templates de módulos (modules/*/templates) para que los blueprints
+# que tengan sus propias plantillas funcionen cuando PyInstaller empaqueta.
+for root, dirs, files in os.walk(os.path.join(project_root, 'modules')):
+    if 'templates' in dirs:
+        tpl_path = os.path.join(root, 'templates')
+        # destino relativo dentro del exe
+        rel_dst = os.path.relpath(tpl_path, project_root)
+        datas.append((tpl_path, rel_dst))
+
 hiddenimports = [
     'jinja2',
     'markupsafe',

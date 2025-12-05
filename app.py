@@ -13,32 +13,64 @@ import os, sys
 import datetime
 import pdfkit
 
-from modules import inventory, sales
-from modules import manager
 
-from db import (
-    get_store_by_code,
-    get_inventory_operations_by_correlative,
-    get_inventory_operations_details_by_correlative,
-    search_product_failure,
-    search_product,
-    get_product_stock_by_store,
-    search_products_with_stock_and_price,
-    get_product_price_and_unit,
-    insert_product_image,
-    get_product_images,
-    delete_product_image,
-)
+# Robust loader for .env files: intenta UTF-8, UTF-8-SIG y latin-1 como fallback.
+def safe_load_dotenv(path, override=False):
+    """Carga un .env intentando varias codificaciones para evitar UnicodeDecodeError.
 
+    - Primero intenta `load_dotenv` con 'utf-8' y 'utf-8-sig'.
+    - Si falla por UnicodeDecodeError, intenta leer en 'latin-1' y parsear manualmente.
+    - Nunca lanza excepciones; retorna True si cargó algo, False en caso contrario.
+    """
+    if not path or not os.path.exists(path):
+        return False
+    tried = []
+    encodings = ["utf-8", "utf-8-sig"]
+    for enc in encodings:
+        try:
+            # python-dotenv acepta encoding en versiones recientes
+            try:
+                load_dotenv(path, encoding=enc, override=override)
+            except TypeError:
+                # versiones antiguas no soportan encoding kw
+                load_dotenv(path, override=override)
+            return True
+        except UnicodeDecodeError:
+            tried.append(enc)
+            continue
+        except Exception:
+            # otras excepciones (permiso, I/O) no las manejamos aquí
+            break
 
-try:
-    import pdfkit
-except Exception:
-    pdfkit = None
-"""
-Cargar variables de entorno ANTES de importar db.py para que DB_CONFIG lea .env correctamente
-en entornos empaquetados (PyInstaller) y desarrollo.
-"""
+    # Fallback: intentar leer con latin-1 y parsear líneas manualmente
+    try:
+        with open(path, 'rb') as f:
+            raw = f.read()
+        # decodificar con latin-1 para preservar bytes sin fallar
+        txt = raw.decode('latin-1')
+        for line in txt.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            k = k.strip()
+            v = v.strip()
+            # remover comillas simples/dobles
+            if len(v) >= 2 and ((v[0] == '"' and v[-1] == '"') or (v[0] == "'" and v[-1] == "'")):
+                v = v[1:-1]
+            # Si override es True, siempre setear; sino, solo si no existe
+            if override or (k not in os.environ):
+                try:
+                    os.environ[k] = v
+                except Exception:
+                    pass
+        return True
+    except Exception:
+        return False
+
+# Determinar paths base y cargar .env ANTES de importar `db` o los blueprints
 if getattr(sys, "frozen", False):
     base_path = sys._MEIPASS
 else:
@@ -53,21 +85,36 @@ if getattr(sys, "frozen", False):
         exe_dir = os.path.dirname(sys.executable)
         external_env = os.path.join(exe_dir, ".env")
         if os.path.exists(external_env):
-            try:
-                load_dotenv(external_env, encoding="utf-8", override=True)
-            except TypeError:
-                load_dotenv(external_env, override=True)
+            safe_load_dotenv(external_env, override=True)
     except Exception:
         pass
 
 # Carga el .env embebido (no sobrescribe claves ya definidas por el externo)
-try:
-    load_dotenv(env_path, encoding="utf-8", override=False)
-except TypeError:
-    # Para compatibilidad con versiones antiguas de python-dotenv sin parámetro encoding
-    load_dotenv(env_path, override=False)
+safe_load_dotenv(env_path, override=False)
 
 # importar funciones de la base de datos (después de cargar .env)
+from db import (
+    get_store_by_code,
+    get_inventory_operations_by_correlative,
+    get_inventory_operations_details_by_correlative,
+    search_product_failure,
+    search_product,
+    get_product_stock_by_store,
+    search_products_with_stock_and_price,
+    get_product_price_and_unit,
+    insert_product_image,
+    get_product_images,
+    delete_product_image,
+)
+
+try:
+    import pdfkit
+except Exception:
+    pdfkit = None
+
+# Registrar blueprints / módulos después de tener variables de entorno y db importado
+from modules import inventory, sales
+from modules import manager
 
 
 app = Flask(__name__, template_folder=template_folder)
@@ -417,25 +464,25 @@ def collection_preview_pdf():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    # try:
-    #     port = int(os.environ.get("APP_PORT", "5001"))
-    # except Exception:
-    #     port = 5001
+    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    try:
+        port = int(os.environ.get("APP_PORT", "5001"))
+    except Exception:
+        port = 5001
 
-    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    # if use_waitress:
-    #     try:
-    #         from waitress import serve
-    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-    #         serve(app, host=host, port=port, threads=threads)
-    #     except Exception as e:
-    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-    #         app.run(debug=False, host=host, port=port)
-    # else:
-    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-    #     app.run(debug=debug, host=host, port=port)
+    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    if use_waitress:
+        try:
+            from waitress import serve
+            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+            serve(app, host=host, port=port, threads=threads)
+        except Exception as e:
+            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+            app.run(debug=False, host=host, port=port)
+    else:
+        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+        app.run(debug=debug, host=host, port=port)

@@ -1049,6 +1049,31 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\mimetypes.py',
    'PYMODULE'),
+  ('modules', '-', 'PYMODULE'),
+  ('modules.inventory',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\__init__.py',
+   'PYMODULE'),
+  ('modules.inventory.routes',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\routes.py',
+   'PYMODULE'),
+  ('modules.manager',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\manager\\__init__.py',
+   'PYMODULE'),
+  ('modules.manager.routes',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\manager\\routes.py',
+   'PYMODULE'),
+  ('modules.sales',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\sales\\__init__.py',
+   'PYMODULE'),
+  ('modules.sales.routes',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\sales\\routes.py',
+   'PYMODULE'),
   ('multiprocessing',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\multiprocessing\\__init__.py',
