@@ -23,6 +23,11 @@ for root, dirs, files in os.walk(os.path.join(project_root, 'modules')):
         # destino relativo dentro del exe
         rel_dst = os.path.relpath(tpl_path, project_root)
         datas.append((tpl_path, rel_dst))
+    # Incluir tambien posibles carpetas de 'reports' dentro de cada módulo
+    if 'reports' in dirs:
+        rpt_path = os.path.join(root, 'reports')
+        rel_dst = os.path.relpath(rpt_path, project_root)
+        datas.append((rpt_path, rel_dst))
 
 hiddenimports = [
     'jinja2',

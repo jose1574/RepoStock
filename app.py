@@ -367,78 +367,90 @@ def logout():
 
 
 
-@app.route("/collection/preview.pdf", methods=["POST", "GET"])
-def collection_preview_pdf():
-    # Aceptar parámetros por POST (form) o GET (querystring)
-    correlative = None
-    operation_type = "TRANSFER"
-    wait = True
+# @app.route("/collection/preview.pdf", methods=["POST", "GET"])
+# def collection_preview_pdf():
+#     # Aceptar parámetros por POST (form) o GET (querystring)
+#     correlative = None
+#     operation_type = "TRANSFER"
+#     wait = True
 
-    if request.method == "POST":
-        correlative = request.form.get("correlative", default=None, type=int)
-        operation_type = request.form.get(
-            "operation_type", default="TRANSFER", type=str
-        )
-        wait_param = request.form.get("wait", default="true", type=str)
-        wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
-    else:
-        correlative = request.args.get("correlative", default=None, type=int)
-        operation_type = request.args.get(
-            "operation_type", default="TRANSFER", type=str
-        )
-        wait_param = request.args.get("wait", default="true", type=str)
-        wait = True if (str(wait_param).lower() in ("true")) else False
+#     if request.method == "POST":
+#         correlative = request.form.get("correlative", default=None, type=int)
+#         operation_type = request.form.get(
+#             "operation_type", default="TRANSFER", type=str
+#         )
+#         wait_param = request.form.get("wait", default="true", type=str)
+#         wait = True if (str(wait_param).lower() in ("1", "true", "yes", "y")) else False
+#     else:
+#         correlative = request.args.get("correlative", default=None, type=int)
+#         operation_type = request.args.get(
+#             "operation_type", default="TRANSFER", type=str
+#         )
+#         wait_param = request.args.get("wait", default="true", type=str)
+#         wait = True if (str(wait_param).lower() in ("true")) else False
 
-    if not correlative:
-        return "Falta el parámetro correlative", 400
+#     if not correlative:
+#         return "Falta el parámetro correlative", 400
 
-    # Consultar encabezado y detalle
-    try:
-        header_rows = get_inventory_operations_by_correlative(
-            correlative, operation_type, wait
-        )
-        header = header_rows[0] if header_rows else {}
-        # Para el PDF queremos la ubicación del depósito de origen
-        details = get_inventory_operations_details_by_correlative(correlative, header.get("store") if header else None)
-    except Exception as e:
-        return f"Error consultando datos de la orden: {e}", 500
+#     # Consultar encabezado y detalle
+#     try:
+#         header_rows = get_inventory_operations_by_correlative(
+#             correlative, operation_type, wait
+#         )
+#         header = header_rows[0] if header_rows else {}
+#         # Para el PDF queremos la ubicación del depósito de origen
+#         details = get_inventory_operations_details_by_correlative(correlative, header.get("store") if header else None)
+#     except Exception as e:
+#         return f"Error consultando datos de la orden: {e}", 500
 
-    # Cargar reporte desde carpeta reports/ y renderizar con Jinja
-    report_path = os.path.join(base_path, "reports", "report_collection_order.html")
-    if not os.path.exists(report_path):
-        return (
-            "No se encontró el reporte report_collection_order.html en la carpeta reports.",
-            500,
-        )
-    try:
-        with open(report_path, "r", encoding="utf-8") as f:
-            report_template = f.read()
-    except Exception as e:
-        return f"No se pudo leer el reporte: {e}", 500
+#     # Cargar reporte desde carpeta reports/ y renderizar con Jinja
+#     report_path = os.path.join(base_path, "reports", "report_collection_order.html")
+#     if not os.path.exists(report_path):
+#         return (
+#             "No se encontró el reporte report_collection_order.html en la carpeta reports.",
+#             500,
+#         )
+#     try:
+#         with open(report_path, "r", encoding="utf-8") as f:
+#             report_template = f.read()
+#     except Exception as e:
+#         return f"No se pudo leer el reporte: {e}", 500
 
-    # Contexto para el reporte
-    context = {
-        "header": header,
-        "details": details,
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    html = render_template_string(report_template, **context)
+#     # Contexto para el reporte
+#     context = {
+#         "header": header,
+#         "details": details,
+#         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+#     }
+#     html = render_template_string(report_template, **context)
 
-    if pdfkit is None:
-        return "pdfkit no está instalado en el entorno de Python.", 500
+#     if pdfkit is None:
+#         return "pdfkit no está instalado en el entorno de Python.", 500
 
-    config = get_pdfkit_config()
-    if not config:
-        return "wkhtmltopdf no está configurado o no se encuentra el ejecutable.", 500
+#     config = get_pdfkit_config()
+#     if not config:
+#         return "wkhtmltopdf no está configurado o no se encuentra el ejecutable.", 500
 
-    options = {
-        "page-size": "A4",
-        "encoding": "UTF-8",
-        "margin-top": "10mm",
-        "margin-bottom": "10mm",
-        "margin-left": "10mm",
-        "margin-right": "10mm",
-    }
+#     options = {
+#         "page-size": "A4",
+#         "encoding": "UTF-8",
+#         "margin-top": "10mm",
+#         "margin-bottom": "10mm",
+#         "margin-left": "10mm",
+#         "margin-right": "10mm",
+#     }
+    # Opciones adicionales para mejorar la generación en entornos empaquetados
+    # - enable-local-file-access: permite que wkhtmltopdf acceda a archivos locales (imagenes/estilos)
+    # - javascript-delay: espera un poco para que scripts (p. ej. JsBarcode) terminen
+    # - no-stop-slow-scripts: evita que wkhtmltopdf pare scripts lentos
+    # - load-error-handling: ignorar errores de carga de recursos remotos
+    # Valores vacíos o cadenas son aceptados como flags por pdfkit/wkhtmltopdf
+    options.update({
+        "enable-local-file-access": "",
+        "javascript-delay": "500",
+        "no-stop-slow-scripts": "",
+        "load-error-handling": "ignore",
+    })
     try:
         pdf = pdfkit.from_string(html, False, configuration=config, options=options)
     except Exception as e:
@@ -464,25 +476,25 @@ def collection_preview_pdf():
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
    #Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
-    host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
-    try:
-        port = int(os.environ.get("APP_PORT", "5001"))
-    except Exception:
-        port = 5001
+    # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
+    # try:
+    #     port = int(os.environ.get("APP_PORT", "5001"))
+    # except Exception:
+    #     port = 5001
 
-    use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
-    if use_waitress:
-        try:
-            from waitress import serve
-            threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
-            print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
-            serve(app, host=host, port=port, threads=threads)
-        except Exception as e:
-            print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
-            app.run(debug=False, host=host, port=port)
-    else:
-        debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
-        print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
-        app.run(debug=debug, host=host, port=port)
+    # use_waitress = str(os.environ.get("REPOSTOCK_USE_WAITRESS", "1")).lower() in ("1", "true", "yes", "y")
+    # if use_waitress:
+    #     try:
+    #         from waitress import serve
+    #         threads = int(os.environ.get("REPOSTOCK_THREADS", "8"))
+    #         print(f"Iniciando servidor de producción (waitress) en {host}:{port} con {threads} hilos...")
+    #         serve(app, host=host, port=port, threads=threads)
+    #     except Exception as e:
+    #         print(f"No se pudo iniciar waitress ({e}). Iniciando servidor de desarrollo Flask...")
+    #         app.run(debug=False, host=host, port=port)
+    # else:
+    #     debug = str(os.environ.get("FLASK_DEBUG", "0")).lower() in ("1", "true", "yes", "y")
+    #     print(f"Iniciando servidor Flask debug={debug} en {host}:{port} ...")
+    #     app.run(debug=debug, host=host, port=port)

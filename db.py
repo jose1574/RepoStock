@@ -967,6 +967,7 @@ def update_inventory_operation_detail_amount(
     Devuelve el número de filas afectadas. Normaliza el código a mayúsculas en la comparación.
     """
     conn = get_db_connection()
+    origin_store = (os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '01').strip()
     sql = """
         UPDATE inventory_operation_details
         SET amount = %s
@@ -1421,6 +1422,7 @@ def search_products_with_stock_and_price(query: str):
         LEFT JOIN (
             SELECT product_code, SUM(stock) AS total_stock
             FROM products_stock
+            WHERE store = %s
             GROUP BY product_code
         ) AS s ON s.product_code = p.code
         WHERE 
@@ -1441,7 +1443,7 @@ def search_products_with_stock_and_price(query: str):
     like = f"%{q}%" if q != "" else "%"
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (q, like, like, like))
+            cur.execute(sql, (origin_store, q, like, like, like))
             rows = cur.fetchall()
             result = []
             for r in rows:
@@ -1604,6 +1606,7 @@ def search_products_with_stock_and_price(query: str = "", limit: int = 50, offse
             total = int(count_row.get("cnt") or 0)
 
             # Select paginated rows
+            origin_store = (os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '01').strip()
             select_sql = f"""
             SELECT
                 p.code AS code,
@@ -1615,11 +1618,11 @@ def search_products_with_stock_and_price(query: str = "", limit: int = 50, offse
             LEFT JOIN products_units pu ON pu.product_code = p.code AND pu.main_unit = TRUE
             LEFT JOIN units u ON u.code = pu.unit
             LEFT JOIN (
-                SELECT product_code, SUM(stock) AS total_stock FROM products_stock GROUP BY product_code
+                SELECT product_code, SUM(stock) AS total_stock FROM products_stock WHERE store = %s GROUP BY product_code
             ) s ON s.product_code = p.code
             """ + where_sql + "\n ORDER BY p.code ASC LIMIT %s OFFSET %s"
 
-            exec_params = tuple(params) + (limit, offset)
+            exec_params = tuple(params) + (origin_store, limit, offset)
             cur.execute(select_sql, exec_params)
             rows = cur.fetchall()
             items = [dict(r) for r in rows]

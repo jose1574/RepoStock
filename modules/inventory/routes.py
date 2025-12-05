@@ -1240,7 +1240,9 @@ def delete_product(code):
 @inventory_bp.route('/products-modal')
 def products_modal():
     """Devuelve el partial HTML del modal de búsqueda de productos."""
-    return render_template("partials/products_search_inventory_modal.html")
+    store_code = os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+    store = get_store_by_code(store_code)
+    return render_template("partials/products_search_inventory_modal.html", store=store)
 
 @inventory_bp.route("/select_store/manual_collection_order", methods=['GET'])
 def select_store_manual_collection_order():
