@@ -20,7 +20,7 @@
          <label for="search-product-input" class="block text-sm font-medium text-gray-700 mb-2">Buscar Producto</label>
          <div class="flex gap-2">
             <input id="search-product-input" type="text" placeholder="Código o descripción (ej: tubo*mts)" autocomplete="off" class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            <button id="search-product-button" type="button" class="px-3 py-2 rounded bg-teal-600 text-white text-sm hover:bg-teal-700 shadow">Buscar</button>
+            <button id="search-product-button" type="button" class="px-3 py-2 rounded bg-teal-600 text-white text-sm hover:bg-teal-700 shadow">Buscar (F12)</button>
          </div>
 
          <div id="modal-host"></div>
@@ -150,7 +150,18 @@
             if(e.key === 'Enter'){
                e.preventDefault();
                const val = (searchInput.value || '').trim();
-               if(!val) return;
+               // Si el input está vacío, abrir el buscador modal
+               if(!val){
+                  await ensureProductsModalLoaded();
+                  if(typeof openProductsModal === 'function') openProductsModal();
+                  else {
+                     const overlay = document.getElementById('products-modal-overlay');
+                     const panel = document.getElementById('products-modal-panel');
+                     if(overlay) overlay.classList.remove('hidden');
+                     if(panel) panel.classList.remove('hidden');
+                  }
+                  return;
+               }
                try{
                   // Usar el endpoint que devuelve todas las unidades (incluye unidades alternas)
                   const url = '{{ url_for("inventory.api_get_product_by_code_all_units") }}' + '?code=' + encodeURIComponent(val);
@@ -195,6 +206,23 @@
             }
          });
       }
+
+      // Tecla global: F12 abre el modal de productos desde cualquier parte
+      document.addEventListener('keydown', async function(e){
+         try{
+            if(e.key === 'F12'){
+               e.preventDefault();
+               await ensureProductsModalLoaded();
+               if(typeof openProductsModal === 'function') openProductsModal();
+               else {
+                  const overlay = document.getElementById('products-modal-overlay');
+                  const panel = document.getElementById('products-modal-panel');
+                  if(overlay) overlay.classList.remove('hidden');
+                  if(panel) panel.classList.remove('hidden');
+               }
+            }
+         }catch(err){ console.error('Error opening products modal with F12:', err); }
+      });
 
    // Estado local del producto seleccionado (para uso al agregar)
    let _currentSelectedProduct = null;

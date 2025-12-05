@@ -45,16 +45,37 @@
 	let _total = null;
 	let _lastQuery = '';
 	let _loading = false;
+	// items mostrados actualmente y selección por teclado
+	let _lastItems = [];
+	let _selectedIndex = -1;
 
 	function qs(selector){ return document.querySelector(selector); }
 
-	window.openProductsModal = function(){
-		qs('#products-modal-overlay').classList.remove('hidden');
-		qs('#products-modal-panel').classList.remove('hidden');
-		qs('#products-modal-query').focus();
-		_offset = 0; _total = null;
-		runProductsSearch();
-	}
+	window.openProductsModal = async function(){
+			const ov = qs('#products-modal-overlay');
+			const panel = qs('#products-modal-panel');
+			if(ov) ov.classList.remove('hidden');
+			if(panel) panel.classList.remove('hidden');
+			_offset = 0; _total = null;
+			// Ejecutar búsqueda y esperar a que termine para asegurar que el input exista
+			try{
+				await runProductsSearch();
+			}catch(e){ /* ignore */ }
+			// Forzar foco en el input con varios fallbacks
+			const focusInput = () => {
+				try{
+					const q = qs('#products-modal-query');
+					if(q){ q.focus(); if(typeof q.select === 'function') q.select(); }
+				}catch(e){/* noop */}
+			};
+			try{
+				requestAnimationFrame(() => requestAnimationFrame(focusInput));
+				// also fallback after a short timeout (increased for robustness)
+				setTimeout(focusInput, 300);
+			}catch(e){
+				setTimeout(focusInput, 120);
+			}
+		}
 
 	window.closeProductsModal = function(){
 		const ov = qs('#products-modal-overlay');
@@ -98,10 +119,15 @@
 
 	function renderRows(items, replace){
 		const tbody = qs('#products-modal-tbody');
-		if(replace) tbody.innerHTML = '';
-		items.forEach(function(it){
+		if(replace){ tbody.innerHTML = ''; _lastItems = []; _selectedIndex = -1; }
+		const startIndex = _lastItems.length;
+		items.forEach(function(it, idx){
+			const rowIndex = startIndex + idx;
+			_lastItems.push(it);
 			const tr = document.createElement('tr');
 			tr.className = 'cursor-pointer hover:bg-gray-50';
+			tr.tabIndex = 0;
+			tr.dataset.idx = String(rowIndex);
 			tr.innerHTML = `
 				<td class="px-2 py-1">${escapeHtml(it.code || '')}</td>
 				<td class="px-2 py-1">${escapeHtml(it.description || '')}</td>
@@ -109,8 +135,50 @@
 				<td class="px-2 py-1 text-right">${(it.total_stock ?? it.stock ?? '')}</td>
 			`;
 			tr.addEventListener('click', function(){ selectProduct(it); });
+			tr.addEventListener('mouseenter', function(){ setSelection(rowIndex); });
 			tbody.appendChild(tr);
 		});
+		// Ensure a selection exists (first row) when new results arrive
+		if(_lastItems.length > 0 && _selectedIndex === -1){ setSelection(0); }
+	}
+
+	function clearSelection(){
+		const rows = document.querySelectorAll('#products-modal-tbody tr');
+		rows.forEach(r => r.classList.remove('bg-teal-100'));
+		_selectedIndex = -1;
+	}
+
+	function setSelection(idx){
+		const rows = document.querySelectorAll('#products-modal-tbody tr');
+		if(rows.length === 0) return;
+		if(idx < 0) idx = 0;
+		if(idx >= _lastItems.length) idx = _lastItems.length - 1;
+		// remove previous
+		rows.forEach(r => r.classList.remove('bg-teal-100'));
+		const row = Array.from(rows).find(r => Number(r.dataset.idx) === idx);
+		if(row){ row.classList.add('bg-teal-100'); row.focus(); }
+		_selectedIndex = idx;
+	}
+
+	function moveSelection(delta){
+		if(_lastItems.length === 0) return;
+		let next = (_selectedIndex === -1) ? 0 : _selectedIndex + delta;
+		if(next < 0) next = 0;
+		if(next >= _lastItems.length) next = _lastItems.length - 1;
+		setSelection(next);
+	}
+
+	function confirmSelectionAndMaybeAdd(){
+		if(_selectedIndex >= 0 && _selectedIndex < _lastItems.length){
+			const prod = _lastItems[_selectedIndex];
+			// select product (close modal and populate UI)
+			selectProduct(prod);
+			// after short delay, try to auto-add the product (simulate user pressing add)
+			// This gives time for onInventoryProductSelected to populate units/stocks.
+			setTimeout(function(){
+				try{ const addBtn = document.getElementById('add-product-button'); if(addBtn) addBtn.click(); }catch(e){}
+			}, 300);
+		}
 	}
 
 	function selectProduct(product){
@@ -129,8 +197,32 @@
 
 	function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
+	// Debounce helper to avoid ejecutar muchas búsquedas mientras el usuario escribe
+	function debounce(fn, wait){
+		let t = null;
+		return function(...args){
+			if(t) clearTimeout(t);
+			t = setTimeout(()=> fn.apply(this, args), wait);
+		};
+	}
+
 	qs('#products-modal-search').addEventListener('click', function(){ runProductsSearch(true); });
-	qs('#products-modal-query').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ runProductsSearch(true); } });
+	qs('#products-modal-query').addEventListener('keydown', function(e){
+		if(e.key === 'Enter'){
+			e.preventDefault();
+			e.stopPropagation();
+			// If there's a selection, confirm it; otherwise perform search
+			if(_selectedIndex >= 0){ confirmSelectionAndMaybeAdd(); }
+			else { runProductsSearch(true); }
+		} else if(e.key === 'ArrowDown'){
+			e.preventDefault(); e.stopPropagation(); moveSelection(1);
+		} else if(e.key === 'ArrowUp'){
+			e.preventDefault(); e.stopPropagation(); moveSelection(-1);
+		}
+	});
+	// Búsqueda en tiempo real mientras se escribe (debounced)
+	const liveSearch = debounce(function(){ runProductsSearch(true); }, 300);
+	qs('#products-modal-query').addEventListener('input', function(e){ liveSearch(); });
 
 	qs('#products-modal-loadmore').addEventListener('click', async function(){ if(_loading) return; _offset += _limit; await runProductsSearch(false); });
 
@@ -152,7 +244,22 @@
 		});
 	}
 
-	// close on ESC
-	document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeProductsModal(); } });
+	// close on ESC and allow arrow navigation when modal is open
+	document.addEventListener('keydown', function(e){
+		const panel = qs('#products-modal-panel');
+		const isOpen = panel && !panel.classList.contains('hidden');
+		if(e.key === 'Escape' && isOpen){ closeProductsModal(); }
+		if(!isOpen) return;
+		if(e.key === 'ArrowDown'){ e.preventDefault(); moveSelection(1); }
+		if(e.key === 'ArrowUp'){ e.preventDefault(); moveSelection(-1); }
+		if(e.key === 'Enter'){
+			// Only handle enter if focus is inside modal (to avoid interfering elsewhere)
+			const active = document.activeElement;
+			if(panel.contains(active)){
+				e.preventDefault();
+				confirmSelectionAndMaybeAdd();
+			}
+		}
+	});
 })();
 </script>

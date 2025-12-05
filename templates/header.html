@@ -25,7 +25,7 @@
                             class="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 md:dark:text-blue-500 dark:bg-blue-600 md:dark:bg-transparent"
                             aria-current="page">Inicio</a>
                     </li>
-                    <li class="relative">
+                    <!-- <li class="relative">
                         <button id="dropdownSalesLink" data-dropdown-toggle="dropdownSales"
                             class="flex items-center justify-between w-full py-2 px-3 text-gray-900 
                             rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 
@@ -37,21 +37,18 @@
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                     stroke-width="2" d="m1 1 4 4 4-4" />
                             </svg></button>
-                        <!-- Dropdown Ventas -->
-                        <div id="dropdownSales"
-                            class="absolute left-0 top-full mt-2 z-[9999] hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-56 dark:bg-gray-700 dark:divide-gray-600">
-                            <ul class="py-2 text-sm text-gray-700 dark:text-gray-400"
-                                aria-labelledby="dropdownSalesLink">
-                                <li>
-                                    <a href="{{ url_for('sales.budget') }}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Presupuestos</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
+                    <div id="dropdownSales"
+                        class="absolute left-0 top-full mt-2 z-[9999] hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-56 dark:bg-gray-700 dark:divide-gray-600">
+                        <ul class="py-2 text-sm text-gray-700 dark:text-gray-400" aria-labelledby="dropdownSalesLink">
+                            <li>
+                                <a href="{{ url_for('sales.budget') }}"
+                                    class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Presupuestos</a>
+                            </li>
+                        </ul>
+                    </div>
+                    </li>  -->
                     <li class="relative">
-                        <button id="dropdownNavbarLink" data-dropdown-toggle="dropdownNavbar"
-                            class="flex items-center justify-between w-full py-2 px-3 text-gray-900 
+                        <button id="dropdownNavbarLink" data-dropdown-toggle="dropdownNavbar" class="flex items-center justify-between w-full py-2 px-3 text-gray-900 
                             rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 
                             md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white 
                             md:dark:hover:text-blue-500 dark:focus:text-white dark:border-gray-700 
@@ -68,38 +65,43 @@
                                 aria-labelledby="dropdownLargeButton">
                                 <li>
                                     <a href="{{ url_for('inventory.select_store_destination_collection_order')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Recolección Automatica</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden
+                                        de Recolección Automatica</a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('inventory.select_store_manual_collection_order')}}"
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden
+                                        de Recolección Manual</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('inventory.check_order_collection')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo de Orden de Recolección</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo
+                                        de Orden de Recolección</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('inventory.check_transfer_reception')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo de Recepción de Traslados</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Chequeo
+                                        de Recepción de Traslados</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('inventory.config_param_product_store')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Parámetros de Productos</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Parámetros
+                                        de Productos</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('inventory.form_destination_store_for_location')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ubicación de Productos</a>
-                                </li>
-                                  <li>
-                                    <a href="{{ url_for('inventory.select_store_manual_collection_order')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Recolección Manual</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ubicación
+                                        de Productos</a>
                                 </li>
                             </ul>
                         </div>
                     </li>
                     <li>
-                        <a href="{{ url_for('manager.document_manager') }}"
-                            class="block py-2 px-3 text-gray-900 rounded-sm 
+                        <a href="{{ url_for('manager.document_manager') }}" class="block py-2 px-3 text-gray-900 rounded-sm 
                             hover:bg-gray-100 md:hover:bg-transparent md:border-0 
                             md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 
-                            dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                            >Administrador de documentos</a>
+                            dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Administrador de
+                            documentos</a>
                     </li>
                 </ul>
             </div>
@@ -108,81 +110,81 @@
 
 </header>
 <script>
-(function(){
-    // Toggle de menú colapsable (mobile)
-    document.querySelectorAll('[data-collapse-toggle]').forEach(function(toggleBtn){
-        const targetId = toggleBtn.getAttribute('aria-controls') || toggleBtn.getAttribute('data-collapse-toggle');
-        const target = targetId ? document.getElementById(targetId) : null;
-        if (!target) return;
-        function isHidden(el){ return el.classList.contains('hidden'); }
-        toggleBtn.addEventListener('click', function(){
-            const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-            if (isHidden(target)) {
-                target.classList.remove('hidden');
-            } else {
-                target.classList.add('hidden');
-            }
-            toggleBtn.setAttribute('aria-expanded', (!expanded).toString());
+    (function () {
+        // Toggle de menú colapsable (mobile)
+        document.querySelectorAll('[data-collapse-toggle]').forEach(function (toggleBtn) {
+            const targetId = toggleBtn.getAttribute('aria-controls') || toggleBtn.getAttribute('data-collapse-toggle');
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (!target) return;
+            function isHidden(el) { return el.classList.contains('hidden'); }
+            toggleBtn.addEventListener('click', function () {
+                const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+                if (isHidden(target)) {
+                    target.classList.remove('hidden');
+                } else {
+                    target.classList.add('hidden');
+                }
+                toggleBtn.setAttribute('aria-expanded', (!expanded).toString());
+            });
         });
-    });
 
-    // Toggle de dropdowns (submenús)
-    const dropdownButtons = Array.from(document.querySelectorAll('[data-dropdown-toggle]'));
-    function closeDropdown(btn){
-        const id = btn.getAttribute('data-dropdown-toggle');
-        const panel = id ? document.getElementById(id) : null;
-        if (panel && !panel.classList.contains('hidden')) {
-            panel.classList.add('hidden');
-            btn.setAttribute('aria-expanded', 'false');
-        }
-    }
-    function closeAllExcept(exceptPanel){
-        dropdownButtons.forEach(function(btn){
+        // Toggle de dropdowns (submenús)
+        const dropdownButtons = Array.from(document.querySelectorAll('[data-dropdown-toggle]'));
+        function closeDropdown(btn) {
             const id = btn.getAttribute('data-dropdown-toggle');
             const panel = id ? document.getElementById(id) : null;
-            if (panel && panel !== exceptPanel) {
+            if (panel && !panel.classList.contains('hidden')) {
                 panel.classList.add('hidden');
                 btn.setAttribute('aria-expanded', 'false');
             }
-        });
-    }
-    dropdownButtons.forEach(function(btn){
-        const id = btn.getAttribute('data-dropdown-toggle');
-        const panel = id ? document.getElementById(id) : null;
-        if (!panel) return;
-        btn.setAttribute('aria-expanded', 'false');
-        btn.addEventListener('click', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            const isHidden = panel.classList.contains('hidden');
-            closeAllExcept(isHidden ? panel : null);
-            if (isHidden) {
-                panel.classList.remove('hidden');
-                btn.setAttribute('aria-expanded', 'true');
-            } else {
-                panel.classList.add('hidden');
-                btn.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
-    // Cerrar al hacer click fuera
-    document.addEventListener('click', function(e){
-        dropdownButtons.forEach(function(btn){
+        }
+        function closeAllExcept(exceptPanel) {
+            dropdownButtons.forEach(function (btn) {
+                const id = btn.getAttribute('data-dropdown-toggle');
+                const panel = id ? document.getElementById(id) : null;
+                if (panel && panel !== exceptPanel) {
+                    panel.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+        dropdownButtons.forEach(function (btn) {
             const id = btn.getAttribute('data-dropdown-toggle');
             const panel = id ? document.getElementById(id) : null;
             if (!panel) return;
-            const clickInside = btn.contains(e.target) || panel.contains(e.target);
-            if (!clickInside && !panel.classList.contains('hidden')) {
-                panel.classList.add('hidden');
-                btn.setAttribute('aria-expanded', 'false');
+            btn.setAttribute('aria-expanded', 'false');
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const isHidden = panel.classList.contains('hidden');
+                closeAllExcept(isHidden ? panel : null);
+                if (isHidden) {
+                    panel.classList.remove('hidden');
+                    btn.setAttribute('aria-expanded', 'true');
+                } else {
+                    panel.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
+        // Cerrar al hacer click fuera
+        document.addEventListener('click', function (e) {
+            dropdownButtons.forEach(function (btn) {
+                const id = btn.getAttribute('data-dropdown-toggle');
+                const panel = id ? document.getElementById(id) : null;
+                if (!panel) return;
+                const clickInside = btn.contains(e.target) || panel.contains(e.target);
+                if (!clickInside && !panel.classList.contains('hidden')) {
+                    panel.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
+        // Cerrar con Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                dropdownButtons.forEach(closeDropdown);
             }
         });
-    });
-    // Cerrar con Escape
-    document.addEventListener('keydown', function(e){
-        if (e.key === 'Escape') {
-            dropdownButtons.forEach(closeDropdown);
-        }
-    });
-})();
+    })();
 </script>
