@@ -1,0 +1,158 @@
+
+<div id="products-modal-overlay" class="fixed inset-0 bg-black/40 z-50 hidden" onclick="closeProductsModal()"></div>
+
+<div id="products-modal-panel" class="fixed inset-0 z-50 flex items-start justify-center p-4 hidden">
+	<div class="w-full max-w-4xl bg-white rounded shadow border">
+		<div class="flex items-center justify-between p-2 border-b">
+			<h3 class="text-sm font-semibold">Buscar productos</h3>
+			<button type="button" class="text-xs px-2 py-1" onclick="closeProductsModal()">Cerrar</button>
+		</div>
+		<div class="p-3 space-y-3">
+				<div class="flex gap-2 items-center">
+					<input id="products-modal-query" type="text" class="border border-gray-300 rounded px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" placeholder="Código o descripción">
+					<button id="products-modal-search" class="px-3 py-2 text-sm rounded bg-teal-600 text-white shadow hover:bg-teal-700">Buscar</button>
+				</div>
+
+			<div id="products-modal-body" class="overflow-auto border rounded" style="max-height:60vh;">
+				<table class="min-w-full text-sm table-fixed border-collapse" role="table">
+					<thead class="bg-white border-b sticky top-0 z-10">
+						<tr>
+							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Código</th>
+							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Descripción</th>
+							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Unidad</th>
+							<th class="px-3 py-3 text-right text-xs font-medium text-gray-600">Stock</th>
+						</tr>
+					</thead>
+					<tbody id="products-modal-tbody" class="divide-y divide-gray-100"></tbody>
+				</table>
+			</div>
+
+			<div class="flex items-center justify-between">
+				<div id="products-modal-status" class="text-xs text-gray-600"></div>
+				<div>
+					<button id="products-modal-loadmore" class="px-3 py-1 text-sm rounded bg-gray-100 border shadow-sm" style="display:none">Cargar más</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+/* products modal script - self contained */
+(function(){
+	let _offset = 0;
+	const _limit = 50;
+	let _total = null;
+	let _lastQuery = '';
+	let _loading = false;
+
+	function qs(selector){ return document.querySelector(selector); }
+
+	window.openProductsModal = function(){
+		qs('#products-modal-overlay').classList.remove('hidden');
+		qs('#products-modal-panel').classList.remove('hidden');
+		qs('#products-modal-query').focus();
+		_offset = 0; _total = null;
+		runProductsSearch();
+	}
+
+	window.closeProductsModal = function(){
+		const ov = qs('#products-modal-overlay');
+		const panel = qs('#products-modal-panel');
+		if(ov) ov.classList.add('hidden');
+		if(panel) panel.classList.add('hidden');
+	}
+
+	async function runProductsSearch(replace=true){
+		const q = qs('#products-modal-query').value.trim();
+		_lastQuery = q;
+		_offset = replace ? 0 : _offset;
+		qs('#products-modal-status').textContent = 'Cargando...';
+		_loading = true;
+		try{
+			const url = new URL(window.location.origin + '/inventory/api/products/search');
+			url.searchParams.set('q', q);
+			url.searchParams.set('limit', _limit);
+			url.searchParams.set('offset', _offset);
+			const res = await fetch(url.toString());
+			const data = await res.json();
+			if(!data.ok){ qs('#products-modal-status').textContent = data.error || 'Error en búsqueda'; return; }
+			const items = data.items || [];
+			if (data.total !== undefined) _total = data.total;
+			renderRows(items, replace);
+			const shown = document.querySelectorAll('#products-modal-tbody tr').length;
+			if(_total === null){
+				// unknown total, show load more if items length == limit
+				qs('#products-modal-loadmore').style.display = (items.length === _limit) ? 'inline-block' : 'none';
+			} else {
+				qs('#products-modal-loadmore').style.display = (shown < _total) ? 'inline-block' : 'none';
+			}
+			qs('#products-modal-status').textContent = `Mostrando ${shown}${_total? ' de '+_total: ''}`;
+		}catch(e){
+			console.error(e);
+			qs('#products-modal-status').textContent = 'Error en la búsqueda';
+		}finally{
+			_loading = false;
+		}
+	}
+
+	function renderRows(items, replace){
+		const tbody = qs('#products-modal-tbody');
+		if(replace) tbody.innerHTML = '';
+		items.forEach(function(it){
+			const tr = document.createElement('tr');
+			tr.className = 'cursor-pointer hover:bg-gray-50';
+			tr.innerHTML = `
+				<td class="px-2 py-1">${escapeHtml(it.code || '')}</td>
+				<td class="px-2 py-1">${escapeHtml(it.description || '')}</td>
+				<td class="px-2 py-1">${escapeHtml(it.unit_description || '')}</td>
+				<td class="px-2 py-1 text-right">${(it.total_stock ?? it.stock ?? '')}</td>
+			`;
+			tr.addEventListener('click', function(){ selectProduct(it); });
+			tbody.appendChild(tr);
+		});
+	}
+
+	function selectProduct(product){
+		if(window.onInventoryProductSelected && typeof window.onInventoryProductSelected === 'function'){
+			window.onInventoryProductSelected(product);
+		}
+
+		// Limpiar el input de búsqueda del modal después de seleccionar
+		try{
+			const qEl = qs('#products-modal-query');
+			if(qEl) qEl.value = '';
+		}catch(e){ /* noop */ }
+
+		closeProductsModal();
+	}
+
+	function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+	qs('#products-modal-search').addEventListener('click', function(){ runProductsSearch(true); });
+	qs('#products-modal-query').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ runProductsSearch(true); } });
+
+	qs('#products-modal-loadmore').addEventListener('click', async function(){ if(_loading) return; _offset += _limit; await runProductsSearch(false); });
+
+	// Scroll-infinite: al hacer scroll al fondo del contenedor cargar más
+	const bodyEl = qs('#products-modal-body');
+	if(bodyEl){
+		bodyEl.addEventListener('scroll', async function(){
+			try{
+				if(_loading) return;
+				const nearBottom = (bodyEl.scrollTop + bodyEl.clientHeight) >= (bodyEl.scrollHeight - 60);
+				if(nearBottom){
+					const shown = document.querySelectorAll('#products-modal-tbody tr').length;
+					if((_total === null && shown % _limit === 0) || (typeof _total === 'number' && shown < _total)){
+						_offset += _limit;
+						await runProductsSearch(false);
+					}
+				}
+			}catch(e){ console.error('scroll load more error', e); }
+		});
+	}
+
+	// close on ESC
+	document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ closeProductsModal(); } });
+})();
+</script>

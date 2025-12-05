@@ -68,7 +68,7 @@
                                 aria-labelledby="dropdownLargeButton">
                                 <li>
                                     <a href="{{ url_for('inventory.select_store_destination_collection_order')}}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Crear Orden de Recolección</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Recolección Automatica</a>
                                 </li>
                                 <li>
                                     <a href="{{ url_for('inventory.check_order_collection')}}"
@@ -85,6 +85,10 @@
                                 <li>
                                     <a href="{{ url_for('inventory.form_destination_store_for_location')}}"
                                         class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ubicación de Productos</a>
+                                </li>
+                                  <li>
+                                    <a href="{{ url_for('inventory.select_store_manual_collection_order')}}"
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Recolección Manual</a>
                                 </li>
                             </ul>
                         </div>

@@ -1184,6 +1184,192 @@ def get_product_stock_by_store(product_code: str):
         close_db_connection(conn)
 
 
+def get_product_by_code_or_other_code(code_product: str):
+    """Busca un producto por su código principal o por other_code en products_codes.
+
+    Retorna un dict con los campos:
+      - code
+      - description
+      - unit_description
+      - unit_correlative
+      - total_stock (suma de stocks en products_stock)
+
+    Retorna None si no se encuentra.
+    """
+
+    sql = """
+    SELECT
+        p.code,
+        p.description,
+        u.description AS unit_description,
+        pu.correlative AS unit_correlative,
+        COALESCE(SUM(ps.stock), 0) AS total_stock
+    FROM products p
+    LEFT JOIN products_codes pc ON pc.main_code = p.code
+    LEFT JOIN products_units pu ON pu.product_code = p.code AND pu.main_unit = true
+    LEFT JOIN units u ON u.code = pu.unit
+    LEFT JOIN products_stock ps ON ps.product_code = p.code
+    WHERE UPPER(p.code) = UPPER(%s) OR UPPER(pc.other_code) = UPPER(%s)
+    GROUP BY p.code, p.description, u.description, pu.correlative
+    LIMIT 1;
+    """
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code_product, code_product))
+            row = cur.fetchone()
+            if not row:
+                return None
+
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            product = _serialize_row(row)
+
+            # Obtener unidades disponibles para el producto (incluye la unidad principal y alternas)
+            sql_units = """
+            SELECT pu.correlative, pu.unit AS unit_code, u.description AS unit_description,
+                   pu.conversion_factor, pu.main_unit, pu.offer_price
+            FROM products_units pu
+            LEFT JOIN units u ON u.code = pu.unit
+            WHERE pu.product_code = %s
+            ORDER BY pu.main_unit DESC, pu.correlative ASC
+            ;
+            """
+            # Usar el código ya serializado para evitar depender del tipo RealDictRow
+            cur.execute(sql_units, (product.get('code'),))
+            units_rows = cur.fetchall() or []
+            units = []
+            for ur in units_rows:
+                units.append(
+                    {
+                        'correlative': ur.get('correlative'),
+                        'unit_code': ur.get('unit_code'),
+                        'unit_description': ur.get('unit_description'),
+                        'conversion_factor': float(ur.get('conversion_factor')) if ur.get('conversion_factor') is not None else None,
+                        'main_unit': bool(ur.get('main_unit')) if ur.get('main_unit') is not None else False,
+                        'offer_price': float(ur.get('offer_price')) if ur.get('offer_price') is not None else None,
+                    }
+                )
+
+            product['units'] = units
+            return product
+    finally:
+        close_db_connection(conn)
+
+
+def get_product_with_all_units(code_product: str):
+    """Devuelve el producto buscado por código principal u other_code y todas sus unidades.
+
+    Similar a `get_product_by_code_or_other_code` pero NO filtra las unidades por `main_unit`.
+    Retorna dict con keys: code, description, total_stock, main_unit (dict or None), units (list).
+    """
+
+    sql = """
+    SELECT
+        p.code,
+        p.description,
+        COALESCE(SUM(ps.stock), 0) AS total_stock
+    FROM products p
+    LEFT JOIN products_codes pc ON pc.main_code = p.code
+    LEFT JOIN products_stock ps ON ps.product_code = p.code
+    WHERE UPPER(p.code) = UPPER(%s) OR UPPER(pc.other_code) = UPPER(%s)
+    GROUP BY p.code, p.description
+    LIMIT 1;
+    """
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code_product, code_product))
+            row = cur.fetchone()
+            if not row:
+                return None
+
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+
+            product = _serialize_row(row)
+
+            # obtener unidad principal (si existe)
+            cur.execute(
+                """
+                SELECT pu.correlative, pu.unit AS unit_code, u.description AS unit_description,
+                       pu.conversion_factor, pu.offer_price
+                FROM products_units pu
+                LEFT JOIN units u ON u.code = pu.unit
+                WHERE pu.product_code = %s AND pu.main_unit = true
+                LIMIT 1
+                """,
+                (product.get("code"),),
+            )
+            main_row = cur.fetchone()
+            main_unit = None
+            if main_row:
+                main_unit = {
+                    "correlative": main_row.get("correlative"),
+                    "unit_code": main_row.get("unit_code"),
+                    "unit_description": main_row.get("unit_description"),
+                    "conversion_factor": float(main_row.get("conversion_factor")) if main_row.get("conversion_factor") is not None else None,
+                    "offer_price": float(main_row.get("offer_price")) if main_row.get("offer_price") is not None else None,
+                    "main_unit": True,
+                }
+
+            # obtener todas las unidades (sin filtrar por main_unit)
+            sql_units = """
+            SELECT pu.correlative, pu.unit AS unit_code, u.description AS unit_description,
+                   pu.conversion_factor, pu.main_unit, pu.offer_price
+            FROM products_units pu
+            LEFT JOIN units u ON u.code = pu.unit
+            WHERE pu.product_code = %s
+            ORDER BY pu.main_unit DESC, pu.correlative ASC
+            ;
+            """
+            cur.execute(sql_units, (product.get("code"),))
+            units_rows = cur.fetchall() or []
+            units = []
+            for ur in units_rows:
+                units.append(
+                    {
+                        "correlative": ur.get("correlative"),
+                        "unit_code": ur.get("unit_code"),
+                        "unit_description": ur.get("unit_description"),
+                        "conversion_factor": float(ur.get("conversion_factor")) if ur.get("conversion_factor") is not None else None,
+                        "main_unit": bool(ur.get("main_unit")) if ur.get("main_unit") is not None else False,
+                        "offer_price": float(ur.get("offer_price")) if ur.get("offer_price") is not None else None,
+                    }
+                )
+
+            product["main_unit"] = main_unit
+            product["units"] = units
+            return product
+    finally:
+        close_db_connection(conn)
+
+
 def get_product_price_and_unit(product_code: str):
     """Obtiene el precio de oferta (offer_price) y la unidad principal del producto.
     Retorna dict: {offer_price: float|None, unit_description: str|None}.
@@ -1359,7 +1545,7 @@ def delete_product_image(image_id: int):
 
 
 # operaciones de cleintes 
-# para obtener todos los clientes activos
+
 def get_clients():
     """Obtiene todos los clientes activos."""
     conn = get_db_connection()
@@ -1379,27 +1565,68 @@ def get_clients():
     finally:
         close_db_connection(conn)
 
-# para obtener un cleinte por su codigo
-def get_client_by_code(client_code: str):
-    """Obtiene un cliente activo por su código."""
-    conn = get_db_connection()
-    sql = """
-        select 
-        c.*,
-        coalesce( (select balance from clients_balance cb where cb.client = c.code order by emission_date desc limit 1 ),0) as balance
-        from clients c
-        where c.client_classification = 'C' and c.code = %s
-        order by c.description
+
+def search_products_with_stock_and_price(query: str = "", limit: int = 50, offset: int = 0):
+    """Busca productos con stock agregado y precio de oferta.
+
+    Retorna un dict: { 'items': [ {code, description, total_stock, offer_price, unit_description} ], 'total': int }
+    Acepta `limit` y `offset` para paginación.
     """
+    conn = get_db_connection()
+    q = (query or "").strip()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (client_code,))
-            row = cur.fetchone()
-            if row:
-                return dict(row)
-            return None
+            where_clauses = ["p.status = '01'", "p.product_type = 'T'"]
+            params = []
+            if q:
+                # Soportar comodín '*' como separador de tokens que deben aparecer (AND)
+                if '*' in q:
+                    parts = [p.strip() for p in q.split('*') if p.strip()]
+                    for part in parts:
+                        like = f"%{part}%"
+                        where_clauses.append(
+                            "(p.code ILIKE %s OR p.description ILIKE %s OR EXISTS (SELECT 1 FROM products_codes pc WHERE pc.main_code = p.code AND pc.other_code ILIKE %s))"
+                        )
+                        params.extend([like, like, like])
+                else:
+                    like = f"%{q}%"
+                    where_clauses.append(
+                        "(p.code ILIKE %s OR p.description ILIKE %s OR EXISTS (SELECT 1 FROM products_codes pc WHERE pc.main_code = p.code AND pc.other_code ILIKE %s))"
+                    )
+                    params.extend([like, like, like])
+
+            where_sql = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+            # Total count
+            count_sql = f"SELECT COUNT(*) AS cnt FROM products p {where_sql}"
+            cur.execute(count_sql, tuple(params))
+            count_row = cur.fetchone()
+            total = int(count_row.get("cnt") or 0)
+
+            # Select paginated rows
+            select_sql = f"""
+            SELECT
+                p.code AS code,
+                p.description AS description,
+                COALESCE(s.total_stock, 0) AS total_stock,
+                pu.offer_price AS offer_price,
+                u.description AS unit_description
+            FROM products p
+            LEFT JOIN products_units pu ON pu.product_code = p.code AND pu.main_unit = TRUE
+            LEFT JOIN units u ON u.code = pu.unit
+            LEFT JOIN (
+                SELECT product_code, SUM(stock) AS total_stock FROM products_stock GROUP BY product_code
+            ) s ON s.product_code = p.code
+            """ + where_sql + "\n ORDER BY p.code ASC LIMIT %s OFFSET %s"
+
+            exec_params = tuple(params) + (limit, offset)
+            cur.execute(select_sql, exec_params)
+            rows = cur.fetchall()
+            items = [dict(r) for r in rows]
+            return {"items": items, "total": total}
     finally:
         close_db_connection(conn)
+
 
 __all__ = [
     "get_db_connection",
@@ -1432,10 +1659,10 @@ __all__ = [
     "update_inventory_operation_type",
     "get_product_stock",
     "get_product_stock_by_store",
+    "get_product_by_code_or_other_code",
     "search_products_with_stock_and_price",
     "insert_product_image",
     "get_product_images",
     "delete_product_image",
     "get_clients",  
-    "get_client_by_code"
 ]

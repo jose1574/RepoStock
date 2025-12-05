@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-6">
+   <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl font-semibold text-gray-800">Orden de Recolección Manual</h2>
+      <div>
+         <div class="text-sm text-gray-600">Depósito origen: <strong class="text-lg font-semibold text-gray-800">{{ store_origin.description or 'N/D' }}</strong></div>
+         <div class="text-sm text-gray-600">Depósito destino: <strong class="text-sm font-medium text-gray-700">{{ store_destination.description or 'N/D' }}</strong></div>
+      </div>
+   </div>
+
+   <form id="manual-collection-form" method="POST" action="{{ url_for('inventory.save_collection_order') }}">
+      <input type="hidden" name="stock_store_origin" value="{{ origin_store_code or '' }}">
+      <input type="hidden" name="store_code_destination" value="{{ destination_store_code or '' }}">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Columna izquierda: búsqueda y producto seleccionado -->
+      <div class="lg:col-span-1 bg-white border rounded-lg p-4 shadow-sm">
+         <label for="search-product-input" class="block text-sm font-medium text-gray-700 mb-2">Buscar Producto</label>
+         <div class="flex gap-2">
+            <input id="search-product-input" type="text" placeholder="Código o descripción (ej: tubo*mts)" autocomplete="off" class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            <button id="search-product-button" type="button" class="px-3 py-2 rounded bg-teal-600 text-white text-sm hover:bg-teal-700 shadow">Buscar</button>
+         </div>
+
+         <div id="modal-host"></div>
+
+         <div id="modal-details-product-selected" class="mt-4">
+            <div class="text-sm text-gray-500">Producto seleccionado</div>
+            <div id="product-info" class="mt-2 bg-gray-50 border rounded p-3">
+               <div class="text-sm text-gray-800"><span id="product-code" class="font-medium"></span> <span id="product-description" class="text-gray-600"></span></div>
+               <div id="product-stock-info" class="mt-2 text-xs text-gray-600">
+                  <span id="product-stock-label">Stock disponible:</span>
+                  <span id="product-stock" class="text-lg font-bold ml-1 text-gray-900"></span>
+               </div>
+                  <!-- Stock por depósitos: se llenará dinámicamente -->
+                  <div id="product-stock-by-stores" class="mt-3 text-xs text-gray-700">
+                     <div class="font-medium text-sm mb-1">Stock por depósito</div>
+                     <div id="product-stock-stores-list" class="space-y-1">
+                        <!-- Items: cada uno será un div con store + stock -->
+                     </div>
+                  </div>
+            </div>
+
+               <div id="product-unit-select-wrapper" class="mt-3">
+                  <label for="product-unit-select" class="text-sm text-gray-700">Unidad</label>
+                  <select id="product-unit-select" class="w-full mt-1 border border-gray-300 rounded px-2 py-1 text-sm">
+                     <!-- Opciones pobladas dinámicamente -->
+                  </select>
+               </div>
+
+            <div id="product-quantity-input" class="mt-3 flex items-center gap-2">
+               <label for="product-quantity" class="text-sm text-gray-700">Cantidad</label>
+               <input type="number" id="product-quantity" min="0" step="0.001" value="1" class="w-28 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none" />
+               <button id="add-product-button" type="button" class="ml-auto px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">Agregar</button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Columna central: tabla de detalles (span 2) -->
+      <div class="lg:col-span-2 bg-white border rounded-lg p-4 shadow-sm">
+         <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-gray-800">Detalle Orden de Recoleccción</h3>
+            <div class="text-xs text-gray-500">Añade y gestiona los productos seleccionados</div>
+         </div>
+
+         <div class="overflow-x-auto">
+            <table class="min-w-full text-sm divide-y divide-gray-100">
+               <thead class="bg-gray-50">
+                  <tr>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Código</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Descripción</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Unidad</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">Ubicación</th>
+                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-600">Cantidad</th>
+                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-600">Acciones</th>
+                  </tr>
+               </thead>
+               <tbody id="details-products-tbody" class="bg-white divide-y divide-gray-100">
+                  <!-- Filas agregadas dinámicamente -->
+               </tbody>
+            </table>
+         </div>
+
+         <div class="mt-4 flex items-center justify-between">
+            <div id="details-summary" class="text-sm text-gray-600">Total ítems: <span id="details-count">0</span></div>
+            <div class="flex gap-2">
+               <button id="clear-selection" type="button" class="px-3 py-2 text-sm rounded border bg-white text-gray-700 hover:bg-gray-50">Limpiar</button>
+               <button id="save-collection" type="submit" class="px-3 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700">Guardar Orden</button>
+            </div>
+         </div>
+      </div>
+      </div>
+   </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+      async function ensureProductsModalLoaded(){
+      // Evitar insertar el partial dentro del formulario principal: siempre insertar en document.body
+      if(document.getElementById('products-modal-panel')) return;
+      try{
+         const res = await fetch('{{ url_for("inventory.products_modal") }}');
+         if(!res.ok) return;
+         const html = await res.text();
+         // Parsear el HTML para poder extraer scripts aunque estén fuera del panel
+         try{
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const scripts = Array.from(doc.querySelectorAll('script'));
+            // Crear un fragment con el contenido sin los <script>
+            scripts.forEach(s => s.parentNode && s.parentNode.removeChild(s));
+            const frag = document.createDocumentFragment();
+            Array.from(doc.body.childNodes).forEach(n => frag.appendChild(document.importNode(n, true)));
+            // Insertar el fragment en el body (modal y overlay)
+            document.body.appendChild(frag);
+            // Ejecutar los scripts extraídos en el contexto global
+            scripts.forEach(s => {
+               try{
+                  const sc = document.createElement('script');
+                  if(s.src){ sc.src = s.src; sc.async = false; document.body.appendChild(sc); }
+                  else { sc.type = 'text/javascript'; sc.text = s.textContent || s.innerText || ''; document.body.appendChild(sc); }
+               }catch(ex){ console.error('Error ejecutando script del partial:', ex); }
+            });
+         }catch(parseErr){
+            // Fallback simple: insertar el HTML crudo en body
+            document.body.insertAdjacentHTML('beforeend', html);
+         }
+      }catch(e){ console.error('Error cargando partial modal:', e); }
+   }
+
+   document.getElementById('search-product-button').addEventListener('click', async function(e){
+      e.preventDefault();
+      await ensureProductsModalLoaded();
+      if(typeof openProductsModal === 'function') openProductsModal();
+      else {
+         const overlay = document.getElementById('products-modal-overlay');
+         const panel = document.getElementById('products-modal-panel');
+         if(overlay) overlay.classList.remove('hidden');
+         if(panel) panel.classList.remove('hidden');
+      }
+   });
+
+      // Permitir búsqueda rápida por ENTER en el input: buscar por código (main u other_code)
+      const searchInput = document.getElementById('search-product-input');
+      if(searchInput){
+         searchInput.addEventListener('keydown', async function(e){
+            if(e.key === 'Enter'){
+               e.preventDefault();
+               const val = (searchInput.value || '').trim();
+               if(!val) return;
+               try{
+                  // Usar el endpoint que devuelve todas las unidades (incluye unidades alternas)
+                  const url = '{{ url_for("inventory.api_get_product_by_code_all_units") }}' + '?code=' + encodeURIComponent(val);
+                  const res = await fetch(url);
+                  if(res.status === 404){
+                     // Producto no encontrado: limpiar y mostrar aviso
+                     window.onInventoryProductSelected && window.onInventoryProductSelected({code: '', description: 'Producto no encontrado', total_stock: ''});
+                     return;
+                  }
+                  if(!res.ok){
+                     console.error('Error buscando producto:', res.status);
+                     return;
+                  }
+                  const data = await res.json();
+                  if(data && data.ok && data.product){
+                     // Usar el handler global para poblar la UI
+                     const p = data.product;
+                     // Mapear claves a las esperadas por onInventoryProductSelected
+                     const mapped = {
+                        code: p.code,
+                        description: p.description,
+                        total_stock: p.total_stock,
+                        unit_description: p.unit_description,
+                        unit_correlative: p.unit_correlative,
+                        // pasar todas las unidades (main + alternas) para poblar el select
+                        units: p.units || []
+                     };
+                     window.onInventoryProductSelected && window.onInventoryProductSelected(mapped);
+                     // limpiar input tras selección
+                     searchInput.value = '';
+                     // pequeña animación de highlight
+                     const host = document.getElementById('modal-details-product-selected');
+                     if(host){
+                        host.animate([{background: '#fff9c4'}, {background: '#ffffff'}], {duration: 700});
+                     }
+                  } else {
+                     window.onInventoryProductSelected && window.onInventoryProductSelected({code: '', description: 'Producto no encontrado', total_stock: ''});
+                  }
+               }catch(err){
+                  console.error('Error en búsqueda rápida:', err);
+               }
+            }
+         });
+      }
+
+   // Estado local del producto seleccionado (para uso al agregar)
+   let _currentSelectedProduct = null;
+
+   // Si el usuario presiona Enter en el input de cantidad, actuar como si presionara 'Agregar'
+   const qtyInputEl = document.getElementById('product-quantity');
+   if(qtyInputEl){
+      qtyInputEl.addEventListener('keydown', function(e){
+         if(e.key === 'Enter'){
+            e.preventDefault();
+            const addBtn = document.getElementById('add-product-button');
+            if(addBtn) addBtn.click();
+         }
+      });
+   }
+
+   // Handler global cuando se selecciona producto desde el modal
+   window.onInventoryProductSelected = function(product){
+      if(!product) return;
+      _currentSelectedProduct = product;
+      const codeEl = document.getElementById('product-code');
+      const descEl = document.getElementById('product-description');
+      const stockEl = document.getElementById('product-stock');
+      const unitSelect = document.getElementById('product-unit-select');
+      if(codeEl) codeEl.textContent = product.code || '';
+      if(descEl) descEl.textContent = product.description || '';
+      if(stockEl) stockEl.textContent = (product.total_stock ?? product.stock ?? '');
+
+      // Helper para poblar el select con una lista de unidades
+      function populateUnitSelect(unitsList){
+         if(!unitSelect) return;
+         unitSelect.innerHTML = '';
+         const units = unitsList || [];
+         if(units.length === 0){
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = product.unit_description || 'Unidad';
+            unitSelect.appendChild(opt);
+            return;
+         }
+         units.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.correlative || u.unit_code || '';
+            opt.textContent = (u.unit_description || u.unit_code || '') + (u.main_unit ? ' (Principal)' : '');
+            if(u.conversion_factor !== undefined && u.conversion_factor !== null) opt.dataset.conv = u.conversion_factor;
+            if(u.unit_code) opt.dataset.code = u.unit_code;
+            unitSelect.appendChild(opt);
+         });
+      }
+
+      // Poblamos el select de unidades: si el objeto recibido no trae unidades,
+      // hacemos una llamada al endpoint que devuelve todas las unidades disponibles.
+      const incomingUnits = product.units || [];
+      if((!incomingUnits || incomingUnits.length === 0) && product.code){
+         // llamada asíncrona para obtener todas las unidades
+         (async () => {
+            try{
+               const resp = await fetch('{{ url_for("inventory.api_get_product_by_code_all_units") }}' + '?code=' + encodeURIComponent(product.code));
+               if(resp.ok){
+                  const data = await resp.json();
+                  if(data && data.ok && data.product){
+                     populateUnitSelect(data.product.units || []);
+                     return;
+                  }
+               }
+            }catch(e){
+               console.error('Error al obtener unidades adicionales:', e);
+            }
+            // fallback: usar lo que venga (aunque esté vacío)
+            populateUnitSelect(incomingUnits);
+         })();
+      } else {
+         populateUnitSelect(incomingUnits);
+      }
+
+      // También obtener y mostrar el stock por depósito (lista de stores)
+      (async function(){
+         try{
+            const codesUrl = '{{ url_for("inventory.api_products_stocks_by_product") }}' + '?code=' + encodeURIComponent(product.code || '');
+            const r = await fetch(codesUrl);
+            if(!r.ok){
+               // limpiar lista si error
+               const listEl = document.getElementById('product-stock-stores-list');
+               if(listEl) listEl.innerHTML = '<div class="text-xs text-red-500">No se pudo obtener stock por depósitos</div>';
+               return;
+            }
+            const data = await r.json();
+            const listEl = document.getElementById('product-stock-stores-list');
+            if(!listEl) return;
+            listEl.innerHTML = '';
+            if(data && data.ok && Array.isArray(data.stocks)){
+               // Guardar stocks por depósito en el producto seleccionado para validaciones posteriores
+               if(_currentSelectedProduct) _currentSelectedProduct.stocks = data.stocks;
+               data.stocks.forEach(s => {
+                  const div = document.createElement('div');
+                  div.className = 'flex items-center justify-between';
+                  const left = document.createElement('div');
+                  // Resaltar si es el depósito origen (marcado por el backend) o coincide con el código de origen del template
+                  const originCode = '{{ origin_store_code or "" }}';
+                  if(s.is_origin || String(s.store_code) === String(originCode)){
+                     left.className = 'text-sm font-semibold text-gray-800';
+                  } else {
+                     left.className = 'text-xs text-gray-700';
+                  }
+                  left.textContent = (s.store_description || s.store_code || 'N/D');
+                  const right = document.createElement('div');
+                  right.className = s.is_origin || String(s.store_code) === String(originCode) ? 'text-lg font-bold text-gray-900' : 'text-sm font-medium text-gray-800';
+                  right.textContent = (s.stock === null || s.stock === undefined) ? '0' : String(s.stock);
+                  div.appendChild(left);
+                  div.appendChild(right);
+                  listEl.appendChild(div);
+               });
+            } else {
+               listEl.innerHTML = '<div class="text-xs text-gray-600">Sin datos</div>';
+            }
+         }catch(err){
+            console.error('Error cargando stock por depósitos:', err);
+         }
+      })();
+   };
+
+   // Añadir producto a la lista de detalles cuando se presiona 'Agregar'
+   document.getElementById('add-product-button').addEventListener('click', function(e){
+      e.preventDefault();
+      const code = (document.getElementById('product-code') || {}).textContent || '';
+      const desc = (document.getElementById('product-description') || {}).textContent || '';
+      const qtyInput = document.getElementById('product-quantity');
+      const qty = qtyInput ? (qtyInput.value || '0') : '0';
+      const unitSelect = document.getElementById('product-unit-select');
+      const selectedOption = unitSelect ? unitSelect.options[unitSelect.selectedIndex] : null;
+      const unitText = selectedOption ? selectedOption.textContent : '';
+      const unitCode = selectedOption ? (selectedOption.dataset.code || selectedOption.value) : '';
+
+      if(!code){
+         return alert('Seleccione primero un producto válido');
+      }
+
+         // Validación de cantidad: si tenemos stock por depósito, validar contra el depósito origen
+         try{
+            const originCode = '{{ origin_store_code or "" }}';
+            let available = null;
+            if(_currentSelectedProduct && Array.isArray(_currentSelectedProduct.stocks)){
+               const match = _currentSelectedProduct.stocks.find(s => String(s.store_code) === String(originCode) || s.is_origin);
+               if(match && (match.stock !== null && match.stock !== undefined)) available = Number(match.stock);
+            }
+            // Fallback a total_stock si no hay detalle por depósito
+            if(available === null && _currentSelectedProduct){
+               const t = _currentSelectedProduct.total_stock ?? _currentSelectedProduct.stock;
+               if(t !== null && t !== undefined) available = Number(t);
+            }
+            const wanted = parseFloat(String(qty).replace(',', '.')) || 0;
+            if(available !== null && !Number.isNaN(available)){
+               if(wanted > available){
+                  return alert(`Cantidad inválida: la cantidad no puede ser mayor a el stock disponible hay (${available}) en el depósito origen.`);
+               }
+            }
+            if(wanted <= 0){
+               return alert('La cantidad debe ser mayor a 0');
+            }
+         }catch(valErr){ console.error('Error validando cantidad:', valErr); }
+
+      // Evitar duplicados: si ya existe una fila para este código y unidad, aumentar cantidad
+      const tbody = document.getElementById('details-products-tbody');
+      const existingRow = tbody.querySelector(`tr[data-code="${code}"][data-unit="${unitCode}"]`);
+      if(existingRow){
+         const qtyEl = existingRow.querySelector('.row-qty');
+         const newQty = parseFloat((qtyEl.textContent || '0').replace(',', '.')) + parseFloat((qty || '0').replace(',', '.'));
+         qtyEl.textContent = String(newQty);
+         // actualizar hidden input correspondiente
+         const hiddenQty = existingRow.querySelector(`input[name="to_transfer_${code}"]`);
+         if(hiddenQty) hiddenQty.value = String(newQty);
+      } else {
+         const tr = document.createElement('tr');
+         tr.dataset.code = code;
+         tr.dataset.unit = unitCode || '';
+          tr.innerHTML = `
+            <td class="px-3 py-2">${code}<input type="hidden" name="selected_products" value="${code}"></td>
+            <td class="px-3 py-2">${desc}</td>
+            <td class="px-3 py-2">${unitText}</td>
+            <td class="px-3 py-2">-</td>
+            <td class="px-3 py-2 text-right"><span class="row-qty">${qty}</span>
+               <input type="hidden" name="to_transfer_${code}" value="${qty}">
+               <input type="hidden" name="unit_for_${code}" value="${selectedOption ? selectedOption.value : ''}">
+            </td>
+            <td class="px-3 py-2 text-right"><button type="button" class="row-remove px-2 py-1 rounded border text-sm">Eliminar</button></td>
+          `;
+         tbody.appendChild(tr);
+
+         // eliminar handler
+         tr.querySelector('.row-remove').addEventListener('click', function(ev){
+            ev.preventDefault();
+            tr.remove();
+            updateDetailsCount();
+         });
+
+            // Interceptar submit del formulario para crear orden vía AJAX,
+            // abrir PDF en nueva pestaña y redirigir la página actual.
+            const form = document.getElementById('manual-collection-form');
+            if(form){
+               form.addEventListener('submit', async function(e){
+                  e.preventDefault();
+                  // Validar que haya al menos un item
+                  const rows = document.querySelectorAll('#details-products-tbody tr');
+                  if(!rows || rows.length === 0){
+                     return alert('Agrega al menos un producto antes de guardar la orden');
+                  }
+                  try{
+                     const fd = new FormData(form);
+                     const res = await fetch('{{ url_for("inventory.manual_collection_order_create_ajax") }}', {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: {
+                           'X-Requested-With': 'XMLHttpRequest'
+                        }
+                     });
+                     if(!res.ok){
+                        const txt = await res.text();
+                        console.error('Error creando orden (ajax):', res.status, txt);
+                        return alert('Error creando la orden. Revisa la consola para más detalles.');
+                     }
+                     const data = await res.json();
+                     if(data && data.ok){
+                        // Abrir PDF en nueva pestaña
+                        const pdfUrl = data.pdf_url;
+                        window.open(pdfUrl, '_blank');
+                        // Redirigir la pestaña actual a la ruta de selección
+                        const redirectTo = data.redirect || '{{ url_for("inventory.select_store_manual_collection_order") }}';
+                        window.location.href = redirectTo;
+                     } else {
+                        console.error('Respuesta inválida al crear orden:', data);
+                        alert('Error creando la orden: ' + (data && data.error ? data.error : 'error desconocido'));
+                     }
+                  }catch(err){
+                     console.error('Error en submit AJAX:', err);
+                     alert('Error creando la orden. Revisa la consola para más detalles.');
+                  }
+               });
+            }
+      }
+
+      // limpiar cantidad a 1 por defecto
+      if(qtyInput) qtyInput.value = 1;
+      updateDetailsCount();
+   });
+
+   function updateDetailsCount(){
+      const cnt = document.querySelectorAll('#details-products-tbody tr').length;
+      const el = document.getElementById('details-count');
+      if(el) el.textContent = String(cnt);
+   }
+
+})();
+</script>
+{% endblock %}

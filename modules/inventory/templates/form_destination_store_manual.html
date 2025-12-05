@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% from 'macros/store_select_form.html' import store_select_form %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Crear Orden de Recolección Manual</h2>
+{{ store_select_form(
+stores, url_for('inventory.manual_collection_order'),
+title='Seleccionar Depósito de destino',
+description='Por favor, selecciona el depósito hacia donde vas a enviar los productos',
+select_label='Tienda de destino',
+submit_label='Seleccionar deposito',
+select_name='store_code_destination'
+) }}
+{% endblock %}
