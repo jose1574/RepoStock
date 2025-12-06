@@ -186,15 +186,15 @@
 	}
 
 	function confirmSelectionAndMaybeAdd(){
+		// NOTE: Historically this function auto-clicked the 'Agregar' button after
+		// selecting a product. That caused products to be added immediately when
+		// the user pressed Enter on a modal selection. Now it only selects the
+		// product (populates the details UI) and closes the modal. The user must
+		// explicitly press 'Agregar' to add the product to the order.
 		if(_selectedIndex >= 0 && _selectedIndex < _lastItems.length){
 			const prod = _lastItems[_selectedIndex];
 			// select product (close modal and populate UI)
 			selectProduct(prod);
-			// after short delay, try to auto-add the product (simulate user pressing add)
-			// This gives time for onInventoryProductSelected to populate units/stocks.
-			setTimeout(function(){
-				try{ const addBtn = document.getElementById('add-product-button'); if(addBtn) addBtn.click(); }catch(e){}
-			}, 300);
 		}
 	}
 
