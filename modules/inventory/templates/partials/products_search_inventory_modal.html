@@ -135,11 +135,20 @@
 				<td class="px-2 py-1 text-right">${(it.total_stock ?? it.stock ?? '')}</td>
 			`;
 			tr.addEventListener('click', function(){ selectProduct(it); });
-			tr.addEventListener('mouseenter', function(){ setSelection(rowIndex); });
+			tr.addEventListener('mouseenter', function(){ setSelection(rowIndex, {focus: false}); });
 			tbody.appendChild(tr);
 		});
 		// Ensure a selection exists (first row) when new results arrive
-		if(_lastItems.length > 0 && _selectedIndex === -1){ setSelection(0); }
+		if(_lastItems.length > 0 && _selectedIndex === -1){
+			// If the search input currently has focus (user is typing), do NOT steal focus
+			const inputEl = qs('#products-modal-query');
+			if(!(inputEl && document.activeElement === inputEl)){
+				setSelection(0);
+			} else {
+				// leave selection unset so typing isn't interrupted; ArrowDown will set it
+				_selectedIndex = -1;
+			}
+		}
 	}
 
 	function clearSelection(){
@@ -148,7 +157,10 @@
 		_selectedIndex = -1;
 	}
 
-	function setSelection(idx){
+	function setSelection(idx, opts){
+		// opts: { focus: true|false }
+		opts = opts || {};
+		const shouldFocus = (opts.focus === undefined) ? true : !!opts.focus;
 		const rows = document.querySelectorAll('#products-modal-tbody tr');
 		if(rows.length === 0) return;
 		if(idx < 0) idx = 0;
@@ -156,7 +168,12 @@
 		// remove previous
 		rows.forEach(r => r.classList.remove('bg-teal-100'));
 		const row = Array.from(rows).find(r => Number(r.dataset.idx) === idx);
-		if(row){ row.classList.add('bg-teal-100'); row.focus(); }
+		if(row){
+			row.classList.add('bg-teal-100');
+			if(shouldFocus){
+				try{ row.focus(); }catch(e){/* noop */}
+			}
+		}
 		_selectedIndex = idx;
 	}
 
