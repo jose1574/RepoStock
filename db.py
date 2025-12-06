@@ -1403,10 +1403,12 @@ def get_product_price_and_unit(product_code: str):
         close_db_connection(conn)
 
 
-def search_products_with_stock_and_price(query: str):
+def search_products_with_stock_and_price(query: str, store_code: str = None):
     """Busca productos por código principal, código alterno (other_code) o descripción.
+    Si `store_code` es provisto, calcula `total_stock` para ese depósito; si no,
+    usa la variable de entorno `DEFAULT_STORE_ORIGIN_CODE` o '01' por defecto.
     Si query está vacío, devuelve todos los productos. Retorna código, descripción,
-    stock total (suma en todos los depósitos) y offer_price (unidad principal).
+    stock total (suma en el depósito indicado) y offer_price (unidad principal).
     """
     conn = get_db_connection()
     sql = """
@@ -1439,6 +1441,8 @@ def search_products_with_stock_and_price(query: str):
             )
         ORDER BY p.code ASC
     """
+    # determinar depósito origen: usar parámetro si se pasa, sino la variable de entorno
+    origin_store = (store_code and str(store_code).strip()) or (os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '01').strip()
     q = (query or "").strip()
     like = f"%{q}%" if q != "" else "%"
     try:
@@ -1568,11 +1572,13 @@ def get_clients():
         close_db_connection(conn)
 
 
-def search_products_with_stock_and_price(query: str = "", limit: int = 50, offset: int = 0):
+def search_products_with_stock_and_price(query: str = "", limit: int = 50, offset: int = 0, store_code: str = None):
     """Busca productos con stock agregado y precio de oferta.
 
     Retorna un dict: { 'items': [ {code, description, total_stock, offer_price, unit_description} ], 'total': int }
     Acepta `limit` y `offset` para paginación.
+    Si `store_code` se pasa, calcula `total_stock` para ese depósito; si no, usa
+    `DEFAULT_STORE_ORIGIN_CODE` o '01'.
     """
     conn = get_db_connection()
     q = (query or "").strip()
@@ -1606,7 +1612,7 @@ def search_products_with_stock_and_price(query: str = "", limit: int = 50, offse
             total = int(count_row.get("cnt") or 0)
 
             # Select paginated rows
-            origin_store = (os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '01').strip()
+            origin_store = (store_code and str(store_code).strip()) or (os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '01').strip()
             select_sql = f"""
             SELECT
                 p.code AS code,

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8">
+  <div class="bg-white shadow-md rounded-lg p-6">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Configurar nueva Orden de Recolección</h2>
+    <p class="text-sm text-gray-600 mb-4">Selecciona el depósito de origen y el depósito de destino para la nueva orden.</p>
+
+    <form method="POST" action="{{ url_for('inventory.select_store_manual_collection_order') }}" class="space-y-4" id="wizard-form">
+      <div>
+        <label for="origin" class="block text-sm font-medium text-gray-700">Depósito Origen</label>
+        <select id="origin" name="origin" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+          <option value="">-- Selecciona depósito origen --</option>
+          {% for s in stores %}
+          <option value="{{ s.code }}">{{ s.description }} ({{ s.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="destination" class="block text-sm font-medium text-gray-700">Depósito Destino</label>
+        <select id="destination" name="destination" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+          <option value="">-- Selecciona depósito destino --</option>
+          {% for s in stores %}
+          <option value="{{ s.code }}">{{ s.description }} ({{ s.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <div class="flex gap-2">
+          <button id="wizard-submit" type="submit" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">Continuar</button>
+        </div>
+      </div>
+    </form>
+    {% if error %}
+    <div class="mt-3 text-sm text-red-600">{{ error }}</div>
+    {% endif %}
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+(function(){
+  const origin = document.getElementById('origin');
+  const destination = document.getElementById('destination');
+  const submitBtn = document.getElementById('wizard-submit');
+  const form = document.getElementById('wizard-form');
+
+  function validate(){
+    const o = origin.value && origin.value.trim() !== '';
+    const d = destination.value && destination.value.trim() !== '';
+    // habilitar sólo si ambos están seleccionados y no son iguales
+    if(o && d && origin.value !== destination.value){
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-60','cursor-not-allowed');
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-60','cursor-not-allowed');
+    }
+  }
+
+  origin.addEventListener('change', validate);
+  destination.addEventListener('change', validate);
+
+  // Validación final en submit (por si JS está deshabilitado, el servidor también valida)
+  form.addEventListener('submit', function(e){
+    const o = origin.value && origin.value.trim() !== '';
+    const d = destination.value && destination.value.trim() !== '';
+    if(!o || !d){
+      e.preventDefault();
+      alert('Debes seleccionar depósito origen y destino antes de continuar.');
+      return false;
+    }
+    if(origin.value === destination.value){
+      e.preventDefault();
+      alert('El depósito de origen y destino no pueden ser el mismo.');
+      return false;
+    }
+    return true;
+  });
+
+  // Inicializar estado
+  validate();
+})();
+</script>
+{% endblock %}
+  </div>
+</div>
+{% endblock %}

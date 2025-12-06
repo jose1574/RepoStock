@@ -9,6 +9,9 @@
          <div class="text-sm text-gray-600">Depósito origen: <strong class="text-lg font-semibold text-gray-800">{{ store_origin.description or 'N/D' }}</strong></div>
          <div class="text-sm text-gray-600">Depósito destino: <strong class="text-sm font-medium text-gray-700">{{ store_destination.description or 'N/D' }}</strong></div>
       </div>
+       <div class="flex items-center gap-2">
+          <button id="open-wizard-btn" type="button" class="px-3 py-1 text-sm rounded bg-teal-600 text-white hover:bg-teal-700">Cambiar depósitos</button>
+       </div>
    </div>
 
    <form id="manual-collection-form" method="POST" action="{{ url_for('inventory.save_collection_order') }}">
@@ -36,8 +39,13 @@
                   <!-- Stock por depósitos: se llenará dinámicamente -->
                   <div id="product-stock-by-stores" class="mt-3 text-xs text-gray-700">
                      <div class="font-medium text-sm mb-1">Stock por depósito</div>
+                     <!-- Mostrar siempre primero el depósito origen -->
+                     <div id="product-stock-origin" class="flex items-center justify-between mb-1">
+                        <div class="text-sm font-semibold text-gray-800">Dep. Origen: {{ store_origin.description if store_origin and store_origin.description else (origin_store_code or 'N/D') }}</div>
+                        <div id="product-stock-origin-value" class="text-lg font-bold text-gray-900" data-main-stock="0">0</div>
+                     </div>
                      <div id="product-stock-stores-list" class="space-y-1">
-                        <!-- Items: cada uno será un div con store + stock -->
+                        <!-- Items: cada uno será un div con store + stock (otros depósitos) -->
                      </div>
                   </div>
             </div>
@@ -98,7 +106,7 @@
 {% block scripts %}
 <script>
 (async function(){
-      async function ensureProductsModalLoaded(){
+   async function ensureProductsModalLoaded(){
       // Evitar insertar el partial dentro del formulario principal: siempre insertar en document.body
       if(document.getElementById('products-modal-panel')) return;
       try{
@@ -227,6 +235,214 @@
    // Estado local del producto seleccionado (para uso al agregar)
    let _currentSelectedProduct = null;
 
+   // Función global (dentro del IIFE) para cargar y renderizar stocks por depósito
+   async function loadProductStocks(productCode){
+      try{
+         const codesUrl = '{{ url_for("inventory.api_products_stocks_by_product") }}' + '?code=' + encodeURIComponent(productCode || '');
+         const r = await fetch(codesUrl);
+         const listEl = document.getElementById('product-stock-stores-list');
+         const originVal = document.getElementById('product-stock-origin-value');
+         if(!listEl || !originVal) return;
+         if(!r.ok){
+            listEl.innerHTML = '<div class="text-xs text-red-500">No se pudo obtener stock por depósitos</div>';
+            originVal.dataset.mainStock = '0';
+            originVal.textContent = 'N/D';
+            return;
+         }
+         const data = await r.json();
+         listEl.innerHTML = '';
+         if(data && data.ok && Array.isArray(data.stocks)){
+            // Guardar stocks por depósito en el producto seleccionado para validaciones posteriores
+            if(_currentSelectedProduct) {
+               _currentSelectedProduct.stocks = data.stocks;
+               // Calcular suma total de stocks en todos los depósitos (tratando null/undefined como 0)
+               try{
+                  const sum = (data.stocks || []).reduce((acc, s) => acc + (s && s.stock ? Number(s.stock) : 0), 0);
+                  _currentSelectedProduct.total_stock = Number(sum || 0);
+               }catch(e){ /* noop */ }
+            }
+
+            // Determinar depósito origen dinámicamente desde el input hidden
+            const originCode = (document.querySelector('input[name="stock_store_origin"]') || {}).value || '';
+
+            // Buscar y renderizar origin primero
+            let originFound = null;
+            for(const s of data.stocks){
+               try{
+                  if(s && (s.is_origin || String(s.store_code) === String(originCode))){ originFound = s; break; }
+               }catch(e){/* ignore */}
+            }
+            if(originFound){
+               originVal.dataset.mainStock = (originFound.stock === null || originFound.stock === undefined) ? '0' : String(originFound.stock);
+               originVal.textContent = originVal.dataset.mainStock;
+               originVal.className = 'text-lg font-bold text-gray-900';
+               // Resaltar visualmente el contenedor del depósito origen
+               const originContainer = document.getElementById('product-stock-origin');
+               if(originContainer){ originContainer.classList.add('bg-yellow-50','rounded','p-1'); }
+            } else {
+               // fallback: usar total_stock o mostrar N/D
+               originVal.dataset.mainStock = '0';
+               originVal.textContent = 'N/D';
+               const originContainer = document.getElementById('product-stock-origin');
+               if(originContainer){ originContainer.classList.remove('bg-yellow-50','rounded','p-1'); }
+            }
+
+            // Renderizar los demás depósitos excluyendo el origen
+            for(const s of data.stocks){
+               try{
+                  if(originFound && (s && (s.is_origin || String(s.store_code) === String(originFound.store_code)))){ continue; }
+               }catch(e){ /* continue */ }
+               const div = document.createElement('div');
+               div.className = 'flex items-center justify-between';
+               const left = document.createElement('div');
+               left.className = 'text-xs text-gray-700';
+               left.textContent = (s.store_description || s.store_code || 'N/D');
+               const right = document.createElement('div');
+               right.dataset.mainStock = (s.stock === null || s.stock === undefined) ? '0' : String(s.stock);
+               right.className = 'text-sm font-medium text-gray-800';
+               right.textContent = right.dataset.mainStock;
+               div.appendChild(left);
+               div.appendChild(right);
+               listEl.appendChild(div);
+            }
+
+            // Después de poblar la lista, recalcular la visualización del stock según la unidad seleccionada
+            try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
+         } else {
+            listEl.innerHTML = '<div class="text-xs text-gray-600">Sin datos</div>';
+            originVal.dataset.mainStock = '0';
+            originVal.textContent = 'N/D';
+         }
+      }catch(err){
+         console.error('Error cargando stock por depósitos:', err);
+      }
+   }
+
+             // --- Wizard modal (selección origen/destino) ---
+             function ensureWizardModal(){
+                   if(document.getElementById('mcw-overlay')) return;
+                   const html = `
+                   <div id="mcw-overlay" class="fixed inset-0 bg-black/40 z-50 hidden"></div>
+                   <div id="mcw-panel" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+                      <div class="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 border">
+                         <h3 class="text-lg font-semibold text-gray-800 mb-2">Configurar Depósitos</h3>
+                         <p class="text-sm text-gray-600 mb-3">Selecciona el depósito de origen y luego el de destino.</p>
+                         <form id="mcw-form" class="space-y-4" onsubmit="return false;">
+                            <div id="mcw-step-1" class="space-y-2">
+                               <label for="mcw-origin" class="block text-sm font-medium text-gray-700">Depósito origen</label>
+                               <select id="mcw-origin" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+                                  <option value=\"\">-- Selecciona origen --</option>
+                                  {% for s in stores %}
+                                  <option value=\"{{ s.code }}\">{{ s.description }} ({{ s.code }})</option>
+                                  {% endfor %}
+                               </select>
+                            </div>
+                            <div id="mcw-step-2" class="space-y-2 mt-2 hidden">
+                               <label for="mcw-destination" class="block text-sm font-medium text-gray-700">Depósito destino</label>
+                               <select id="mcw-destination" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+                                  <option value=\"\">-- Selecciona destino --</option>
+                                  {% for s in stores %}
+                                  <option value=\"{{ s.code }}\">{{ s.description }} ({{ s.code }})</option>
+                                  {% endfor %}
+                               </select>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between">
+                               <button id="mcw-back" type="button" class="px-3 py-2 rounded bg-gray-100 text-sm" disabled>Atrás</button>
+                               <div class="flex gap-2">
+                                  <button id="mcw-cancel" type="button" class="px-3 py-2 rounded bg-white border text-sm">Cancelar</button>
+                                  <button id="mcw-next" type="button" class="px-3 py-2 rounded bg-teal-600 text-white text-sm">Siguiente</button>
+                                  <button id="mcw-confirm" type="button" class="px-3 py-2 rounded bg-green-600 text-white text-sm hidden">Confirmar</button>
+                               </div>
+                            </div>
+                         </form>
+                      </div>
+                   </div>
+                   `;
+                   document.body.insertAdjacentHTML('beforeend', html);
+                   const ov = document.getElementById('mcw-overlay'); if(ov) ov.addEventListener('click', closeWizard);
+             }
+
+         function openWizard(){
+             ensureWizardModal();
+             document.getElementById('mcw-overlay').classList.remove('hidden');
+             document.getElementById('mcw-panel').classList.remove('hidden');
+             showStep(1);
+         }
+
+         function closeWizard(){
+             const ov = document.getElementById('mcw-overlay');
+             const pn = document.getElementById('mcw-panel');
+             if(ov) ov.classList.add('hidden');
+             if(pn) pn.classList.add('hidden');
+         }
+
+         function showStep(n){
+             const s1 = document.getElementById('mcw-step-1');
+             const s2 = document.getElementById('mcw-step-2');
+             const back = document.getElementById('mcw-back');
+             const next = document.getElementById('mcw-next');
+             const confirm = document.getElementById('mcw-confirm');
+             if(n===1){ s1.classList.remove('hidden'); s2.classList.add('hidden'); back.disabled = true; next.classList.remove('hidden'); confirm.classList.add('hidden'); }
+             else { s1.classList.add('hidden'); s2.classList.remove('hidden'); back.disabled = false; next.classList.add('hidden'); confirm.classList.remove('hidden'); }
+         }
+
+         async function applyWizardSelection(){
+             const origin = document.getElementById('mcw-origin').value;
+             const destination = document.getElementById('mcw-destination').value;
+             if(!origin || !destination){ alert('Selecciona origen y destino'); return; }
+             try{
+                const fd = new FormData(); fd.append('origin', origin); fd.append('destination', destination);
+                const res = await fetch('{{ url_for("inventory.api_manual_collection_order_set_stores") }}', { method: 'POST', body: fd, credentials: 'same-origin', headers: {'X-Requested-With':'XMLHttpRequest'} });
+                const data = await res.json();
+                if(!data || !data.ok){ alert('No se pudo guardar la selección: '+(data && data.error? data.error : 'error')); return; }
+                // actualizar labels y hidden inputs en la UI
+                const originDesc = (document.querySelector('#mcw-origin option:checked') || {}).textContent || origin;
+                const destDesc = (document.querySelector('#mcw-destination option:checked') || {}).textContent || destination;
+                // actualizar UI: los dos labels visibles (primer .text-sm .strong y el segundo strong.text-sm)
+                const originLabel = document.querySelector('.text-sm.text-gray-600 strong');
+                if(originLabel) originLabel.textContent = originDesc;
+                const destLabel = document.querySelector('.text-sm.text-gray-600 strong.text-sm');
+                if(destLabel) destLabel.textContent = destDesc;
+                // hidden inputs
+                const hiddenOrigin = document.querySelector('input[name="stock_store_origin"]');
+                const hiddenDest = document.querySelector('input[name="store_code_destination"]');
+                if(hiddenOrigin) hiddenOrigin.value = origin;
+                if(hiddenDest) hiddenDest.value = destination;
+                // actualizar el título fijo del depósito origen dentro del panel de stock
+                try{
+                   const originHeader = document.querySelector('#product-stock-origin .text-sm.font-semibold');
+                   if(originHeader) originHeader.textContent = 'Dep. Origen: ' + (originDesc || origin);
+                }catch(e){/* noop */}
+                // Si hay un producto seleccionado, recargar su stock para reflejar el nuevo depósito origen
+                try{
+                   if(_currentSelectedProduct && _currentSelectedProduct.code){
+                      // llamada a la función definida más arriba que carga y renderiza stocks
+                      if(typeof loadProductStocks === 'function') loadProductStocks(_currentSelectedProduct.code);
+                   }
+                }catch(e){ console.error('Error recargando stocks tras cambio de depósito', e); }
+                // Cerrar wizard y recargar la página para asegurar que la sesión y la UI se sincronicen
+                closeWizard();
+                try{ window.location.reload(); }catch(e){ /* noop */ }
+             }catch(e){ console.error('Error guardando selección wizard', e); alert('Error guardando selección'); }
+         }
+
+         // Wire buttons after injection
+         document.addEventListener('click', function(e){
+             if(e.target && e.target.id === 'open-wizard-btn'){ e.preventDefault(); openWizard(); }
+             if(e.target && e.target.id === 'mcw-next'){ e.preventDefault();
+                   // validate origin selected
+                   const o = document.getElementById('mcw-origin').value; if(!o){ alert('Selecciona el depósito de origen antes de continuar'); return; }
+                   // populate destination options excluding origin
+                   const dest = document.getElementById('mcw-destination'); const opts = Array.from(dest.options);
+                   opts.forEach(opt => { opt.hidden = (opt.value === o); });
+                   showStep(2);
+             }
+             if(e.target && e.target.id === 'mcw-back'){ e.preventDefault(); showStep(1); }
+             if(e.target && e.target.id === 'mcw-cancel'){ e.preventDefault(); closeWizard(); }
+             if(e.target && e.target.id === 'mcw-confirm'){ e.preventDefault(); applyWizardSelection(); }
+         });
+
+
    // Si el usuario presiona Enter en el input de cantidad, actuar como si presionara 'Agregar'
    const qtyInputEl = document.getElementById('product-quantity');
    if(qtyInputEl){
@@ -302,61 +518,8 @@
          try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
       }
 
-      // También obtener y mostrar el stock por depósito (lista de stores)
-      (async function(){
-         try{
-            const codesUrl = '{{ url_for("inventory.api_products_stocks_by_product") }}' + '?code=' + encodeURIComponent(product.code || '');
-            const r = await fetch(codesUrl);
-            if(!r.ok){
-               // limpiar lista si error
-               const listEl = document.getElementById('product-stock-stores-list');
-               if(listEl) listEl.innerHTML = '<div class="text-xs text-red-500">No se pudo obtener stock por depósitos</div>';
-               return;
-            }
-            const data = await r.json();
-            const listEl = document.getElementById('product-stock-stores-list');
-            if(!listEl) return;
-            listEl.innerHTML = '';
-            if(data && data.ok && Array.isArray(data.stocks)){
-               // Guardar stocks por depósito en el producto seleccionado para validaciones posteriores
-               if(_currentSelectedProduct) {
-                  _currentSelectedProduct.stocks = data.stocks;
-                  // Calcular suma total de stocks en todos los depósitos (tratando null/undefined como 0)
-                  try{
-                     const sum = (data.stocks || []).reduce((acc, s) => acc + (s && s.stock ? Number(s.stock) : 0), 0);
-                     _currentSelectedProduct.total_stock = Number(sum || 0);
-                  }catch(e){ /* noop */ }
-               }
-               data.stocks.forEach(s => {
-                  const div = document.createElement('div');
-                  div.className = 'flex items-center justify-between';
-                  const left = document.createElement('div');
-                  // Resaltar si es el depósito origen (marcado por el backend) o coincide con el código de origen del template
-                  const originCode = '{{ origin_store_code or "" }}';
-                  if(s.is_origin || String(s.store_code) === String(originCode)){
-                     left.className = 'text-sm font-semibold text-gray-800';
-                  } else {
-                     left.className = 'text-xs text-gray-700';
-                  }
-                  left.textContent = (s.store_description || s.store_code || 'N/D');
-                  const right = document.createElement('div');
-                  // Guardar el stock en unidades principales como dato para poder recalcular según unidad seleccionada
-                  right.dataset.mainStock = (s.stock === null || s.stock === undefined) ? '0' : String(s.stock);
-                  right.className = s.is_origin || String(s.store_code) === String(originCode) ? 'text-lg font-bold text-gray-900' : 'text-sm font-medium text-gray-800';
-                  right.textContent = right.dataset.mainStock;
-                  div.appendChild(left);
-                  div.appendChild(right);
-                  listEl.appendChild(div);
-               });
-               // Después de poblar la lista, recalcular la visualización del stock según la unidad seleccionada
-               try{ applyUnitConversionToStocks(); }catch(e){/* noop */}
-            } else {
-               listEl.innerHTML = '<div class="text-xs text-gray-600">Sin datos</div>';
-            }
-         }catch(err){
-            console.error('Error cargando stock por depósitos:', err);
-         }
-      })();
+      // Cargar stocks inicialmente para el producto actual (usa la función global loadProductStocks)
+      (async function(){ if(product && product.code) await loadProductStocks(product.code); })();
    };
 
    // Añadir producto a la lista de detalles cuando se presiona 'Agregar'
@@ -377,7 +540,7 @@
 
          // Validación de cantidad: si tenemos stock por depósito, validar contra el depósito origen
          try{
-            const originCode = '{{ origin_store_code or "" }}';
+              const originCode = (document.querySelector('input[name="stock_store_origin"]') || {}).value || '';
             let available = null;
             if(_currentSelectedProduct && Array.isArray(_currentSelectedProduct.stocks)){
                const match = _currentSelectedProduct.stocks.find(s => String(s.store_code) === String(originCode) || s.is_origin);
@@ -518,6 +681,17 @@
                right.textContent = txt;
             }catch(e){/* ignore */}
          });
+      }
+      // Actualizar el elemento fijo de depósito origen si existe
+      const originValEl = document.getElementById('product-stock-origin-value');
+      if(originValEl){
+         try{
+            const mainOrigin = originValEl.dataset && originValEl.dataset.mainStock ? parseFloat(originValEl.dataset.mainStock) : 0;
+            let displayOrigin = mainOrigin;
+            if(conv && !Number.isNaN(conv) && conv > 0){ displayOrigin = mainOrigin / conv; }
+            const txto = (Math.abs(displayOrigin - Math.round(displayOrigin)) < 1e-9) ? String(Math.round(displayOrigin)) : String(Number(displayOrigin.toFixed(3)));
+            originValEl.textContent = txto;
+         }catch(e){/* ignore */}
       }
       // Actualizar label de stock total (usar _currentSelectedProduct.total_stock si existe)
       if(_currentSelectedProduct){

@@ -20,7 +20,7 @@
 							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Código</th>
 							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Descripción</th>
 							<th class="px-3 py-3 text-left text-xs font-medium text-gray-600">Unidad</th>
-							<th class="px-3 py-3 text-right text-xs font-medium text-gray-600">Stock Deposito: {{store.description}}</th>
+							<th class="px-3 py-3 text-right text-xs font-medium text-gray-600">Stock (Depósito Origen)</th>
 						</tr>
 					</thead>
 					<tbody id="products-modal-tbody" class="divide-y divide-gray-100"></tbody>
@@ -121,22 +121,24 @@
 		const tbody = qs('#products-modal-tbody');
 		if(replace){ tbody.innerHTML = ''; _lastItems = []; _selectedIndex = -1; }
 		const startIndex = _lastItems.length;
-		items.forEach(function(it, idx){
+				items.forEach(function(it, idx){
 			const rowIndex = startIndex + idx;
 			_lastItems.push(it);
 			const tr = document.createElement('tr');
 			tr.className = 'cursor-pointer hover:bg-gray-50';
 			tr.tabIndex = 0;
 			tr.dataset.idx = String(rowIndex);
-			tr.innerHTML = `
-				<td class="px-2 py-1">${escapeHtml(it.code || '')}</td>
-				<td class="px-2 py-1">${escapeHtml(it.description || '')}</td>
-				<td class="px-2 py-1">${escapeHtml(it.unit_description || '')}</td>
-				<td class="px-2 py-1 text-right">${(it.total_stock ?? it.stock ?? '')}</td>
-			`;
+					tr.innerHTML = `
+						<td class="px-2 py-1">${escapeHtml(it.code || '')}</td>
+						<td class="px-2 py-1">${escapeHtml(it.description || '')}</td>
+						<td class="px-2 py-1">${escapeHtml(it.unit_description || '')}</td>
+						<td class="px-2 py-1 text-right"><span class="product-origin-stock" data-code="${escapeHtml(it.code || '')}">...</span></td>
+					`;
 			tr.addEventListener('click', function(){ selectProduct(it); });
 			tr.addEventListener('mouseenter', function(){ setSelection(rowIndex, {focus: false}); });
 			tbody.appendChild(tr);
+					// Asíncronamente obtener stock del depósito origen y actualizar la celda
+					try{ fetchOriginStockForRow(tr, it.code); }catch(e){ /* noop */ }
 		});
 		// Ensure a selection exists (first row) when new results arrive
 		if(_lastItems.length > 0 && _selectedIndex === -1){
@@ -221,6 +223,62 @@
 			if(t) clearTimeout(t);
 			t = setTimeout(()=> fn.apply(this, args), wait);
 		};
+	}
+
+	// Obtener el código del depósito origen desde el formulario principal (si existe)
+	function getOriginStoreCode(){
+		try{
+			const el = document.querySelector('input[name="stock_store_origin"]');
+			if(el) return (el.value || '').trim();
+		}catch(e){/* noop */}
+		return '';
+	}
+
+	function formatStockValue(v){
+		if(v === null || v === undefined || v === '') return 'N/D';
+		const n = Number(v);
+		if(Number.isNaN(n)) return 'N/D';
+		if(Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+		return Number(n.toFixed(3)).toString();
+	}
+
+	// Consulta el endpoint de stock por producto y actualiza la celda correspondiente
+	async function fetchOriginStockForRow(tr, productCode){
+		try{
+			if(!productCode) return;
+			const origin = getOriginStoreCode();
+			if(!origin) {
+				// Si no hay origen definido, intentar usar valores provistos en la fila (it.total_stock fallback)
+				const span = tr.querySelector('.product-origin-stock');
+				if(span){ span.textContent = formatStockValue(span.dataset.fallback || ''); }
+				return;
+			}
+			const url = new URL(window.location.origin + '{{ url_for("inventory.api_products_stocks_by_product") }}');
+			url.searchParams.set('code', productCode || '');
+			const res = await fetch(url.toString());
+			if(!res.ok) return;
+			const data = await res.json();
+			if(!data || !data.ok || !Array.isArray(data.stocks)) return;
+			// buscar el stock del depósito origen
+			let found = null;
+			for(const s of data.stocks){
+				try{
+					if(s && (s.is_origin || String(s.store_code) === String(origin))){ found = s; break; }
+				}catch(e){/* ignore */}
+			}
+			const span = tr.querySelector('.product-origin-stock');
+			if(!span) return;
+			if(found && (found.stock !== null && found.stock !== undefined)){
+				span.textContent = formatStockValue(found.stock);
+				span.dataset.mainStock = String(found.stock);
+			} else {
+				// Si no encontró en depósitos, usar total_stock si viene en el item original
+				const item = _lastItems[Number(tr.dataset.idx)];
+				const fallback = item && (item.total_stock ?? item.stock) ? (item.total_stock ?? item.stock) : '';
+				span.textContent = formatStockValue(fallback);
+				if(fallback !== '') span.dataset.fallback = String(fallback);
+			}
+		}catch(e){ console.error('fetchOriginStockForRow error', e); }
 	}
 
 	qs('#products-modal-search').addEventListener('click', function(){ runProductsSearch(true); });

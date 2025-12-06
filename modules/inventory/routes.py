@@ -249,9 +249,11 @@ def api_products_search():
         offset = 0
 
     try:
+        # Determinar depósito origen: priorizar parámetro 'store', luego sesión, luego env var
+        store_param = (request.args.get('store') or session.get('store_manual_collection_order_origin') or os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '').strip()
         # Intentar llamar a la función DB con paginación si la implementa
         try:
-            rows_and_total = search_products_with_stock_and_price(q, limit=limit, offset=offset)
+            rows_and_total = search_products_with_stock_and_price(q, limit=limit, offset=offset, store_code=store_param)
             print(f"[api_products_search] q={q!r} limit={limit} offset={offset} -> call DB returned type={type(rows_and_total)}")
             # Si la función devuelve dict {'items':..., 'total':...}
             if isinstance(rows_and_total, dict) and 'items' in rows_and_total:
@@ -273,7 +275,8 @@ def api_products_search():
 
         except TypeError:
             # función no soporta params; llamar sin params y paginar aquí
-            rows = search_products_with_stock_and_price(q) or []
+            # (fallback) incluir store si la función lo soporta
+            rows = search_products_with_stock_and_price(q, store_code=store_param) or []
             print(f"[api_products_search] fallback call returned {len(rows)} rows; offset={offset} limit={limit}")
             total = len(rows)
             items = rows[offset: offset+limit]
@@ -416,7 +419,8 @@ def api_products_stocks_by_product():
     if not code:
         return jsonify({"ok": False, "error": "Falta code"}), 400
     try:
-        origin_code = (os.environ.get("DEFAULT_STORE_ORIGIN_CODE") or "").strip()
+        # Preferir override en sesión (wizard) si existe
+        origin_code = (session.get('store_manual_collection_order_origin') or os.environ.get("DEFAULT_STORE_ORIGIN_CODE") or "").strip()
         stores = get_stores() or []
         result = []
         for s in stores:
@@ -1244,10 +1248,52 @@ def products_modal():
     store = get_store_by_code(store_code)
     return render_template("partials/products_search_inventory_modal.html", store=store)
 
-@inventory_bp.route("/select_store/manual_collection_order", methods=['GET'])
+
+
+@inventory_bp.route('/api/manual_collection_order/set_stores', methods=['POST'])
+def api_manual_collection_order_set_stores():
+    """API AJAX para establecer depósito origen y destino para la creación manual.
+
+    Espera form-encoded o JSON con keys: origin (store code) y destination (store code).
+    Guarda en sesión:
+      - session['store_manual_collection_order_origin'] = origin
+      - session['store_manual_collection_order'] = destination
+    Retorna JSON {ok: True}.
+    """
+    try:
+        origin = request.form.get('origin') or (request.get_json(silent=True) or {}).get('origin')
+        destination = request.form.get('destination') or (request.get_json(silent=True) or {}).get('destination')
+        if origin:
+            session['store_manual_collection_order_origin'] = origin
+        if destination:
+            session['store_manual_collection_order'] = destination
+        return jsonify({'ok': True, 'origin': origin, 'destination': destination})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@inventory_bp.route("/select_store/manual_collection_order", methods=['GET', 'POST'])
 def select_store_manual_collection_order():
+    """Wizard: seleccionar depósito origen y destino antes de crear una orden manual.
+
+    GET: mostrar formulario con selects de origen y destino.
+    POST: guardar selección en sesión y redirigir a `manual_collection_order`.
+    """
     stores = get_stores()
-    return render_template("form_destination_store_manual.html", stores=stores)
+    if request.method == 'POST':
+        origin = (request.form.get('origin') or '').strip()
+        destination = (request.form.get('destination') or '').strip()
+        # Validación: exigir ambos valores y que no sean iguales
+        if not origin or not destination:
+            error = 'Debe seleccionar depósito origen y destino para continuar.'
+            return render_template("wizard_select_stores_manual.html", stores=stores, error=error, sel_origin=origin, sel_destination=destination)
+        if origin == destination:
+            error = 'El depósito de origen y destino no pueden ser el mismo.'
+            return render_template("wizard_select_stores_manual.html", stores=stores, error=error, sel_origin=origin, sel_destination=destination)
+        # Guardar en sesión y continuar
+        session['store_manual_collection_order_origin'] = origin
+        session['store_manual_collection_order'] = destination
+        return redirect(url_for('inventory.manual_collection_order'))
+    return render_template("wizard_select_stores_manual.html", stores=stores)
 
 
 
@@ -1261,9 +1307,12 @@ def manual_collection_order():
       `DEFAULT_STORE_ORIGIN_CODE` (leer con `get_store_by_code`).
     - `store_destination` se obtiene desde `session['store_manual_collection_order']` si existe.
     """
-    # origen por defecto desde .env (si está configurado)
-    store_origin_code = os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+    # origen por defecto: permitir override por sesión, si existe usarlo
+    store_origin_code = session.get('store_manual_collection_order_origin') or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
     store_origin = get_store_by_code(store_origin_code) if store_origin_code else None
+
+    # lista de stores para el wizard (selección de origen/destino)
+    stores = get_stores()
 
     # destino desde sesión por defecto
     store_destination = get_store_by_code(session.get('store_manual_collection_order')) if session.get('store_manual_collection_order') else None
@@ -1281,6 +1330,7 @@ def manual_collection_order():
         store_destination=store_destination,
         destination_store_code=session.get('store_manual_collection_order'),
         origin_store_code=store_origin_code,
+        stores=stores,
     )
 
 
