@@ -4,6 +4,12 @@
 
 {% block content %}
 <div class="container mx-auto px-4 pt-6 pb-12">
+   {% if store_selection_error %}
+   <div class="mb-4 rounded border border-red-200 bg-red-50 text-red-800 p-3">
+      <strong class="block font-medium">Error de selección</strong>
+      <div class="text-sm">{{ store_selection_error }}</div>
+   </div>
+   {% endif %}
    <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
    <div class="mb-4 flex items-center gap-3 sticky top-0 z-40 bg-white border-b border-gray-200 py-2">
       <!-- Dropdown multi-filtro Departamentos -->
@@ -22,6 +28,12 @@
             <div class="flex items-center justify-between mb-1">
                <span class="text-xs text-gray-600">Filtrar departamentos</span>
                <button type="button" id="dept-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+            </div>
+            <div class="mb-2">
+               <label class="inline-flex items-center gap-2 text-sm">
+                  <input type="checkbox" id="dept-all" class="form-checkbox h-4 w-4 text-indigo-600">
+                  <span class="text-sm text-gray-700">Todos</span>
+               </label>
             </div>
             <div class="space-y-1" id="dept-options">
                {% if departments %}
@@ -52,6 +64,12 @@
                <span class="text-xs text-gray-600">Filtrar marcas</span>
                <button type="button" id="brand-clear" class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
             </div>
+            <div class="mb-2">
+               <label class="inline-flex items-center gap-2 text-sm">
+                  <input type="checkbox" id="brand-all" class="form-checkbox h-4 w-4 text-indigo-600">
+                  <span class="text-sm text-gray-700">Todos</span>
+               </label>
+            </div>
             <div class="space-y-1" id="brand-options">
                {% if brands %}
                {% for b in brands %}
@@ -64,13 +82,13 @@
             </div>
          </div>
       </div>
-      <span id="selected-count" class="text-xs text-gray-600 ml-2"></span>
+      
 
       <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
       <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
          class="border rounded px-2 py-1 text-sm w-64" />
 
-
+<span id="selected-count" class="text-sm font-medium text-gray-700"></span> 
       <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
       <form id="server-filter-form" method="post" action="{{ url_for('inventory.create_collection_order') }}">
          <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
@@ -81,7 +99,6 @@
          </select>
       </form>
    </div>
-
    <!-- Form que envía la selección de productos -->
    <form id="collection-form" action="{{ url_for('inventory.save_collection_order')}}" method="post">
       <!-- Barra flotante de acciones -->
@@ -555,11 +572,34 @@
          }
       });
       // Clear buttons
-      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked = false); updateDropdownSummary(); filterRows(); });
-      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked = false); updateDropdownSummary(); filterRows(); });
-      // Change event on checkboxes
+      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked = false); document.getElementById('dept-all') && (document.getElementById('dept-all').checked = false); updateDropdownSummary(); filterRows(); });
+      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked = false); document.getElementById('brand-all') && (document.getElementById('brand-all').checked = false); updateDropdownSummary(); filterRows(); });
+
+      // 'Todos' checkboxes: marcar/desmarcar todos
+      const deptAllCheckbox = document.getElementById('dept-all');
+      const brandAllCheckbox = document.getElementById('brand-all');
+      deptAllCheckbox?.addEventListener('change', function () {
+         const checked = !!this.checked;
+         document.querySelectorAll('.dept-check').forEach(c => c.checked = checked);
+         updateDropdownSummary(); filterRows();
+      });
+      brandAllCheckbox?.addEventListener('change', function () {
+         const checked = !!this.checked;
+         document.querySelectorAll('.brand-check').forEach(c => c.checked = checked);
+         updateDropdownSummary(); filterRows();
+      });
+
+      // Change event on checkboxes: sync 'Todos' state and update summaries
       document.addEventListener('change', (e) => {
-         if (e.target.classList.contains('dept-check') || e.target.classList.contains('brand-check')) {
+         if (e.target.classList.contains('dept-check')) {
+            const anyUnchecked = Array.from(document.querySelectorAll('.dept-check')).some(c => !c.checked);
+            if (deptAllCheckbox) deptAllCheckbox.checked = !anyUnchecked;
+            updateDropdownSummary();
+            filterRows();
+         }
+         if (e.target.classList.contains('brand-check')) {
+            const anyUncheckedB = Array.from(document.querySelectorAll('.brand-check')).some(c => !c.checked);
+            if (brandAllCheckbox) brandAllCheckbox.checked = !anyUncheckedB;
             updateDropdownSummary();
             filterRows();
          }

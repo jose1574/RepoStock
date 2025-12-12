@@ -53,37 +53,65 @@ def select_store_destination_collection_order():
 @inventory_bp.route("/create_collection_order", methods=["POST", "GET"])
 def create_collection_order():
     products = []
-    store_origin_code = os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
     selected_department = None
 
-    # Resolver tiendas origen/destino para GET y POST
-    search_store_origin = (
-        get_store_by_code(store_origin_code) if store_origin_code else None
-    )
-    store_destination = (
-        get_store_by_code(session.get("store_code_destination", None))
-        if session.get("store_code_destination")
-        else None
-    )
-
+    # Resolver depósito origen y destino: prioridad POST form -> GET args -> sesión -> env
+    store_origin_code = None
+    store_destination_code = None
+    # From POST form
     if request.method == "POST":
-        # Actualizar destino desde el formulario si viene
-        if request.form.get("store_code_destination"):
-            session["store_code_destination"] = request.form.get(
-                "store_code_destination"
-            )
-            store_destination = (
-                get_store_by_code(session.get("store_code_destination"))
-                if session.get("store_code_destination")
-                else None
-            )
+        store_origin_code = (request.form.get("store_origin") or request.form.get("store_origin_code") or "").strip() or None
+        store_destination_code = (request.form.get("store_destination") or request.form.get("store_code_destination") or "").strip() or None
+    # If not in POST, try GET args
+    if not store_origin_code:
+        store_origin_code = (request.args.get("store_origin") or "").strip() or None
+    if not store_destination_code:
+        store_destination_code = (request.args.get("store_destination") or request.args.get("store_code_destination") or "").strip() or None
 
-        selected_department = request.form.get("department", None)
-        products = get_collection_products(
-            store_origin_code,
-            session.get("store_code_destination"),
-            selected_department,
-        )
+    # Fallback a sesión / env
+    if not store_origin_code:
+        store_origin_code = session.get("store_manual_collection_order_origin") or os.environ.get("DEFAULT_STORE_ORIGIN_CODE") or None
+    if not store_destination_code:
+        store_destination_code = session.get("store_code_destination") or None
+
+    # Objetos store para plantilla
+    search_store_origin = get_store_by_code(store_origin_code) if store_origin_code else None
+    store_destination = get_store_by_code(store_destination_code) if store_destination_code else None
+
+    # Validación servidor: origen y destino no pueden ser iguales
+    store_selection_error = None
+    if store_origin_code and store_destination_code and str(store_origin_code) == str(store_destination_code):
+        store_selection_error = "El depósito origen y destino no pueden ser el mismo. Por favor elige depósitos distintos."
+
+    # Si viene en POST persistir en sesión (solo si no hay error)
+    if request.method == "POST":
+        if store_selection_error:
+            # No persistir ni cargar productos cuando la selección es inválida
+            selected_department = request.form.get("department", None)
+            products = []
+        else:
+            if store_origin_code:
+                session["store_manual_collection_order_origin"] = store_origin_code
+            if store_destination_code:
+                session["store_code_destination"] = store_destination_code
+            selected_department = request.form.get("department", None)
+            products = get_collection_products(
+                store_origin_code,
+                store_destination_code,
+                selected_department,
+            )
+    else:
+        # Si es GET y se proporcionó al menos el origen, cargar productos también
+        if store_selection_error:
+            products = []
+        else:
+            if store_origin_code:
+                selected_department = request.args.get("department", None)
+                products = get_collection_products(
+                    store_origin_code,
+                    store_destination_code,
+                    selected_department,
+                )
 
     # Construir listas únicas para filtros: departamentos y marcas presentes en los productos
     departments = []
