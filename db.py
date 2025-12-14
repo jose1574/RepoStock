@@ -46,19 +46,48 @@ def close_db_connection(conn):
         conn.close()
 
 
-def login_user(username, password):
-    """Verifica las credenciales del usuario y retorna su información si son válidas."""
+def login_user(code: str, password: str):
+    """Autentica un usuario por su nombre y contraseña.
+    Retorna un dict con los datos del usuario si es válido, o None si no.
+    """
+    print("esto es lo que recibe la funcion login_user ", code, password)
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT * FROM users WHERE username = %s AND password = %s",
-        (username, password),
-    )
-    user = cur.fetchone()
-    cur.close()
-    close_db_connection(conn)
-    return user
+    sql = """
+        SELECT  
+        u.code, 
+        u.description, 
+        u.status
+        FROM users AS u
+        WHERE u.code = UPPER(%s) AND u.user_password = %s AND u.status = '01'
+        LIMIT 1;
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code, password))
+            row = cur.fetchone()
+            if not row:
+                return None
+            rows = [row]
+            print("esto es lo que imprime desde db ", rows)
 
+            # serializar tipos no nativos de JSON (Decimal, datetime)
+            def _serialize_row(r):
+                return {
+                    k: (
+                        float(v)
+                        if isinstance(v, decimal.Decimal)
+                        else (
+                            v.isoformat()
+                            if isinstance(v, (datetime.date, datetime.datetime))
+                            else v
+                        )
+                    )
+                    for k, v in r.items()
+                }
+            return [_serialize_row(r) for r in rows][0]
+    finally:
+        close_db_connection(conn)
+        
 
 def get_stores():
     """Obtiene la lista de depositos de la base de datos."""
@@ -1675,3 +1704,6 @@ __all__ = [
     "delete_product_image",
     "get_clients",  
 ]
+
+
+#autenticacion de usuarios

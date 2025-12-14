@@ -43,3 +43,36 @@ a:focus, .btn:focus, .main-nav a:focus{outline:3px solid rgba(43,122,120,0.18);o
 
 .hero{background:white;padding:2rem;margin:1rem 0;border-radius:6px}
 .site-footer{padding:1rem 0;text-align:center;color:var(--muted)}
+
+/* Estilos para la página de login centrada */
+.login-page{
+	min-height:100vh;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	padding:1.5rem;
+	background:linear-gradient(180deg, #f7f7f7 0%, #eef6f6 100%);
+}
+
+.login-card{
+	width:100%;
+	max-width:420px;
+	background:white;
+	border-radius:10px;
+	padding:2rem;
+	box-shadow:0 8px 24px rgba(15,40,40,0.08);
+	border:1px solid rgba(0,0,0,0.04);
+}
+
+.login-card h2{margin:0 0 1rem 0;color:var(--accent-strong);font-size:1.25rem}
+
+.login-form{display:flex;flex-direction:column;gap:0.75rem}
+.login-form label{font-size:.9rem;color:#333}
+.login-form input{padding:.65rem .75rem;border:1px solid #e6e6e6;border-radius:6px;font-size:1rem}
+.login-form input:focus{outline:none;border-color:var(--accent-2);box-shadow:0 0 0 4px rgba(111,179,177,0.06)}
+
+.login-form .btn{margin-top:.5rem;padding:.65rem .9rem;border-radius:6px;font-weight:600;display:block;text-align:center}
+
+@media (max-width:480px){
+	.login-card{padding:1.25rem;margin:0 0.5rem}
+}
