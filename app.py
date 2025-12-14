@@ -130,6 +130,28 @@ app.register_blueprint(manager.manager_bp)
 app.register_blueprint(sales.sales_bp)
 
 
+# Protección global: redirige a login si no hay usuario en sesión.
+# Excepciones: endpoint 'login' y archivos estáticos.
+@app.before_request
+def require_login():
+    try:
+        ep = (request.endpoint or "")
+    except Exception:
+        ep = ""
+    # permitir acceso a login y recursos estáticos
+    public_endpoints = {"login", "static"}
+    if ep in public_endpoints:
+        return None
+    # permitir favicon
+    if request.path.startswith("/favicon.ico"):
+        return None
+    # si ya hay sesión, permitir
+    if session.get("user"):
+        return None
+    # de lo contrario redirigir a login con next
+    return redirect(url_for("login", next=request.path))
+
+
 
 # Configuración de wkhtmltopdf (Windows):
 # - Usa variable de entorno WKHTMLTOPDF_BIN si existe

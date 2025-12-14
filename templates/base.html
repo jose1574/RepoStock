@@ -7,11 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   </head>
   <body class="min-h-screen flex flex-col">
-    {% block header %}
-      {% include 'header.html' %}
-    {% endblock %}
+    {% include 'header.html' %}
 
-    <main class="flex-1 w-full">
+    <main class="w-full flex-1">
       {% block content %}{% endblock %}
     </main>
 

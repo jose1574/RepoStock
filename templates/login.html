@@ -3,12 +3,11 @@
 {% block title %}Iniciar sesión{% endblock %}
 
 {% block content %}
-<div class="bg-gray-50 min-h-screen text-gray-800">
-    <div class="h-full flex items-center justify-center">
-        <main class="w-full max-w-md p-6">
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <main class="max-w-4xl mx-auto p-6">
         <header class="mb-6">
             <h1 id="pageTitle" class="text-2xl font-semibold text-gray-900">Iniciar sesión</h1>
-            <p class="text-sm text-gray-600 mt-1">Introduce tu usuario y contraseña para poder acceder.</p>
+            <p class="text-sm text-gray-600 mt-1">Introduce tu usuario y contraseña para acceder al sistema.</p>
         </header>
 
         <section id="loginPanel" class="bg-white rounded-lg shadow-sm p-6">
@@ -22,7 +21,8 @@
                     id="username"
                     name="username"
                     type="text"
-                    placeholder="ingrese usuario"
+                    value="{{ username or '' }}"
+                    placeholder="usuario"
                     autocomplete="username"
                     required
                     class="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -33,8 +33,6 @@
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="ingrese contraseña"
-                    autocomplete="current-password"
                     required
                     class="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
@@ -50,10 +48,9 @@
                 </div>
             </form>
         </section>
-        </main>
-    </div>
+    </main>
 
-    <script>
+<script>
 document.addEventListener('DOMContentLoaded', function(){
     const input = document.getElementById('username');
     if (input) {
@@ -65,8 +62,6 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     }
 });
-    </script>
-</div>
+</script>
+</body>
 {% endblock %}
-
-{% block header %}{% endblock %}
