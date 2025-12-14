@@ -88,7 +88,11 @@
       <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
          class="border rounded px-2 py-1 text-sm w-64" />
 
-<span id="selected-count" class="text-sm font-medium text-gray-700"></span> 
+      <span id="selected-count" class="text-sm font-medium text-gray-700"></span>
+      <span id="products-count" class="ml-3 inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+         <span class="inline-block bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full border border-gray-200">{{ products|length }} </span>
+         <span class="text-xs text-gray-500">productos</span>
+      </span>
       <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
       <form id="server-filter-form" method="post" action="{{ url_for('inventory.create_collection_order') }}">
          <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
