@@ -1,0 +1,3 @@
+# Dependencias opcionales. Python ya incluye sqlite3, pero si prefieres usar
+# una implementación empaquetada, descomenta la línea siguiente e instala.
+# pysqlite3-binary>=0.4.0

@@ -38,6 +38,7 @@ def get_pdfkit_config():
     except Exception:
         return None
 from db import get_collection_products, get_correlative_product_unit, get_document_no_inventory_operation, get_inventory_operations_by_correlative, get_inventory_operations_details_by_correlative, get_product_stock, get_products_by_codes, get_store_by_code, get_stores, save_product_failure, save_transfer_order_in_wait, save_transfer_order_items, search_product, search_product_failure, search_products_with_stock_and_price, update_description_inventory_operations, update_inventory_operation_detail_amount, update_minmax_product_failure, get_product_with_all_units
+from db import update_locations_products_failures as db_update_locations_products_failures
 from db import get_product_by_code_or_other_code
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
@@ -147,7 +148,6 @@ def save_collection_order():
         # Si el formulario envía un store_code_destination, actualizar la sesión
         if request.form.get('store_code_destination'):
             session['store_code_destination'] = request.form.get('store_code_destination')
-        
         # Leer productos seleccionados y cantidades (permitir decimales, aceptar coma o punto)
         selected = request.form.getlist("selected_products")
         product_codes = [code for code in selected if code]
@@ -186,11 +186,11 @@ def save_collection_order():
                 unit_val = int(unit_raw) if unit_raw is not None and str(unit_raw).strip() != '' else get_correlative_product_unit(code)
             except Exception:
                 unit_val = get_correlative_product_unit(code)
-
             item = {
                 "product_code": code,
                 "description": prod.get("description") if prod else None,
                 "quantity": qty,
+                "user_code": session.get("user_code"),
                 "from_store": stock_store_origin,
                 "to_store": store_stock_destination,
                 # valores por defecto para campos opcionales que espera la función
@@ -212,9 +212,7 @@ def save_collection_order():
         transfer_data = {
             "emission_date": datetime.date.today(),
             "wait": True,
-            "user_code": session.get(
-                "user_id", "01"
-            ),  # usar usuario en sesión si existe
+            "user_code": session.get("user_code"),  # usar usuario en sesión si existe
             "station": "00",
             "store": stock_store_origin,
             "locations": "00",
@@ -222,7 +220,6 @@ def save_collection_order():
             "operation_comments": "Orden creada desde interfaz Repostock",
             "total": sum([it["quantity"] for it in items]),
         }
-        print("esto es lo que voy a guardar: ", transfer_data, items)
         try:
             # Crear la ORDER_COLLECTION con descripción inicial de no validada
             order_id = save_transfer_order_in_wait(transfer_data, "La operacion aun no ha sido validada")
@@ -878,8 +875,6 @@ def check_transfer_reception():
             if rows and len(rows) > 0:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative)
-                # Ignorar estado de descripción para permitir múltiples validaciones
-                print("esto es el detalle: ", details)
             else:
                 # Fallback: buscar en espera (wait=true) para informar al usuario que aún no está procesada
                 pending_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
@@ -1134,7 +1129,6 @@ def form_destination_store_for_location():
 def save_session_select_store_destination_for_location():
     store_code = session.get("store_location")
     store = get_store_by_code(store_code)
-    print("store_code ->", store)
     store_location = request.form.get("store_code_location")
 
     session['store_location'] = store_location
@@ -1165,7 +1159,7 @@ def update_location_products():
                 product_code = p.get("code") if isinstance(p, dict) else None
                 if product_code:
                     try:
-                        update_locations_products_failures(
+                        db_update_locations_products_failures(
                             store_code, product_code, location
                         )
                     except Exception as e:
@@ -1175,7 +1169,7 @@ def update_location_products():
                         )
             # Siempre limpiar la lista de productos de la sesión tras guardar
             session.pop("products", None)
-    return redirect(url_for("update_locations_products_failures_products", store_code=store_code))
+    return redirect(url_for("inventory.update_locations_products_failures_products", store_code=store_code))
 
 
 @inventory_bp.route("/update_locations_products_failures", methods=["GET", "POST"])

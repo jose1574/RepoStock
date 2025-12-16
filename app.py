@@ -104,6 +104,7 @@ from db import (
     get_product_images,
     delete_product_image,
     login_user,
+    get_user_by_code
 )
 
 try:
@@ -112,8 +113,11 @@ except Exception:
     pdfkit = None
 
 # Registrar blueprints / módulos después de tener variables de entorno y db importado
-from modules import inventory, sales
-from modules import manager
+from modules import (
+    inventory, 
+    sales, 
+    manager,
+    systems)
 
 
 app = Flask(__name__, template_folder=template_folder)
@@ -128,6 +132,9 @@ app.register_blueprint(manager.manager_bp)
 
 # Registrar blueprint de sales
 app.register_blueprint(sales.sales_bp)
+
+# Registrar blueprint de systems
+app.register_blueprint(systems.systems_bp)
 
 
 
@@ -173,13 +180,18 @@ def logout():
             username = user.get("code") or user.get("description")
     except Exception:
         username = None
-    # Limpiar sesión
-    session.clear()
+    # Eliminar solo la información de usuario (no tocar otras claves de sesión)
+    session.pop("user_code", None)
+    session.pop("user_description", None)
+    session.pop("user", None)
     return render_template("login.html", username=username)
 
 
 @app.route("/")
 def index():
+    user_code = session.get("user_code")
+    user_description = session.get("user_description")
+    print("Usuario en sesión:", user_code, user_description)
     return render_template("index.html")
 @app.route("/product_images", methods=["GET", "POST"])
 
@@ -378,33 +390,34 @@ def delete_product_images_route():
 def login():
     if request.method == "GET":
         return render_template("login.html")
-    if request.method == "POST":
-        username = (request.form.get("username")).strip()
-        password = (request.form.get("password")).strip()
-        print("Intento de login usuario:", username, "...", password)
-        # Aquí debería ir la validación real contra la base de datos o sistema de usuarios
-        user = login_user(username, password) 
-        print("Resultado login:", user)
-        if user:
-            try:
-                # Almacenar información mínima del usuario en sesión
-                session.permanent = True
-                # `login_user` retorna un dict con al menos la clave 'code'
-                session["user"] = user
-                session["user_code"] = user.get("code")
-            except Exception:
-                pass
 
-            # Soportar parámetro `next` (form o query) para redirección posterior al login
-            next_url = request.args.get("next") or request.form.get("next")
-            if not next_url:
-                return redirect(url_for("index"))
-            # Evitar redirección abierta: solo rutas internas
-            if next_url.startswith("/"):
-                return redirect(next_url)
+    # POST
+    user_code = (request.form.get("user_code") or "").strip()
+    password = (request.form.get("password") or "").strip()
+    print("Intento de login usuario:", user_code, "...", password)
+    # Validación contra la base de datos
+    user = login_user(user_code, password)
+    print("Resultado login:", user)
+    if user:
+        try:
+            # Almacenar información mínima del usuario en sesión
+            session.permanent = True
+            session["user"] = user
+            session["user_code"] = user.get("code")
+        except Exception:
+            pass
+
+        # Soportar parámetro `next` (form o query) para redirección posterior al login
+        next_url = request.args.get("next") or request.form.get("next")
+        if not next_url:
             return redirect(url_for("index"))
-        else:
-            return render_template("login.html", error="usuario o contraseña incorrectos", username=username)
+        # Evitar redirección abierta: solo rutas internas
+        if next_url.startswith("/"):
+            return redirect(next_url)
+        return redirect(url_for("index"))
+
+    # credenciales inválidas
+    return render_template("login.html", error="usuario o contraseña incorrectos", user_code=user_code)
 
 
 if __name__ == "__main__":

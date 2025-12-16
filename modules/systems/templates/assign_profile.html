@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Asignar Perfil a Usuario{% endblock %}
+
+{% block content %}
+<section class="container mx-auto p-4">
+  <h2 class="text-xl font-semibold mb-4">Asignar Perfil a Usuario</h2>
+  <form method="post" action="{{ url_for('systems.assign_profile') }}" class="space-y-4 max-w-lg">
+    <div>
+      <label class="block text-sm font-medium">ID de usuario (desde Postgres)</label>
+      <input name="user_id" required class="mt-1 block w-full border rounded p-2" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium">Perfil</label>
+      <select name="profile_id" class="mt-1 block w-full border rounded p-2">
+        {% for p in profiles %}
+          <option value="{{ p.id }}">{{ p.description }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Asignar perfil</button>
+      <a href="{{ url_for('systems.setup') }}" class="ml-2 text-sm text-gray-600">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

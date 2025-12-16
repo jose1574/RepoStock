@@ -68,10 +68,11 @@
             <div class="cell"><strong>Fecha emisión:</strong> {{ header.emission_date or '' }}</div>
         </div>
         <div class="row">
-            <div class="cell"><strong>Deposito Origen:</strong> {{ header.origin_store_description or '' }}</div>
-            <div class="cell"><strong>Deposito Destino:</strong> {{ header.destination_store_description or '' }}</div>
-            <div class="cell"><strong>Correlativo:</strong> {{ header.correlative or '' }}</div>
-            <div class="cell"><strong>Numero de Documento:</strong> {{ header.document_no or '' }}</div>
+            <div class="cell"><strong>Deposito Origen: </strong> {{ header.origin_store_description or '' }}</div>
+            <div class="cell"><strong>Deposito Destino: </strong> {{ header.destination_store_description or '' }}</div>
+            <div class="cell"><strong>Correlativo: </strong> {{ header.correlative or '' }}</div>
+            <div class="cell"><strong>Numero de Documento: </strong> {{ header.document_no or '' }}</div>
+            <div class="cell"><strong>usuario: </strong> {{header.user_code}} // {{ header.user_description or '' }} </div>
         </div>
         <div class="row">
             <div class="cell"><strong>Descripción:</strong> {{ header.description or header.correlative }}</div>

@@ -604,7 +604,7 @@ def save_transfer_order_in_wait(data, description: str):
         %s::date,  -- p_emission_date
         true,  -- p_wait
         %s,  -- p_description
-        '01',  -- p_user_code
+        %s,  -- p_user_code
         '00',  -- p_station
         %s,  -- p_store
         '00',  -- p_locations
@@ -622,6 +622,7 @@ def save_transfer_order_in_wait(data, description: str):
     params = (
         data.get("emission_date", datetime.date.today()),
         description,
+        data.get("user_code", None),
         data.get("store", None),
         data.get("destination_store", None),
     )
@@ -642,11 +643,7 @@ def save_transfer_order_in_wait(data, description: str):
         close_db_connection(conn)
 
 
-def save_collection_order(data):
-    """Guarda una orden de recolección y retorna el correlativo.
-    Nota: El tipo de operación es 'TRANSFER' y la descripción inicial marca que no ha sido validada.
-    """
-    return save_transfer_order_in_wait(data, "La operacion aun no ha sido validada")
+
 
 
 def get_correlative_product_unit(product_code):
@@ -721,7 +718,6 @@ def save_transfer_order_items(order_id, items):
                     item.get("from_store")
                     or item.get("store_from")
                     or item.get("store")
-                    or "01"
                 )
                 location_from = (
                     item.get("from_location") or item.get("location_from") or "00"
@@ -824,6 +820,7 @@ def get_inventory_operations_by_correlative(
     sql = """
         SELECT
             io.*,
+            u.description as  user_description,
             s_origin.description AS origin_store_description,
             s_destination.description AS destination_store_description
         FROM
@@ -832,6 +829,8 @@ def get_inventory_operations_by_correlative(
             store AS s_origin ON io.store = s_origin.code
         LEFT JOIN
             store AS s_destination ON io.destination_Store = s_destination.code
+        LEFT JOIN
+            users as u on (u.code = io.user_code )
         WHERE
             io.correlative = %s
             AND io.operation_type = %s
@@ -1665,6 +1664,24 @@ def search_products_with_stock_and_price(query: str = "", limit: int = 50, offse
     finally:
         close_db_connection(conn)
 
+def get_user_by_code(code: str):
+    """Obtiene un usuario por su código."""
+    conn = get_db_connection()
+    sql = """
+        SELECT *
+        FROM users
+        WHERE code = %s
+        LIMIT 1;
+    """
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (code,))
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            return None
+    finally:
+        close_db_connection(conn)
 
 __all__ = [
     "get_db_connection",
@@ -1689,7 +1706,6 @@ __all__ = [
     "update_locations_products_failures",
     "get_inventory_operations",
     "delete_inventory_operation_by_correlative",
-    "save_collection_order",
     "update_inventory_operation_detail_amount",
     "delete_inventory_operation_detail",
     "search_product",
@@ -1702,7 +1718,8 @@ __all__ = [
     "insert_product_image",
     "get_product_images",
     "delete_product_image",
-    "get_clients",  
+    "get_clients", 
+    "get_user_by_code", 
 ]
 
 
