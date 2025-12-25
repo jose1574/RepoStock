@@ -1,0 +1,1085 @@
+{% extends "base.html" %}
+
+{% block title %}Compras{% endblock %}
+
+{% block content %}
+<div class="w-full p-2 flex flex-col h-[calc(100vh-64px)]">
+    <h1 class="text-xl font-bold mb-2 text-gray-800 shrink-0">Registro de Compras</h1>
+
+    <h1>prueba de proveedor: {{ provider.description if provider else 'No provider selected' }}</h1>
+
+    <!-- Top Row: Provider, Product Info, Product Image -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-2 shrink-0">
+
+        <!-- 1. Provider Details (Col-span-3) -->
+        <div class="lg:col-span-3 bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col">
+            <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Datos del Proveedor</h2>
+
+            <div class="mb-2">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Buscar Proveedor</label>
+                <div class="flex gap-1">
+                    <input type="text" id="search-provider"
+                        class="flex-1 border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Código o nombre...">
+                    <button id="search-provider-button"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
+                        Buscar
+                    </button>
+                </div>
+            </div>
+
+            <div id="provider-info" class="space-y-2 text-xs flex-1">
+                <div class="flex justify-between border-b border-gray-100 pb-1">
+                    <span class="text-gray-500">Nombre:</span>
+                    <span id="display-provider-name" class="font-medium text-gray-900 text-right truncate ml-2">{{
+                        provider.description if provider else '---' }}</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-1">
+                    <span class="text-gray-500">Contacto:</span>
+                    <span id="display-provider-phone" class="font-medium text-gray-900 text-right truncate ml-2">{{
+                        provider.contact if provider else '---' }}</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-gray-100 pb-1">
+                    <span class="text-gray-500">Días Crédito:</span>
+                    <input type="number" id="input-provider-credit-days"
+                        class="w-16 border rounded px-1 py-0.5 text-right text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                        value="{{ provider.credit_days if provider else 0 }}" min="0">
+                </div>
+                <div id="coins" class="flex justify-between items-center border-b border-gray-100 pb-1">
+                    <span class="text-gray-500">Moneda:</span>
+                    <select id="select-coin"
+                        class="w-32 border rounded px-1 py-0.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                        {% for coin in coins %}
+                        <option value="{{ coin.code }}">{{ coin.description }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Product Details & Stock (Col-span-6) -->
+        <div class="lg:col-span-6 bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col">
+            <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Detalles del Producto</h2>
+
+            <!-- Search Bar -->
+            <div id="search-product" class="flex gap-2 mb-2">
+                <input type="text" id="input-search-product"
+                    class="flex-1 border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Código o descripción...">
+                <button id="button-search-product"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
+                    Buscar
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                <!-- Product Properties -->
+                <div id="product-info" class="space-y-1 text-xs">
+                    <div class="flex justify-between border-b border-gray-100 pb-1">
+                        <span class="text-gray-500">Código:</span>
+                        <span id="display-product-code"
+                            class="font-medium text-gray-900 text-right truncate ml-2"></span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-100 pb-1">
+                        <span class="text-gray-500">Nombre:</span>
+                        <span id="display-product-name"
+                            class="font-medium text-gray-900 text-right truncate ml-2">---</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-1">
+                        <span class="text-gray-500">Costo:</span>
+                        <input type="number" id="input-product-cost"
+                            class="w-24 border rounded px-1 py-0.5 text-right text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                            step="0.01">
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-1 pt-1">
+                        <span class="text-gray-500">Unidad:</span>
+                        <select id="select-product-unit"
+                            class="w-32 border rounded px-1 py-0.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                            disabled>
+                            <option value="">--</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-1 pt-1">
+                        <span class="text-gray-500">Cantidad:</span>
+                        <input type="number" id="input-product-quantity"
+                            class="w-24 border rounded px-1 py-0.5 text-right text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                            value="1" min="0.01" step="0.01" disabled>
+                    </div>
+
+                    <button id="add-to-cart-button"
+                        class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        Agregar al carrito
+                    </button>
+                </div>
+
+                <!-- Stock Details -->
+                <div class="border-l pl-4 flex flex-col">
+                    <div class="flex justify-between items-baseline border-b pb-1">
+                        <span class="text-gray-500">Stock Total:</span>
+                        <span id="display-product-stock-total" class="font-bold text-gray-900 text-base">---</span>
+                    </div>
+                    <div id="display-product-stock-details" class="mt-1 overflow-y-auto flex-1"
+                        style="max-height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Product Image (Col-span-3) -->
+        <div
+            class="lg:col-span-3 bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col items-center justify-center">
+            <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1 w-full">Imagen</h2>
+            <div id="image" class="flex-1 flex items-center justify-center w-full">
+                <img id="product-image-display" src="" alt="Imagen del Producto"
+                    class="w-full h-auto hidden rounded shadow-sm" style="max-height: 150px; object-fit: contain;">
+                <span id="no-image-text" class="text-gray-400 text-xs italic hidden py-2">Sin imagen disponible</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Row: Shopping Cart (Full Width) -->
+    <div
+        class="w-full bg-white rounded-lg shadow border border-gray-200 mb-2 flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div class="p-3 border-b flex justify-between items-center bg-gray-50 rounded-t-lg shrink-0">
+            <h2 class="text-base font-semibold text-gray-700">Detalle de Compra</h2>
+        </div>
+
+        <div class="overflow-auto flex-1">
+            <table id="cart-table" class="w-full text-xs text-left relative">
+                <thead class="bg-gray-100 text-gray-600 font-medium border-b sticky top-0 z-10">
+                    <tr>
+                        <th class="px-3 py-2">Item</th>
+                        <th class="px-3 py-2 text-center">Unidad</th>
+                        <th class="px-3 py-2 text-center">Cantidad</th>
+                        <th class="px-3 py-2 text-right">Costo</th>
+                        <th class="px-3 py-2 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% if cart and cart.items %}
+                    {% for item in cart.items %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-3 py-2">{{ item.name }}</td>
+                        <td class="px-3 py-2 text-center">{{ item.unit }}</td>
+                        <td class="px-3 py-2 text-center">{{ item.quantity }}</td>
+                        <td class="px-3 py-2 text-right">{{ item.price }}</td>
+                        <td class="px-3 py-2 text-center">
+                            <!-- Server-side rendered items might not have the delete button wired up yet if we rely on JS, 
+                                 but usually the cart starts empty or we re-render it with JS. 
+                                 For now, let's assume the JS will take over or we just leave this as is for initial load. -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-3 py-8 text-center text-gray-400 italic">
+                            No hay artículos en el carrito
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bottom Section: Totals -->
+    <div class="bg-white rounded-lg shadow p-4 border border-gray-200 shrink-0">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-700">Resumen de la Operación</h2>
+            <div class="flex items-center gap-4">
+                <button id="btn-save-operation"
+                    class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 font-medium text-sm transition-colors flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Guardar Operación
+                </button>
+                <div class="text-right">
+                    <span class="block text-xs text-gray-500">Total a Pagar</span>
+                    <span id="display-cart-total" class="text-2xl font-bold text-blue-600">{{ cart.total if cart else
+                        '0.00' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/browser_providers.html' %}
+{% include 'partials/bowser_products.html' %}
+
+<script>
+    // Variable explícita para guardar el proveedor seleccionado
+    let selectedProviderCode = null;
+
+
+    // Initialize data structure for ShoppingOperationData
+    let shoppingOperationData = {
+        correlative: 0,
+        operation_type: "ORDER",
+        document_no: null,
+        control_no: "",
+        emission_date: "",
+        reception_date: "",
+        provider_code: "",
+        provider_name: "",
+        provider_id: "",
+        provider_address: "",
+        provider_phone: "",
+        credit_days: 0,
+        expiration_date: "",
+        wait: false,
+        description: "",
+        store: "00",
+        locations: "00",
+        user_code: "00",
+        station: "00",
+        percent_discount: 0.0,
+        discount: 0.0,
+        percent_freight: 0.0,
+        freight: 0.0,
+        freight_tax: "",
+        freight_aliquot: 0.0,
+        credit: 0.0,
+        cash: 0.0,
+        operation_comments: "",
+        pending: false,
+        buyer: "",
+        total_amount: 0.0,
+        total_net_details: 0.0,
+        total_tax_details: 0.0,
+        total_details: 0.0,
+        total_net: 0.0,
+        total_tax: 0.0,
+        total: 0.0,
+        total_retention_tax: 0.0,
+        total_retention_municipal: 0.0,
+        total_retention_islr: 0.0,
+        total_operation: 0.0,
+        retention_tax_prorration: 0.0,
+        retention_islr_prorration: 0.0,
+        retention_municipal_prorration: 0.0,
+        coin_code: "",
+        free_tax: false,
+        total_exempt: 0.0,
+        secondary_coin: "",
+        base_igtf: 0.0,
+        percent_igtf: 0.0,
+        igtf: 0.0
+    }
+
+
+    // Factory function to ensure ShoppingOperationDetailData format
+    const createShoppingOperationDetail = (data = {}) => ({
+        line: data.line || 0,
+        code_product: data.code_product || "",
+        description_product: data.description_product || "",
+        referenc: data.referenc || "",
+        mark: data.mark || "",
+        model: data.model || "",
+        amount: data.amount || 0.0,
+        store: data.store || "",
+        locations: data.locations || "",
+        unit: data.unit || 0,
+        conversion_factor: data.conversion_factor || 0.0,
+        unit_type: data.unit_type || 0,
+        unitary_cost: data.unitary_cost || 0.0,
+        buy_tax: data.buy_tax || "",
+        buy_aliquot: data.buy_aliquot || 0.0,
+        percent_discount: data.percent_discount || 0.0,
+        discount: data.discount || 0.0,
+        product_type: data.product_type || "",
+        total_net_gross: data.total_net_gross || 0.0,
+        total_tax_gross: data.total_tax_gross || 0.0,
+        total_gross: data.total_gross || 0.0,
+        total_net: data.total_net || 0.0,
+        total_tax: data.total_tax || 0.0,
+        total: data.total || 0.0,
+        coin_code: data.coin_code || "",
+        change_price: data.change_price || false
+    });
+
+    let shoppingOperationDetailData = [];
+
+
+    // 1. Nueva función dedicada a buscar los detalles del proveedor (API)
+    async function fetchProviderDetails(code) {
+        try {
+            const response = await fetch(`/shopping/api/providers/details/${encodeURIComponent(code)}`);
+
+            if (!response.ok) {
+                throw new Error('No se pudo obtener la información del proveedor');
+            }
+
+            const data = await response.json();
+            return data.provider;
+        } catch (error) {
+            console.error('Error fetching provider:', error);
+            alert('Error al cargar los datos completos del proveedor.');
+            return null;
+        }
+    }
+
+    // 2. Nueva función para renderizar (Separamos la lógica de vista de la lógica de datos)
+    function renderProviderInfo(provider) {
+        if (!provider) return;
+        console.log('Proveedor completo obtenido vía API:', provider);
+
+        // Actualizar UI
+        document.getElementById('display-provider-name').textContent = provider.description || '---';
+        document.getElementById('display-provider-phone').textContent = provider.provider_phone || '---';
+
+        const creditDaysInput = document.getElementById('input-provider-credit-days');
+        if (creditDaysInput) {
+            creditDaysInput.value = provider.credit_days || 0;
+        }
+
+        // Actualizar el objeto de datos global (shoppingOperationData)
+        shoppingOperationData.provider_code = provider.code || '';
+        shoppingOperationData.provider_name = provider.description || '';
+        shoppingOperationData.provider_phone = provider.provider_phone || '---';
+        shoppingOperationData.provider_id = provider.provider_id || '';
+        shoppingOperationData.provider_address = provider.address || '';
+
+        // Aquí podrías actualizar campos que quizás no venían en la lista simple del modal
+        shoppingOperationData.credit_days = provider.credit_days || 0;
+
+        console.log('Datos del proveedor actualizados vía API:', shoppingOperationData);
+    }
+
+    let provider = null;
+    // Esta función se ejecutará CUANDO el modal termine
+    async function handleProviderSelection(selection) {
+        // 1. Extraemos el código (manejando si viene como objeto o texto)
+        const providerCode = selection.code;;
+        if (providerCode) {
+            document.getElementById('display-provider-name').textContent = 'Cargando detalles...';
+            // 2. Buscamos los datos completos
+            provider = await fetchProviderDetails(providerCode);
+            // 3. Renderizamos
+            if (provider) {
+                renderProviderInfo(provider);
+            } else {
+                document.getElementById('display-provider-name').textContent = 'Error al cargar';
+            }
+        }
+    }
+
+    // muestra el modal de proveedores
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Shopping script loaded');
+
+        const btnProvider = document.getElementById('search-provider-button');
+        if (btnProvider) {
+            btnProvider.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (typeof openProviderModal === 'function') {
+                    openProviderModal(handleProviderSelection);
+                } else {
+                    console.error('openProviderModal not defined');
+                }
+            });
+        }
+
+        // Listener para actualizar días de crédito en el objeto de datos
+        const inputCredit = document.getElementById('input-provider-credit-days');
+        if (inputCredit) {
+            inputCredit.addEventListener('change', function () {
+                shoppingOperationData.credit_days = parseInt(this.value) || 0;
+            });
+        }
+
+        // Listener para actualizar la moneda en el objeto de datos
+        const coinSelect = document.getElementById('select-coin');
+        if (coinSelect) {
+            // Set initial value
+            shoppingOperationData.coin_code = coinSelect.value;
+
+            coinSelect.addEventListener('change', function () {
+                shoppingOperationData.coin_code = this.value;
+                console.log('Moneda seleccionada:', shoppingOperationData.coin_code);
+            });
+        }
+
+
+        // Product Search Button Handler
+        const btnProduct = document.getElementById('button-search-product');
+        if (btnProduct) {
+            btnProduct.addEventListener('click', function (e) {
+                e.preventDefault();
+                console.log('Click en buscar producto');
+                if (typeof openProductSearchModal === 'function') {
+                    console.log('Abriendo modal de productos...');
+                    openProductSearchModal(handleProductSelection);
+                } else {
+                    console.error('openProductSearchModal no está definida');
+                    alert('Error: La función para abrir el modal no está cargada.');
+                }
+            });
+        } else {
+            console.error('Button button-search-product not found');
+        }
+
+        // Input Enter Key Handler
+        const inputProduct = document.getElementById('input-search-product');
+        if (inputProduct) {
+            inputProduct.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const query = this.value.trim();
+                    if (query) {
+                        handleProductSelection(query);
+                    }
+                }
+            });
+        }
+    });
+
+    // --- NUEVA LÓGICA PARA PRODUCTOS ---
+
+    async function fetchProductDetails(code) {
+        try {
+            const response = await fetch(`/shopping/api/products/details/${encodeURIComponent(code)}`);
+            if (!response.ok) throw new Error('Error fetching product');
+            const data = await response.json();
+            return data.product;
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
+    }
+
+
+
+
+
+    async function fetchProductStock(code) {
+        try {
+            const response = await fetch(`/shopping/api/product/stock/${encodeURIComponent(code)}`);
+            if (!response.ok) throw new Error('Error fetching product stock');
+            const data = await response.json();
+            return data.stock_info;
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
+    }
+
+    async function fetchProductUnits(code) {
+        try {
+            const response = await fetch(`/shopping/api/product/units/${encodeURIComponent(code)}`);
+            if (!response.ok) throw new Error('Error fetching product units');
+            const data = await response.json();
+            return data.units || [];
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    }
+
+    function renderStockDetail(stockList, factor = 1) {
+        const stockTotalEl = document.getElementById('display-product-stock-total');
+        const stockDetailsEl = document.getElementById('display-product-stock-details');
+
+        if (stockDetailsEl) stockDetailsEl.innerHTML = '';
+
+        let totalStock = 0;
+        if (stockList && stockList.length > 0) {
+            const totalBaseStock = stockList.reduce((acc, item) => acc + (parseFloat(item.stock) || 0), 0);
+            totalStock = totalBaseStock / factor;
+
+            if (stockTotalEl) stockTotalEl.textContent = "Total: " + totalStock.toFixed(2);
+
+            if (stockDetailsEl) {
+                const table = document.createElement('table');
+                table.className = 'w-full text-xs text-gray-600 mt-2';
+                table.innerHTML = `
+                    <thead>
+                        <tr class="text-gray-400 border-b border-gray-100">
+                            <th class="text-left font-normal pb-1">Almacén</th>
+                            <th class="text-right font-normal pb-1">MinMax</th>
+                            <th class="text-right font-normal pb-1">Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50"></tbody>
+                `;
+
+                const tbody = table.querySelector('tbody');
+
+                stockList.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const minVal = item.minimal_stock ? parseFloat(item.minimal_stock) : null;
+                    const maxVal = item.maximum_stock ? parseFloat(item.maximum_stock) : null;
+                    const stockVal = parseFloat(item.stock);
+
+                    const min = minVal !== null ? (minVal / factor).toFixed(2) : '-';
+                    const max = maxVal !== null ? (maxVal / factor).toFixed(2) : '-';
+                    const stock = (stockVal / factor).toFixed(2);
+
+                    tr.innerHTML = `
+                        <td class="text-left py-1 pr-2">${item.store_description || item.store || '---'}</td>
+                        <td class="text-right text-gray-400">
+                            <span class="text-xs">${min}</span>
+                            <span class="mx-1">/</span>
+                            <span class="text-xs">${max}</span>
+                        </td>
+                        <td class="text-right font-medium text-gray-800">${stock}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                stockDetailsEl.appendChild(table);
+            }
+        } else {
+            if (stockTotalEl) stockTotalEl.textContent = '0.00';
+        }
+    }
+
+    function renderProductDetail(product, stockList, productUnits) {
+        if (!product) {
+            document.getElementById('display-product-name').textContent = 'Producto no encontrado';
+            const imgEl = document.getElementById('product-image-display');
+            if (imgEl) imgEl.classList.add('hidden');
+            return;
+        }
+
+        // Save stock list globally for recalculation
+        currentStockList = stockList || [];
+
+        // 1. Actualizar UI básica
+        document.getElementById('display-product-code').textContent = product.code || '---';
+        document.getElementById('display-product-name').textContent = product.description || '---';
+
+        // 2. Renderizar Unidades
+        const unitSelect = document.getElementById('select-product-unit');
+        unitSelect.innerHTML = '';
+        let currentFactor = 1;
+        let initialCost = product.cost || product.unitary_cost || 0;
+
+        if (productUnits && productUnits.length > 0) {
+            productUnits.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.unit_code;
+                option.text = unit.unit_description || unit.description || 'Unidad';
+                option.dataset.factor = unit.conversion_factor;
+                option.dataset.cost = unit.unitary_cost;
+
+                if (unit.main_unit) {
+                    option.selected = true;
+                    option.text += ' (Principal)';
+                    currentFactor = parseFloat(unit.conversion_factor) || 1;
+                    initialCost = unit.unitary_cost;
+                }
+
+                unitSelect.appendChild(option);
+            });
+            unitSelect.disabled = false;
+        } else {
+            const option = document.createElement('option');
+            option.text = "Unidad única";
+            option.dataset.factor = 1;
+            option.dataset.cost = initialCost;
+            unitSelect.appendChild(option);
+            unitSelect.disabled = true;
+        }
+
+        // Setup change listener
+        unitSelect.onchange = function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const factor = selectedOption ? parseFloat(selectedOption.dataset.factor) || 1 : 1;
+            const newCost = selectedOption ? parseFloat(selectedOption.dataset.cost) || 0 : 0;
+
+            renderStockDetail(currentStockList, factor);
+
+            const costInput = document.getElementById('input-product-cost');
+            if (costInput) {
+                costInput.value = parseFloat(newCost).toFixed(2);
+            }
+        };
+
+        // 3. Renderizar Stock con el factor inicial
+        renderStockDetail(currentStockList, currentFactor);
+
+        // 4. Mostrar costo
+        const costInput = document.getElementById('input-product-cost');
+        if (costInput) {
+            costInput.value = parseFloat(initialCost).toFixed(2);
+            costInput.disabled = false;
+        }
+
+        // 5. Preparar objeto para el carrito
+        const totalBaseStock = currentStockList.reduce((acc, item) => acc + (parseFloat(item.stock) || 0), 0);
+        currentSelectedProduct = {
+            fullProduct: product, // Store full product for OrderItem creation
+            code: product.code,
+            name: product.description,
+            price: parseFloat(initialCost),
+            stock: totalBaseStock
+        };
+
+        // 6. Habilitar inputs
+        const qtyInput = document.getElementById('input-product-quantity');
+        qtyInput.value = 1;
+        qtyInput.disabled = false;
+        qtyInput.focus();
+        qtyInput.select();
+
+        document.getElementById('add-to-cart-button').disabled = false;
+
+        // 7. Mostrar imagen
+        const imgEl = document.getElementById('product-image-display');
+        const noImgText = document.getElementById('no-image-text');
+
+        if (imgEl) {
+            // Resetear estado y definir handlers ANTES de asignar src
+            imgEl.classList.add('hidden');
+            if (noImgText) noImgText.classList.add('hidden');
+
+            imgEl.onerror = function () {
+                this.classList.add('hidden');
+                if (noImgText) noImgText.classList.remove('hidden');
+            };
+            imgEl.onload = function () {
+                this.classList.remove('hidden');
+                if (noImgText) noImgText.classList.add('hidden');
+            };
+
+            imgEl.src = `/shopping/api/product/image/${encodeURIComponent(product.code)}?t=${new Date().getTime()}`;
+        }
+    }
+
+    let productStock = {};
+    let productUnits = [];
+    let currentStockList = [];
+    let currentSelectedProduct = null;
+    let currentSelectedProductUnit = null;
+
+    async function handleProductSelection(code) {
+        if (!code) return;
+
+        document.getElementById('display-product-name').textContent = 'Cargando...';
+
+        // 1. Obtener detalles del producto
+        currentSelectedProduct = await fetchProductDetails(code);
+        console.log("Producto obtenido:", currentSelectedProduct);
+
+        currentStockList = await fetchProductStock(code);
+        console.log("Stock obtenido:", currentStockList);
+
+        productUnits = await fetchProductUnits(code);
+
+        console.log("Unidades obtenidas:", productUnits);
+
+        // 2. Renderizar
+        renderProductDetail(currentSelectedProduct, currentStockList, productUnits);
+        // Limpiar input de búsqueda si se encontró el producto
+        if (currentSelectedProduct) {
+            document.getElementById('input-search-product').value = '';
+        }
+    }
+
+    // Función para transformar cantidades según unidad
+    function getConvertedQuantity() {
+        const qtyInput = document.getElementById('input-product-quantity');
+        const unitSelect = document.getElementById('select-product-unit');
+
+        const qty = parseFloat(qtyInput.value) || 0;
+        const selectedOption = unitSelect.options[unitSelect.selectedIndex];
+        const factor = selectedOption ? parseFloat(selectedOption.dataset.factor) || 1 : 1;
+
+        return qty * factor;
+    }
+
+    class OrderItem {
+        constructor(
+            code_product,
+            description_product,
+            referenc,
+            mark,
+            model,
+            amount,
+            store,
+            locations,
+            unit,
+            conversion_factor,
+            unit_type,
+            unitary_cost,
+            sale_tax,
+            sale_aliquot,
+            buy_tax,
+            buy_aliquot,
+            price,
+            type_price,
+            percent_discount,
+            discount,
+            product_type,
+            total_net_cost,
+            total_tax_cost,
+            total_cost,
+            total_net_gross,
+            total_tax_gross,
+            total_gross,
+            total_net,
+            total_tax,
+            total,
+            description,
+            technician,
+            coin_code,
+            total_weight,
+
+        ) {
+            this.code_product = code_product;
+            this.description_product = description_product;
+            this.referenc = referenc;
+            this.mark = mark;
+            this.model = model;
+            this.amount = amount;
+            this.store = store;
+            this.locations = locations;
+            this.unit = unit;
+            this.conversion_factor = conversion_factor;
+            this.unit_type = unit_type;
+            this.unitary_cost = unitary_cost;
+            this.sale_tax = sale_tax;
+            this.sale_aliquot = sale_aliquot;
+            this.buy_tax = buy_tax;
+            this.buy_aliquot = buy_aliquot;
+            this.price = price;
+            this.type_price = type_price;
+            this.percent_discount = percent_discount;
+            this.discount = discount;
+            this.product_type = product_type;
+            this.total_net_cost = total_net_cost;
+            this.total_tax_cost = total_tax_cost;
+            this.total_cost = total_cost;
+            this.total_net_gross = total_net_gross;
+            this.total_tax_gross = total_tax_gross;
+            this.total_gross = total_gross;
+            this.total_net = total_net;
+            this.total_tax = total_tax;
+            this.total = total;
+            this.description = description;
+            this.technician = technician;
+            this.coin_code = coin_code;
+            this.total_weight = total_weight;
+        }
+    }
+
+
+
+    // Cart Management
+    let cart = {
+        items: [],
+        total: 0.0
+    };
+
+    document.getElementById('add-to-cart-button').addEventListener('click', function () {
+        if (currentSelectedProduct) {
+            const qtyInput = document.getElementById('input-product-quantity');
+            const costInput = document.getElementById('input-product-cost');
+            const unitSelect = document.getElementById('select-product-unit');
+
+            const quantity = parseFloat(qtyInput.value) || 1;
+            const cost = parseFloat(costInput.value) || 0;
+
+            // Obtener datos de la unidad seleccionada
+            const selectedOption = unitSelect.options[unitSelect.selectedIndex];
+            const unitCode = unitSelect.value || '00';
+            const factor = selectedOption ? parseFloat(selectedOption.dataset.factor) || 1.0 : 1.0;
+            const unitDesc = selectedOption ? selectedOption.text : '';
+
+            addProductToCart({
+                ...currentSelectedProduct,
+                price: cost,
+                quantity: quantity,
+                unit_code: unitCode,
+                conversion_factor: factor,
+                unit_desc: unitDesc
+            });
+
+            // Reset for next entry
+            qtyInput.value = 1;
+            qtyInput.focus();
+            qtyInput.select();
+        }
+    });
+
+    function addProductToCart(productData) {
+        // Check if product already exists
+        const existingItem = cart.items.find(item => item.code_product === productData.code && item.unit === productData.unit_code);
+
+        if (existingItem) {
+            existingItem.amount += productData.quantity;
+            // Recalculate totals for this item if needed
+            existingItem.total_cost = existingItem.amount * existingItem.unitary_cost;
+            existingItem.total = existingItem.total_cost;
+        } else {
+            const p = productData.fullProduct || {};
+            const totalLine = productData.quantity * productData.price;
+
+            const newItem = new OrderItem(
+                productData.code,                   // code_product
+                productData.name,                   // description_product
+                p.reference || '',                  // referenc
+                p.mark || '',                       // mark
+                p.model || '',                      // model
+                productData.quantity,               // amount
+                shoppingOperationData.store || '01',// store
+                shoppingOperationData.locations || '', // locations
+                productData.unit_code || 0,         // unit
+                productData.conversion_factor || 1.0, // conversion_factor
+                0,                                  // unit_type
+                productData.price,                  // unitary_cost
+                p.tax || '',                        // sale_tax
+                parseFloat(p.tax_aliquot) || 0,     // sale_aliquot
+                p.tax || '',                        // buy_tax (assuming same)
+                parseFloat(p.tax_aliquot) || 0,     // buy_aliquot
+                productData.price,                  // price
+                'COST',                             // type_price
+                0.0,                                // percent_discount
+                0.0,                                // discount
+                p.product_type || '',               // product_type
+                totalLine,                          // total_net_cost
+                0.0,                                // total_tax_cost
+                totalLine,                          // total_cost
+                0.0,                                // total_net_gross
+                0.0,                                // total_tax_gross
+                0.0,                                // total_gross
+                totalLine,                          // total_net
+                0.0,                                // total_tax
+                totalLine,                          // total
+                '',                                 // description
+                '',                                 // technician
+                shoppingOperationData.coin_code || '02', // coin_code
+                0.0                                 // total_weight
+            );
+            newItem.unit_desc = productData.unit_desc; // Assign description
+            cart.items.push(newItem);
+        }
+
+        updateCartUI();
+    }
+
+    function removeProductFromCart(index) {
+        cart.items.splice(index, 1);
+        updateCartUI();
+    }
+
+    function updateItemCost(index, newCost) {
+        const cost = parseFloat(newCost);
+        if (!isNaN(cost) && cost >= 0) {
+            cart.items[index].unitary_cost = cost;
+            cart.items[index].price = cost;
+            // Recalculate totals
+            const amount = cart.items[index].amount;
+            const total = amount * cost;
+            cart.items[index].total_net_cost = total;
+            cart.items[index].total_cost = total;
+            cart.items[index].total_net = total;
+            cart.items[index].total = total;
+
+            updateCartUI();
+        }
+    }
+
+    function updateItemQuantity(index, newQuantity) {
+        const qty = parseFloat(newQuantity);
+        if (!isNaN(qty) && qty > 0) {
+            cart.items[index].amount = qty;
+            // Recalculate totals
+            const cost = cart.items[index].unitary_cost;
+            const total = qty * cost;
+            cart.items[index].total_net_cost = total;
+            cart.items[index].total_cost = total;
+            cart.items[index].total_net = total;
+            cart.items[index].total = total;
+
+            updateCartUI();
+        }
+    }
+
+    function updateCartUI() {
+        const tbody = document.querySelector('#cart-table tbody');
+        tbody.innerHTML = '';
+
+        let total = 0;
+
+        if (cart.items.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-3 py-8 text-center text-gray-400 italic">
+                        No hay artículos en el carrito
+                    </td>
+                </tr>
+            `;
+        } else {
+            cart.items.forEach((item, index) => {
+                // Use OrderItem fields: unitary_cost, amount
+                const itemTotal = item.unitary_cost * item.amount;
+                total += itemTotal;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="px-3 py-2">${item.description_product}</td>
+                    <td class="px-3 py-2 text-center text-gray-600">${item.unit_desc}</td>
+                    <td class="px-3 py-2 text-center">
+                        <input type="number" value="${item.amount}" 
+                            onchange="updateItemQuantity(${index}, this.value)"
+                            class="w-16 border rounded px-1 py-0.5 text-center text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                            step="0.01" min="0.01">
+                    </td>
+                    <td class="px-3 py-2 text-right">
+                        <input type="number" value="${item.unitary_cost.toFixed(2)}" 
+                            onchange="updateItemCost(${index}, this.value)"
+                            class="w-24 border rounded px-1 py-0.5 text-right text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                            step="0.01" min="0">
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                        <button onclick="removeProductFromCart(${index})" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Eliminar">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        cart.total = total;
+        document.getElementById('display-cart-total').textContent = total.toFixed(2);
+        
+        // Update shoppingOperationData totals
+        shoppingOperationData.total_amount = total;
+        shoppingOperationData.total = total;
+        shoppingOperationData.total_net = total; 
+        shoppingOperationData.total_operation = total;
+    }
+
+    // --- SAVE OPERATION LOGIC ---
+    // Moved to top of script to avoid ReferenceError
+    // let shoppingOperationData = ... (moved)
+
+    // funcion para construir datos de header de la operacion de compra
+    function buildShoppingOperationData() {
+        // Aquí puedes agregar lógica para llenar o validar datos adicionales si es necesario
+        let data = shoppingOperationData// Nuevo
+
+        data.correlative = null; // Asignar null para nueva operación
+        data.operation_type = "ORDER";
+        data.document_no = null;
+        data.control_no = "";
+        data.emission_date = "";
+        data.reception_date = "";
+        data.provider_code = provider.code || "";
+        data.provider_name = provider.description || "";
+        data.provider_id = provider.provider_id || "";
+        data.provider_address = provider.address || "";
+        data.provider_phone = provider.phone || "";
+        data.credit_days = provider.credit_days || 0;
+        data.expiration_date = "";
+        data.wait = false;
+        data.description = "";
+        data.store = "00";
+        data.locations = "00";
+        data.user_code = user.code || "00";
+        data.station = "00";
+        data.percent_discount = 0.0;
+        data.discount = 0.0;
+        data.percent_freight = 0.0;
+        data.freight = 0.0;
+        data.freight_tax = "";
+        data.freight_aliquot = 0.0;
+        data.credit = 0.0;
+        data.cash = 0.0;
+        data.operation_comments = "";
+        data.pending = true;
+        data.buyer = "";
+        data.total_amount = cart.total;
+        data.total_net_details = cart.total;
+        data.total_tax_details = 0.0;
+        data.total_details = cart.total;
+        data.total_net = cart.total;
+        data.total_tax = 0.0;
+        data.total = cart.total;
+        data.total_retention_tax = 0.0;
+        data.total_retention_municipal = 0.0;
+        data.total_retention_islr = 0.0;
+        data.total_operation = cart.total;
+        data.retention_tax_prorration = 0.0;
+        data.retention_islr_prorration = 0.0;
+        data.retention_municipal_prorration = 0.0;
+        data.coin_code = "02"; // Asumimos moneda local
+        data.free_tax = false;
+        data.total_exempt = 0.0;
+        data.secondary_coin = "";
+        data.base_igtf = 0.0;
+        data.percent_igtf = 0.0;
+        data.igtf = 0.0;
+        return data;
+    }
+
+    // Save Button Listener
+    const saveBtn = document.getElementById('btn-save-operation');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async function () {
+            // 1. Validations
+            if (!shoppingOperationData.provider_code) {
+                alert('Por favor, seleccione un proveedor.');
+                return;
+            }
+            if (cart.items.length === 0) {
+                alert('El carrito de compras está vacío.');
+                return;
+            }
+
+            // 2. Prepare Details Data
+            // Since cart.items are already OrderItem instances which match the structure (mostly),
+            // we just need to ensure line numbers are correct.
+            const details = cart.items.map((item, index) => {
+                item.line = index + 1;
+                return item;
+            });
+
+            // 3. Prepare Payload
+            const payload = {
+                ...shoppingOperationData,
+                details: details
+            };
+
+            // Disable button to prevent double submit
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando...';
+
+            try {
+                const response = await fetch('/shopping/api/shopping/operation/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.ok) {
+                    alert('Operación guardada exitosamente. Correlativo: ' + (result.message || ''));
+                    // Reload page to clear form
+                    window.location.reload();
+                } else {
+                    alert('Error al guardar la operación: ' + (result.error || 'Error desconocido'));
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Guardar Operación';
+                }
+            } catch (error) {
+                console.error('Error saving operation:', error);
+                alert('Error de conexión al guardar la operación.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Guardar Operación';
+            }
+        });
+    }
+
+</script>
+{% endblock %}

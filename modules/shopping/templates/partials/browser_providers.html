@@ -1,0 +1,107 @@
+<div id="provider-modal-overlay" class="fixed inset-0 bg-black/40 z-50 hidden"></div>
+<div id="provider-modal-panel" class="fixed inset-0 z-50 flex items-start justify-center p-4 hidden">
+  <div class="w-full max-w-3xl bg-white rounded shadow border">
+    <div class="flex items-center justify-between p-2 border-b">
+      <h3 class="text-sm font-semibold">Buscar proveedores</h3>
+      <button type="button" class="text-xs px-2 py-1" onclick="closeProviderModal()">Cerrar</button>
+    </div>
+    <div class="p-2 space-y-2" style="max-height: 80vh; overflow-y: auto;">
+      <div class="flex gap-2">
+        <input id="provider-modal-query" type="text" class="border rounded px-2 py-1 text-xs w-full" placeholder="Código o descripción">
+        <button id="provider-modal-search" class="px-3 py-1 text-xs rounded bg-blue-600 text-white" onclick="runProviderSearch()">Buscar</button>
+      </div>
+      <div class="border rounded" style="max-height: 70vh; overflow-y: auto;">
+        <table class="min-w-full text-xs">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-2 py-1 text-left">Código</th>
+              <th class="px-2 py-1 text-left">Descripción</th>
+              <th class="px-2 py-1 text-left">Teléfono</th>
+              <th class="px-2 py-1 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="provider-modal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  
+let onProviderSelectedCallback = null;
+
+function openProviderModal(callback) {
+  onProviderSelectedCallback = callback;
+  document.getElementById('provider-modal-overlay').classList.remove('hidden');
+  document.getElementById('provider-modal-panel').classList.remove('hidden');
+  const q = document.getElementById('provider-modal-query');
+  q.value = '';
+  q.focus();
+  runProviderSearch();
+}
+
+
+function selectProvider(item) {
+  if (onProviderSelectedCallback) {
+    onProviderSelectedCallback(item);
+  }
+  closeProviderModal();
+}
+
+
+function closeProviderModal() {
+  document.getElementById('provider-modal-overlay').classList.add('hidden');
+  document.getElementById('provider-modal-panel').classList.add('hidden');
+  onProviderSelectedCallback = null;
+}
+
+async function runProviderSearch() {
+  const q = document.getElementById('provider-modal-query').value.trim();
+  const url = '{{ url_for("shopping.api_providers_search") }}' + '?q=' + encodeURIComponent(q || '*');
+  
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const tbody = document.getElementById('provider-modal-tbody');
+    tbody.innerHTML = '';
+
+    if (!data.ok) {
+      tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
+      return;
+    }
+    
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-gray-500">No se encontraron resultados</td></tr>';
+      return;
+    }
+
+    data.items.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b hover:bg-gray-50';
+      // Escape single quotes in JSON for the onclick handler
+      const itemJson = JSON.stringify(item).replace(/'/g, "&#39;");
+      tr.innerHTML = `
+        <td class="px-2 py-1">${item.provider_code}</td>
+        <td class="px-2 py-1">${item.provider_name || ''}</td>
+        <td class="px-2 py-1">${item.provider_phone || ''}</td>
+        <td class="px-2 py-1 text-center">
+          <button type="button" class="text-blue-600 hover:underline" onclick='selectProvider(${itemJson})'>Seleccionar</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error(err);
+    const tbody = document.getElementById('provider-modal-tbody');
+    tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-red-600">Error de conexión</td></tr>';
+  }
+}
+
+
+// Allow Enter key to search
+document.getElementById('provider-modal-query').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      runProviderSearch();
+    }
+});
+</script>

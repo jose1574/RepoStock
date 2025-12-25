@@ -104,7 +104,6 @@ from db import (
     get_product_images,
     delete_product_image,
     login_user,
-    get_user_by_code
 )
 
 try:
@@ -117,7 +116,9 @@ from modules import (
     inventory, 
     sales, 
     manager,
-    systems)
+    systems,
+    shopping,
+)
 
 
 app = Flask(__name__, template_folder=template_folder)
@@ -136,7 +137,8 @@ app.register_blueprint(sales.sales_bp)
 # Registrar blueprint de systems
 app.register_blueprint(systems.systems_bp)
 
-
+#Registrar blueprint de shopping
+app.register_blueprint(shopping.shopping_bp)
 
 # Configuración de wkhtmltopdf (Windows):
 # - Usa variable de entorno WKHTMLTOPDF_BIN si existe
@@ -397,7 +399,7 @@ def login():
     print("Intento de login usuario:", user_code, "...", password)
     # Validación contra la base de datos
     user = login_user(user_code, password)
-    print("Resultado login:", user)
+    session["user"] = user
     if user:
         try:
             # Almacenar información mínima del usuario en sesión
