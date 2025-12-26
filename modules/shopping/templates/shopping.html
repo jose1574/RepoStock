@@ -270,37 +270,55 @@
     }
 
 
+    // let shoppingOperationDetailItem = {
+    //     main_correlative: "",
+    //     line: 0,
+    //     code_product: "",
+    //     description_product: "",
+    //     referenc: "",
+    //     mark: "",
+    //     model: "",
+    //     amount: 0.0,
+    //     store: "",
+    //     locations: "",
+    //     unit: 0,
+    //     conversion_factor: 0.0,
+    //     unit_type: 0,
+    //     unitary_cost: 0.0,
+    //     sale_tax: "",
+    //     sale_aliquot: 0.0,
+    //     buy_tax: "",
+    //     buy_aliquot: 0.0,
+    //     price: 0.0,
+    //     type_price: 0,
+    //     percent_discount: 0.0,
+    //     discount: 0.0,
+    //     product_type: "",
+    //     total_net_cost: 0.0,
+    //     total_tax_cost: 0.0,
+    //     total_cost: 0.0,
+    //     total_net_gross: 0.0,
+    //     total_tax_gross: 0.0,
+    //     total_gross: 0.0,
+    //     total_net: 0.0,
+    //     total_tax: 0.0,
+    //     total: 0.0,
+    //     description: "",
+    //     technician: "",
+    //     coin_code: "",
+    //     total_weight: 0.0
+    // }
+
+    
     // Factory function to ensure ShoppingOperationDetailData format
-    const createShoppingOperationDetail = (data = {}) => ({
-        line: data.line || 0,
-        code_product: data.code_product || "",
-        description_product: data.description_product || "",
-        referenc: data.referenc || "",
-        mark: data.mark || "",
-        model: data.model || "",
-        amount: data.amount || 0.0,
-        store: data.store || "",
-        locations: data.locations || "",
-        unit: data.unit || 0,
-        conversion_factor: data.conversion_factor || 0.0,
-        unit_type: data.unit_type || 0,
-        unitary_cost: data.unitary_cost || 0.0,
-        buy_tax: data.buy_tax || "",
-        buy_aliquot: data.buy_aliquot || 0.0,
-        percent_discount: data.percent_discount || 0.0,
-        discount: data.discount || 0.0,
-        product_type: data.product_type || "",
-        total_net_gross: data.total_net_gross || 0.0,
-        total_tax_gross: data.total_tax_gross || 0.0,
-        total_gross: data.total_gross || 0.0,
-        total_net: data.total_net || 0.0,
-        total_tax: data.total_tax || 0.0,
-        total: data.total || 0.0,
-        coin_code: data.coin_code || "",
-        change_price: data.change_price || false
-    });
 
     let shoppingOperationDetailData = [];
+
+
+    //constructor de ShoppingOperationDetailData
+    function buildShoppingOperationDetailData() {
+        shoppingOperationDetailItem               
+    }
 
 
     // 1. Nueva función dedicada a buscar los detalles del proveedor (API)
@@ -559,7 +577,8 @@
         if (productUnits && productUnits.length > 0) {
             productUnits.forEach(unit => {
                 const option = document.createElement('option');
-                option.value = unit.unit_code;
+                // Corregido: usar 'unit' que es el nombre de la columna en BD, no 'unit_code'
+                option.value = unit.correlative.toFixed(0); 
                 option.text = unit.unit_description || unit.description || 'Unidad';
                 option.dataset.factor = unit.conversion_factor;
                 option.dataset.cost = unit.unitary_cost;
@@ -581,6 +600,7 @@
             option.dataset.cost = initialCost;
             unitSelect.appendChild(option);
             unitSelect.disabled = true;
+            unitSelect.value = option.value;
         }
 
         // Setup change listener
@@ -594,6 +614,14 @@
             const costInput = document.getElementById('input-product-cost');
             if (costInput) {
                 costInput.value = parseFloat(newCost).toFixed(2);
+            }
+
+            // Actualizar currentSelectedProduct cuando cambia la unidad
+            if (currentSelectedProduct) {
+                currentSelectedProduct.unit_code = this.value;
+                currentSelectedProduct.conversion_factor = factor;
+                currentSelectedProduct.unit_desc = selectedOption ? selectedOption.text : '';
+                currentSelectedProduct.price = newCost;
             }
         };
 
@@ -609,12 +637,18 @@
 
         // 5. Preparar objeto para el carrito
         const totalBaseStock = currentStockList.reduce((acc, item) => acc + (parseFloat(item.stock) || 0), 0);
+        
+        const selectedUnitOption = unitSelect.options[unitSelect.selectedIndex];
+
         currentSelectedProduct = {
-            fullProduct: product, // Store full product for OrderItem creation
+            ...product,
             code: product.code,
             name: product.description,
             price: parseFloat(initialCost),
-            stock: totalBaseStock
+            stock: totalBaseStock,
+            unit_code: Number(unitSelect.value),
+            conversion_factor: currentFactor,
+            unit_desc: selectedUnitOption ? selectedUnitOption.text : ''
         };
 
         // 6. Habilitar inputs
@@ -651,7 +685,7 @@
     let productStock = {};
     let productUnits = [];
     let currentStockList = [];
-    let currentSelectedProduct = null;
+    let currentSelectedProduct = {};
     let currentSelectedProductUnit = null;
 
     async function handleProductSelection(code) {
@@ -661,14 +695,9 @@
 
         // 1. Obtener detalles del producto
         currentSelectedProduct = await fetchProductDetails(code);
-        console.log("Producto obtenido:", currentSelectedProduct);
-
         currentStockList = await fetchProductStock(code);
-        console.log("Stock obtenido:", currentStockList);
-
         productUnits = await fetchProductUnits(code);
 
-        console.log("Unidades obtenidas:", productUnits);
 
         // 2. Renderizar
         renderProductDetail(currentSelectedProduct, currentStockList, productUnits);
@@ -681,6 +710,7 @@
     // Función para transformar cantidades según unidad
     function getConvertedQuantity() {
         const qtyInput = document.getElementById('input-product-quantity');
+        //converte esto en number
         const unitSelect = document.getElementById('select-product-unit');
 
         const qty = parseFloat(qtyInput.value) || 0;
@@ -766,7 +796,6 @@
     }
 
 
-
     // Cart Management
     let cart = {
         items: [],
@@ -784,9 +813,10 @@
 
             // Obtener datos de la unidad seleccionada
             const selectedOption = unitSelect.options[unitSelect.selectedIndex];
-            const unitCode = unitSelect.value || '00';
+            console.log('selectedOption', selectedOption);
+            const unitCode = unitSelect.value;
             const factor = selectedOption ? parseFloat(selectedOption.dataset.factor) || 1.0 : 1.0;
-            const unitDesc = selectedOption ? selectedOption.text : '';
+            const unitDescription = selectedOption ? selectedOption.text : '';
 
             addProductToCart({
                 ...currentSelectedProduct,
@@ -794,7 +824,7 @@
                 quantity: quantity,
                 unit_code: unitCode,
                 conversion_factor: factor,
-                unit_desc: unitDesc
+                unit_description: unitDescription,
             });
 
             // Reset for next entry
@@ -807,34 +837,35 @@
     function addProductToCart(productData) {
         // Check if product already exists
         const existingItem = cart.items.find(item => item.code_product === productData.code && item.unit === productData.unit_code);
-
+        console.log('esto es el producto ',productData);
+        
         if (existingItem) {
             existingItem.amount += productData.quantity;
             // Recalculate totals for this item if needed
             existingItem.total_cost = existingItem.amount * existingItem.unitary_cost;
             existingItem.total = existingItem.total_cost;
         } else {
-            const p = productData.fullProduct || {};
+            const p = productData;
             const totalLine = productData.quantity * productData.price;
 
             const newItem = new OrderItem(
-                productData.code,                   // code_product
-                productData.name,                   // description_product
+                p.code,                   // code_product
+                p.name,                   // description_product
                 p.reference || '',                  // referenc
                 p.mark || '',                       // mark
                 p.model || '',                      // model
-                productData.quantity,               // amount
+                p.quantity,               // amount
                 shoppingOperationData.store || '01',// store
                 shoppingOperationData.locations || '', // locations
-                productData.unit_code || 0,         // unit
-                productData.conversion_factor || 1.0, // conversion_factor
+                Number(p.unit_code),              // unit
+                p.conversion_factor || 1.0, // conversion_factor
                 0,                                  // unit_type
-                productData.price,                  // unitary_cost
+                p.price,                  // unitary_cost
                 p.tax || '',                        // sale_tax
                 parseFloat(p.tax_aliquot) || 0,     // sale_aliquot
-                p.tax || '',                        // buy_tax (assuming same)
+                p.buy_tax,                        // buy_tax (assuming same)
                 parseFloat(p.tax_aliquot) || 0,     // buy_aliquot
-                productData.price,                  // price
+                p.price,                  // price
                 'COST',                             // type_price
                 0.0,                                // percent_discount
                 0.0,                                // discount
@@ -853,8 +884,9 @@
                 shoppingOperationData.coin_code || '02', // coin_code
                 0.0                                 // total_weight
             );
-            newItem.unit_desc = productData.unit_desc; // Assign description
+            newItem.unit_desc = p.unit_desc; // Assign description
             cart.items.push(newItem);
+            console.log("producto nuevo agregado al carrito:", newItem);
         }
 
         updateCartUI();
@@ -968,7 +1000,7 @@
 
         data.correlative = null; // Asignar null para nueva operación
         data.operation_type = "ORDER";
-        data.document_no = null;
+        data.document_no = "";
         data.control_no = "";
         data.emission_date = "";
         data.reception_date = "";
@@ -983,7 +1015,7 @@
         data.description = "";
         data.store = "00";
         data.locations = "00";
-        data.user_code = user.code || "00";
+        data.user_code = "00";
         data.station = "00";
         data.percent_discount = 0.0;
         data.discount = 0.0;
@@ -1013,11 +1045,19 @@
         data.coin_code = "02"; // Asumimos moneda local
         data.free_tax = false;
         data.total_exempt = 0.0;
-        data.secondary_coin = "";
+        data.secondary_coin = "02";
         data.base_igtf = 0.0;
         data.percent_igtf = 0.0;
         data.igtf = 0.0;
         return data;
+    }
+
+// funcion para construir el detalle de la operacion de compra
+    function buildShoppingOperationDetails() {
+        return cart.items.map((item, index) => {
+            item.line = index + 1; // Asegurar numeración de línea
+            return item;
+        });
     }
 
     // Save Button Listener
@@ -1042,11 +1082,15 @@
                 return item;
             });
 
+            const header = buildShoppingOperationData();
+            console.log('Header de la operación:', header);
             // 3. Prepare Payload
             const payload = {
-                ...shoppingOperationData,
+                ...header,
                 details: details
             };
+
+            console.log('Payload a enviar:', payload);
 
             // Disable button to prevent double submit
             saveBtn.disabled = true;
