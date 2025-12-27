@@ -2,13 +2,13 @@
 <div id="provider-modal-panel" class="fixed inset-0 z-50 flex items-start justify-center p-4 hidden">
   <div class="w-full max-w-3xl bg-white rounded shadow border">
     <div class="flex items-center justify-between p-2 border-b">
-      <h3 class="text-sm font-semibold">Buscar proveedores</h3>
+      <h3 class="text-sm font-semibold">Buscar proveedor</h3>
       <button type="button" class="text-xs px-2 py-1" onclick="closeProviderModal()">Cerrar</button>
     </div>
     <div class="p-2 space-y-2" style="max-height: 80vh; overflow-y: auto;">
       <div class="flex gap-2">
-        <input id="provider-modal-query" type="text" class="border rounded px-2 py-1 text-xs w-full" placeholder="Código o descripción">
-        <button id="provider-modal-search" class="px-3 py-1 text-xs rounded bg-blue-600 text-white" onclick="runProviderSearch()">Buscar</button>
+        <input id="provider-modal-search" type="text" class="border rounded px-2 py-1 text-xs w-full" placeholder="Código o descripción (* para todos)" oninput="filterProviderTable()">
+        <button id="provider-modal-search-btn" class="px-3 py-1 text-xs rounded bg-blue-600 text-white" onclick="loadProviders()">Actualizar</button>
       </div>
       <div class="border rounded" style="max-height: 70vh; overflow-y: auto;">
         <table class="min-w-full text-xs">
@@ -17,7 +17,6 @@
               <th class="px-2 py-1 text-left">Código</th>
               <th class="px-2 py-1 text-left">Descripción</th>
               <th class="px-2 py-1 text-left">Teléfono</th>
-              <th class="px-2 py-1 text-center">Acción</th>
             </tr>
           </thead>
           <tbody id="provider-modal-tbody"></tbody>
@@ -29,15 +28,73 @@
 <script>
   
 let onProviderSelectedCallback = null;
+let selectedRowIndex = -1;
+
+function handleModalKeydown(e) {
+  if (e.key === 'Escape') {
+    closeProviderModal();
+    return;
+  }
+
+  const rows = getVisibleRows();
+  if (rows.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (selectedRowIndex < rows.length - 1) {
+      selectedRowIndex++;
+      highlightRow(rows, selectedRowIndex);
+    } else if (selectedRowIndex === -1) {
+      selectedRowIndex = 0;
+      highlightRow(rows, selectedRowIndex);
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (selectedRowIndex > 0) {
+      selectedRowIndex--;
+      highlightRow(rows, selectedRowIndex);
+    } else if (selectedRowIndex === 0) {
+      // Optional: Move back to input?
+      selectedRowIndex = -1;
+      highlightRow(rows, -1);
+      document.getElementById('provider-modal-search').focus();
+    }
+  } else if (e.key === 'Enter') {
+    if (selectedRowIndex >= 0 && selectedRowIndex < rows.length) {
+      e.preventDefault();
+      rows[selectedRowIndex].click();
+    }
+  }
+}
+
+function getVisibleRows() {
+  const allRows = Array.from(document.querySelectorAll('#provider-modal-tbody tr'));
+  return allRows.filter(r => r.style.display !== 'none');
+}
+
+function highlightRow(rows, index) {
+  rows.forEach((row, i) => {
+    if (i === index) {
+      row.classList.add('bg-blue-100');
+      row.classList.remove('hover:bg-gray-50');
+      row.scrollIntoView({ block: 'nearest' });
+    } else {
+      row.classList.remove('bg-blue-100');
+      row.classList.add('hover:bg-gray-50');
+    }
+  });
+}
 
 function openProviderModal(callback) {
   onProviderSelectedCallback = callback;
   document.getElementById('provider-modal-overlay').classList.remove('hidden');
   document.getElementById('provider-modal-panel').classList.remove('hidden');
-  const q = document.getElementById('provider-modal-query');
+  const q = document.getElementById('provider-modal-search');
   q.value = '';
   q.focus();
-  runProviderSearch();
+  selectedRowIndex = -1;
+  loadProviders();
+  document.addEventListener('keydown', handleModalKeydown);
 }
 
 
@@ -53,11 +110,12 @@ function closeProviderModal() {
   document.getElementById('provider-modal-overlay').classList.add('hidden');
   document.getElementById('provider-modal-panel').classList.add('hidden');
   onProviderSelectedCallback = null;
+  document.removeEventListener('keydown', handleModalKeydown);
 }
 
-async function runProviderSearch() {
-  const q = document.getElementById('provider-modal-query').value.trim();
-  const url = '{{ url_for("shopping.api_providers_search") }}' + '?q=' + encodeURIComponent(q || '*');
+async function loadProviders() {
+  // Always fetch all providers for client-side filtering
+  const url = '{{ url_for("shopping.api_providers_search") }}' + '?q=*';
   
   try {
     const res = await fetch(url);
@@ -66,42 +124,90 @@ async function runProviderSearch() {
     tbody.innerHTML = '';
 
     if (!data.ok) {
-      tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" class="px-2 py-2 text-red-600">Error en búsqueda</td></tr>';
       return;
     }
     
     if (!Array.isArray(data.items) || data.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-gray-500">No se encontraron resultados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" class="px-2 py-2 text-gray-500">No se encontraron resultados</td></tr>';
       return;
     }
 
     data.items.forEach(item => {
       const tr = document.createElement('tr');
-      tr.className = 'border-b hover:bg-gray-50';
+      tr.className = 'border-b hover:bg-gray-50 cursor-pointer';
       // Escape single quotes in JSON for the onclick handler
       const itemJson = JSON.stringify(item).replace(/'/g, "&#39;");
+      tr.setAttribute('onclick', `selectProvider(${itemJson})`);
       tr.innerHTML = `
         <td class="px-2 py-1">${item.provider_code}</td>
         <td class="px-2 py-1">${item.provider_name || ''}</td>
         <td class="px-2 py-1">${item.provider_phone || ''}</td>
-        <td class="px-2 py-1 text-center">
-          <button type="button" class="text-blue-600 hover:underline" onclick='selectProvider(${itemJson})'>Seleccionar</button>
-        </td>
       `;
       tbody.appendChild(tr);
     });
+    
+    // Apply filter if there is any text in the input
+    filterProviderTable();
+    
   } catch (err) {
     console.error(err);
     const tbody = document.getElementById('provider-modal-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="px-2 py-2 text-red-600">Error de conexión</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="px-2 py-2 text-red-600">Error de conexión</td></tr>';
   }
 }
 
+function filterProviderTable() {
+  selectedRowIndex = -1; // Reset selection on filter
+  const query = document.getElementById('provider-modal-search').value.toLowerCase().trim();
+  const rows = document.querySelectorAll('#provider-modal-tbody tr');
+  
+  // Reset highlights
+  rows.forEach(r => {
+      r.classList.remove('bg-blue-100');
+      r.classList.add('hover:bg-gray-50');
+  });
 
-// Allow Enter key to search
-document.getElementById('provider-modal-query').addEventListener('keypress', function (e) {
+  if (!query) {
+    rows.forEach(row => row.style.display = '');
+    return;
+  }
+
+  // Escape special regex characters except *
+  // Split by *, escape each part, then join with .*
+  const parts = query.split('*').map(part => {
+    return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  });
+  
+  const regexString = parts.join('.*');
+  
+  try {
+    const regex = new RegExp(regexString, 'i');
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      if (regex.test(text)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  } catch (e) {
+    // Fallback to simple includes if regex fails for some reason
+    console.error("Regex error", e);
+    rows.forEach(row => {
+       if (row.innerText.toLowerCase().includes(query)) {
+         row.style.display = '';
+       } else {
+         row.style.display = 'none';
+       }
+    });
+  }
+}
+
+// Allow Enter key to refresh/load
+document.getElementById('provider-modal-search').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
-      runProviderSearch();
+      loadProviders();
     }
 });
 </script>
