@@ -70,6 +70,9 @@
                     class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
                     Buscar
                 </button>
+                  <button type="button" id="btnCreateProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                        Crear Nuevo
+                    </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
@@ -208,8 +211,22 @@
 
 {% include 'partials/browser_providers.html' %}
 {% include 'partials/bowser_products.html' %}
+{% include 'partials/new_product.html' %}
 
 <script>
+
+        const btnCreateProduct = document.getElementById('btnCreateProduct');
+        if (btnCreateProduct) {
+            btnCreateProduct.addEventListener('click', function() {
+                if (typeof window.openNewProductModal === 'function') {
+                    window.openNewProductModal();
+                } else {
+                    console.error('openNewProductModal is not defined');
+                }
+            });
+        }
+
+
     // Variable explícita para guardar el proveedor seleccionado
     let selectedProviderCode = null;
 

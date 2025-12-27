@@ -1,0 +1,54 @@
+<!-- Modal for New Product (Tailwind) -->
+<div id="new-product-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title-new-product" role="dialog" aria-modal="true">
+    <!-- Background overlay -->
+    <div class="fixed inset-0 bg-black/50 transition-opacity" aria-hidden="true"></div>
+
+    <!-- Modal panel -->
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-lg shadow-xl transform transition-all flex flex-col max-h-[90vh]">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b">
+                <h3 class="text-lg font-semibold text-gray-900" id="modal-title-new-product">Crear Nuevo Producto</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" onclick="closeNewProductModal()">
+                    <span class="sr-only">Cerrar</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 space-y-4 flex-1 overflow-y-auto">
+                <p class="text-gray-600">Formulario para crear un nuevo producto (Próximamente)</p>
+                <!-- Aquí irá el formulario -->
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t bg-gray-50 flex justify-end gap-2 rounded-b-lg">
+                <button type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium shadow-sm" onclick="closeNewProductModal()">
+                    Cancelar
+                </button>
+                <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.openNewProductModal = function() {
+        const modal = document.getElementById('new-product-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    window.closeNewProductModal = function() {
+        const modal = document.getElementById('new-product-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+</script>

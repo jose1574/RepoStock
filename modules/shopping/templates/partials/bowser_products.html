@@ -16,6 +16,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+                
             </div>
 
             <!-- Body -->
@@ -24,6 +25,9 @@
                     <input type="text" id="productSearchInput" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="Buscar por código o descripción (use * para filtros)...">
                     <button type="button" id="btnSearchProducts" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                         Buscar
+                    </button>
+                    <button type="button" id="btnCreateProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                        Crear Nuevo
                     </button>
                 </div>
 
@@ -204,6 +208,17 @@ let onProductSelectedCallback = null;
         }, 300));
 
         btnSearch.addEventListener('click', () => searchProducts(true));
+
+        const btnCreateProduct = document.getElementById('btnCreateProduct');
+        if (btnCreateProduct) {
+            btnCreateProduct.addEventListener('click', function() {
+                if (typeof window.openNewProductModal === 'function') {
+                    window.openNewProductModal();
+                } else {
+                    console.error('openNewProductModal is not defined');
+                }
+            });
+        }
     });
     // funcion para devolver el stock de un producto
 
