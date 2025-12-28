@@ -26,9 +26,6 @@
                     <button type="button" id="btnSearchProducts" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                         Buscar
                     </button>
-                    <button type="button" id="btnCreateProduct" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                        Crear Nuevo
-                    </button>
                 </div>
 
                 <div class="border rounded-md overflow-auto flex-1">
@@ -208,17 +205,6 @@ let onProductSelectedCallback = null;
         }, 300));
 
         btnSearch.addEventListener('click', () => searchProducts(true));
-
-        const btnCreateProduct = document.getElementById('btnCreateProduct');
-        if (btnCreateProduct) {
-            btnCreateProduct.addEventListener('click', function() {
-                if (typeof window.openNewProductModal === 'function') {
-                    window.openNewProductModal();
-                } else {
-                    console.error('openNewProductModal is not defined');
-                }
-            });
-        }
     });
     // funcion para devolver el stock de un producto
 

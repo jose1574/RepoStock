@@ -3,10 +3,16 @@ import io
 from datetime import date
 
 
+from modules.shopping.services.schemas.product import Product
+from modules.shopping.services.schemas.product_codes import ProductCodes
+from modules.shopping.services.schemas.product_units import ProductUnits
 from modules.shopping.services.schemas.set_shopping_operation import SetShoppingOperationData
 from modules.shopping.services.schemas.set_shopping_operation_details import SetShoppingOperationDetailData
 
 from modules.shopping.services.shoppingDb import (
+    create_product_codes,
+    create_product_units,
+    get_default_coin,
     get_shopping_operations, 
     get_providers, 
     get_products_for_modal,
@@ -17,17 +23,25 @@ from modules.shopping.services.shoppingDb import (
     get_product_units_by_code,
     save_shopping_operation,
     save_shopping_operation_detail,
-    get_coins
+    get_coins,
+    create_product
 )
 
 shopping_bp = Blueprint('shopping', __name__, template_folder='templates', url_prefix='/shopping') 
 
 
-@shopping_bp.route('/shopping', methods=['GET'])
+@shopping_bp.route('/', methods=['GET'])
 def shopping():
     user = session.get('user', {})
     coins = get_coins()
-    return render_template('shopping.html', user=user, coins=coins)
+    default_coin = get_default_coin()
+    print(f"Default coin: {default_coin}")
+    return render_template(
+        'shopping.html', 
+        user=user, 
+        coins=coins, 
+        default_coin=default_coin  # Asumimos '02' como moneda predeterminada
+        )
 
 
 # API para buscar proveedores
@@ -220,4 +234,132 @@ def api_save_shopping_operation():
         import traceback
         traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+
+# API para crear un producto
+@shopping_bp.route('/api/product/create', methods=['POST'])
+def api_create_product():
+    try:
+        data = request.get_json()
+        current_sale_tax = data.get('sale_tax') 
+        current_buy_tax = data.get('buy_tax')   
+        sale_tax_divisor = 1.16 if current_sale_tax == "01" else 1.0
+        buy_tax_divisor = 1.16 if current_buy_tax == "01" else 1.0
+
+        print("--- DEBUG: Payload recibido para crear producto ---")
+        print(data)
+        print("---------------------------------------------------")
+
+        if not data:
+            return jsonify({'ok': False, 'error': 'No JSON data received'}), 400
+
+        # Validar campos requeridos mínimos
+        if not data.get('code'):
+             return jsonify({'ok': False, 'error': 'El campo código es obligatorio'}), 400
+        if not data.get('description'):
+             return jsonify({'ok': False, 'error': 'El campo nombre (descripción) es obligatorio'}), 400
+
+        newProductData = Product(
+            code=data.get('code'),
+            description=data.get('description'),
+            short_name=data.get('description'),
+            mark="",
+            referenc="",
+            model="",
+            department="00",
+            days_warranty=0,
+            sale_tax="01",
+            buy_tax="01",
+            rounding_type=2,
+            costing_type=0,
+            discount=0.0,
+            max_discount=0.0,
+            minimal_sale=float(data.get('minimum_price') or 0.0),
+            maximal_sale=float(data.get('maximum_price') or 0.0),
+            status="01",
+            origin="01",
+            take_department_utility=False,
+            allow_decimal=True,
+            edit_name=False,
+            sale_price=0,
+            product_type="T",
+            technician="00",
+            request_technician=True,
+            serialized=False,
+            request_details=False,
+            request_amount=False,
+            coin="02",
+            allow_negative_stock=False,
+            use_scale=False,
+            add_unit_description=False,
+            use_lots=False,
+            lots_order=0,
+            minimal_stock=0.0,
+            notify_minimal_stock=False,
+            size="",
+            color="",
+            extract_net_from_unit_cost_plus_tax=True,
+            extract_net_from_unit_price_plus_tax=True,
+            maximum_stock=0.0,
+            action="I"
+        )
+
+        newProductUnitData = ProductUnits(
+            correlative=None,
+            unit="00",
+            producto_codigo=data.get('code'),
+            main_unit=True,
+            conversion_factor=0,
+            unit_type=0,
+            show_in_screen=True,
+            is_for_buy=True,
+            is_for_sale=True,
+            unitary_cost=(float(data.get('cost') or 0.0) / buy_tax_divisor),
+            calculated_cost=(float(data.get('cost') or 0.0) / buy_tax_divisor),
+            average_cost=(float(data.get('cost') or 0.0) / buy_tax_divisor),
+            perc_waste_cost=0.0,
+            perc_handling_cost=0.0,
+            perc_operating_cost=0.0,
+            perc_additional_cost=0.0,
+            maximum_price=(float(data.get('maximum_price') or 0.0) / sale_tax_divisor),
+            offer_price=(float(data.get('offer_price') or 0.0) / sale_tax_divisor),
+            higher_price=(float(data.get('higher_price') or 0.0) / sale_tax_divisor),
+            minimum_price=(float(data.get('minimum_price') or 0.0) / sale_tax_divisor),
+            # Los porcentajes se calculan en base al costo unitario
+            perc_maximum_price= ((float(data.get('maximum_price') or 0.0) - float(data.get('cost') or 0.0)) / float(data.get('cost') or 1.0)) * 100,
+            perc_offer_price= ((float(data.get('offer_price') or 0.0) - float(data.get('cost') or 0.0)) / float(data.get('cost') or 1.0)) * 100,
+            perc_higher_price= ((float(data.get('higher_price') or 0.0) - float(data.get('cost') or 0.0)) / float(data.get('cost') or 1.0)) * 100,
+            perc_minimum_price= ((float(data.get('minimum_price') or 0.0) - float(data.get('cost') or 0.0)) / float(data.get('cost') or 1.0)) * 100,
+            perc_freight_cost=0.0,
+            perc_discount_provider=0.0,
+            lenght=0.0,
+            height=0.0,
+            width=0.0,
+            weight=0.0,
+            capacitance=0.0
+       )
+
+        newProductCode = ProductCodes(
+            main_code=data.get('code'),
+            other_code=data.get('code'),
+            code_type="C"
+
+        )
+        print(f"--- DEBUG: Objeto Product creado: {newProductData} ---")
+
+        created_product_code = create_product(newProductData)
+        created_product_units = create_product_units(newProductUnitData)
+        created_product_code = create_product_codes(newProductCode) # Asumimos que devuelve el código del producto creado
+
         
+        print(f"--- DEBUG: Producto creado con código: {created_product_code} ---")
+        print(f"--- DEBUG: Producto creado con código: {created_product_units} ---")
+
+        return jsonify({'ok': True, 'message': 'Product created successfully.', 'code': created_product_code})
+
+    except Exception as e:
+        print(f"Error creating product: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500

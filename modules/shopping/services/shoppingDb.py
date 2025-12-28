@@ -10,9 +10,12 @@ from contextlib import contextmanager
 from typing import Any, Iterable, Optional
 
 from database import get_connection, close_connection
+from modules.shopping.services.schemas.product_codes import ProductCodes
+from modules.shopping.services.schemas.product_units import ProductUnits
 from .schemas.set_shopping_operation import SetShoppingOperationData
 from .schemas.set_shopping_operation_details import SetShoppingOperationDetailData
 from .schemas.provider import Provider
+from .schemas.product import Product
 
 
 @contextmanager
@@ -514,6 +517,202 @@ def get_coins():
         close_connection(conn)
 
 
+def create_product(product: Product) -> str:
+    """
+    Crea o actualiza un producto en la base de datos usando la función set_product.
+    Retorna el código del producto.
+    """
+    print(f"--- DEBUG DB: Intentando crear producto: {product.code} ---")
+    
+    # Validaciones básicas
+    if not product.code:
+        raise ValueError("El código del producto es obligatorio")
+    if not product.description:
+        raise ValueError("La descripción del producto es obligatoria")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Llamada a la función almacenada set_product
+        # El orden de los parámetros debe coincidir con la definición de la función en la BD
+        params = (
+            product.code,
+            product.description,
+            product.short_name,
+            product.mark,
+            product.model,
+            product.referenc,
+            product.department,
+            product.days_warranty,
+            product.sale_tax,
+            product.buy_tax,
+            product.rounding_type,
+            product.costing_type,
+            product.discount,
+            product.max_discount,
+            product.minimal_sale,
+            product.maximal_sale,
+            product.status,
+            product.origin,
+            product.take_department_utility,
+            product.allow_decimal,
+            product.edit_name,
+            product.sale_price,
+            product.product_type,
+            product.technician,
+            product.request_technician,
+            product.serialized,
+            product.request_details,
+            product.request_amount,
+            product.coin,
+            product.allow_negative_stock,
+            product.use_scale,
+            product.add_unit_description,
+            product.use_lots,
+            product.lots_order,
+            product.minimal_stock,
+            product.notify_minimal_stock,
+            product.size,
+            product.color,
+            product.extract_net_from_unit_cost_plus_tax,
+            product.extract_net_from_unit_price_plus_tax,
+            product.maximum_stock,
+            product.action
+        )
+        
+        # print(f"--- DEBUG DB: Parámetros para set_product: {params}") # Descomentar si se necesita ver todos los params
+        
+        cur.callproc('set_product', params)
+        conn.commit()
+        print(f"--- DEBUG DB: Producto {product.code} creado/actualizado exitosamente ---")
+        return product.code
+    except Exception as e:
+        conn.rollback()
+        print(f"--- ERROR DB: Error al crear producto {product.code}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise e
+    finally:
+        close_connection(conn)
+
+#crea product_units
+def create_product_units(product_units: ProductUnits) -> None:
+    """
+    Crea o actualiza las unidades de un producto en la base de datos usando la función set_product_units.
+    """
+    print(f"--- DEBUG DB: Intentando crear unidad de producto: {product_units.producto_codigo} - {product_units.unit} ---")
+    
+    # Validaciones básicas
+    if not product_units.producto_codigo:
+        raise ValueError("El código del producto es obligatorio")
+    if not product_units.unit:
+        raise ValueError("La unidad es obligatoria")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Llamada a la función almacenada set_product_units
+        params = (
+            product_units.correlative,
+            product_units.unit,
+            product_units.producto_codigo,
+            product_units.main_unit,
+            product_units.conversion_factor,
+            product_units.unit_type,
+            product_units.show_in_screen,
+            product_units.is_for_buy,
+            product_units.is_for_sale,
+            product_units.unitary_cost,
+            product_units.calculated_cost,
+            product_units.average_cost,
+            product_units.perc_waste_cost,
+            product_units.perc_handling_cost,
+            product_units.perc_operating_cost,
+            product_units.perc_additional_cost,
+            product_units.maximum_price,
+            product_units.offer_price,
+            product_units.higher_price,
+            product_units.minimum_price,
+            product_units.perc_maximum_price,
+            product_units.perc_offer_price,
+            product_units.perc_higher_price,
+            product_units.perc_minimum_price,
+            product_units.perc_freight_cost,
+            product_units.perc_discount_provider,
+            product_units.lenght,
+            product_units.height,
+            product_units.width,
+            product_units.weight,
+            product_units.capacitance
+        )
+        
+        cur.callproc('set_products_units', params)
+        conn.commit()
+        print(f"--- DEBUG DB: Unidad de producto {product_units.producto_codigo} - {product_units.unit} creada/actualizada exitosamente ---")
+    except Exception as e:
+        conn.rollback()
+        print(f"--- ERROR DB: Error al crear unidad de producto {product_units.producto_codigo} - {product_units.unit}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise e
+    finally:
+        close_connection(conn)
+
+#crea product_codes
+def create_product_codes(product_codes: ProductCodes) -> None:
+    """
+    Crea o actualiza los códigos alternos de un producto en la base de datos usando la función set_product_codes.
+    """
+    print(f"--- DEBUG DB: Intentando crear código alterno de producto: {product_codes.main_code} - {product_codes.other_code} ---")
+    
+    # Validaciones básicas
+    if not product_codes.main_code:
+        raise ValueError("El código principal del producto es obligatorio")
+    if not product_codes.other_code:
+        raise ValueError("El código alterno es obligatorio")
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Llamada a la función almacenada set_product_codes
+        params = (
+            product_codes.main_code,
+            product_codes.other_code,
+            product_codes.code_type
+        )
+        
+        cur.callproc('set_products_codes', params)
+        conn.commit()
+        print(f"--- DEBUG DB: Código alterno de producto {product_codes.main_code} - {product_codes.other_code} creado/actualizado exitosamente ---")
+    except Exception as e:
+        conn.rollback()
+        print(f"--- ERROR DB: Error al crear código alterno de producto {product_codes.main_code} - {product_codes.other_code}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise e
+    finally:
+        close_connection(conn)
+
+#obtiene moneda por defecto para productos
+
+def get_default_coin() -> str:    
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = "select system_value from system_properties where code = 65"
+        cur.execute(sql)
+        row = cur.fetchone()
+
+        if row and row[0]:
+            return row[0]  # Asumiendo que el código de moneda está en la primera columna
+        return "02"  # Retorna '02' como moneda por defecto si no se encuentra ninguna
+
+    except Exception as e:
+        print(f"Error fetching default coin: {e}")
+        return "02"
+    finally:
+        close_connection(conn)
+
 __all__ = [
     "get_db_connection",
     "execute_query",
@@ -529,4 +728,5 @@ __all__ = [
     "save_shopping_operation_detail",
     "get_product_units_by_code",
     "get_coins",
+    "create_product",
 ]

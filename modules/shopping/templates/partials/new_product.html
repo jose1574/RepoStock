@@ -1,35 +1,140 @@
 <!-- Modal for New Product (Tailwind) -->
-<div id="new-product-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title-new-product" role="dialog" aria-modal="true">
+<div id="new-product-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title-new-product" role="dialog"
+    aria-modal="true">
     <!-- Background overlay -->
     <div class="fixed inset-0 bg-black/50 transition-opacity" aria-hidden="true"></div>
 
     <!-- Modal panel -->
     <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="w-full max-w-2xl bg-white rounded-lg shadow-xl transform transition-all flex flex-col max-h-[90vh]">
-            
+
             <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b">
                 <h3 class="text-lg font-semibold text-gray-900" id="modal-title-new-product">Crear Nuevo Producto</h3>
-                <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" onclick="closeNewProductModal()">
+                <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    onclick="closeNewProductModal()">
                     <span class="sr-only">Cerrar</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
             <!-- Body -->
-            <div class="p-6 space-y-4 flex-1 overflow-y-auto">
-                <p class="text-gray-600">Formulario para crear un nuevo producto (Próximamente)</p>
-                <!-- Aquí irá el formulario -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Tabs Header -->
+                <div class="border-b border-gray-200 px-6">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button onclick="switchTab('general')" id="tab-general"
+                            class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                            Generales
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tabs Content -->
+                <div class="p-6">
+                    <!-- General Tab -->
+                    <div id="general" class="tab-content block space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="col-span-1">
+                                <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Código</label>
+                                <input type="text" id="code" name="code" value="174"
+                                    class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+                            <div class="col-span-1 md:col-span-1">
+                                <label for="description"
+                                    class="block text-sm font-medium text-gray-700 mb-1" 
+                                    >Nombre</label>
+                                <input type="text" id="description" name="description" value="PRODUCTO DE PRUEBA"
+                                    class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                            </div>
+                            <div class="col-span-1 md:col-span-2 border-t border-gray-200 pt-4 mt-4">
+                                <h4 class="text-sm font-medium text-gray-900 mb-3">Impuestos</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="buy_tax" class="block text-sm font-medium text-gray-700 mb-1">Impuesto en Compras</label>
+                                        <select id="buy_tax" name="buy_tax"
+                                            class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="01" selected>IVA 16%</option>
+                                            <option value="EX">Exento</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="sale_tax" class="block text-sm font-medium text-gray-700 mb-1">Impuesto en Ventas</label>
+                                        <select id="sale_tax" name="sale_tax"
+                                            class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="01" selected>IVA 16%</option>
+                                            <option value="EX">Exento</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-span-1 border-t border-gray-200 pt-4 mt-4">
+                                <label for="cost" class="block text-sm font-medium text-gray-700 mb-1">Costo</label>
+                                <input type="number" id="cost" name="cost" value="10"
+                                    class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-200 pt-4 mt-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">Precios</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="maximum_price"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Precio Máximo</label>
+                                    <input type="number" id="maximum_price" name="maximum_price" value="20"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label for="minimum_price"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Precio Mínimo</label>
+                                    <input type="number" id="minimum_price" name="minimum_price" value="20"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label for="offer_price" class="block text-sm font-medium text-gray-700 mb-1">Precio
+                                        Oferta</label>
+                                    <input type="number" id="offer_price" name="offer_price" value="20"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label for="higher_price"
+                                        class="block text-sm font-medium text-gray-700 mb-1">Precio Mayor</label>
+                                    <input type="number" id="higher_price" name="higher_price" value="20"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Codes Tab -->
+                    <div id="product-codes" class="tab-content hidden space-y-4">
+                        <div>
+                            <label for="other-code" class="block text-sm font-medium text-gray-700 mb-1">Códigos
+                                alternos</label>
+                            <input type="text" id="other-code" name="other-code"
+                                class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Ingrese códigos adicionales separados por coma" />
+                            <p class="mt-1 text-sm text-gray-500">Puede ingresar múltiples códigos para identificar el
+                                producto.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Footer -->
             <div class="p-4 border-t bg-gray-50 flex justify-end gap-2 rounded-b-lg">
-                <button type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium shadow-sm" onclick="closeNewProductModal()">
+                <button type="button"
+                    class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium shadow-sm"
+                    onclick="closeNewProductModal()">
                     Cancelar
                 </button>
-                <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm">
+                <button type="button"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm"
+                    onclick="saveNewProduct()">
                     Guardar
                 </button>
             </div>
@@ -38,17 +143,87 @@
 </div>
 
 <script>
-    window.openNewProductModal = function() {
+    window.openNewProductModal = function () {
         const modal = document.getElementById('new-product-modal');
         if (modal) {
             modal.classList.remove('hidden');
         }
     }
 
-    window.closeNewProductModal = function() {
+    window.closeNewProductModal = function () {
         const modal = document.getElementById('new-product-modal');
         if (modal) {
             modal.classList.add('hidden');
         }
+    }
+
+    window.switchTab = function (tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('block');
+        });
+
+        // Show selected tab content
+        const selectedContent = document.getElementById(tabName);
+        if (selectedContent) {
+            selectedContent.classList.remove('hidden');
+            selectedContent.classList.add('block');
+        }
+
+        // Reset all tab styles
+        document.querySelectorAll('[id^="tab-"]').forEach(el => {
+            el.classList.remove('border-blue-500', 'text-blue-600');
+            el.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        });
+
+        // Set active tab style
+        const activeTab = document.getElementById('tab-' + tabName);
+        if (activeTab) {
+            activeTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            activeTab.classList.add('border-blue-500', 'text-blue-600');
+        }
+    }
+
+    window.saveNewProduct = function () {
+        // Recolectar datos del formulario
+        const data = {
+            code: document.getElementById('code').value,
+            description: document.getElementById('description').value,
+            cost: document.getElementById('cost').value,
+            maximum_price: document.getElementById('maximum_price').value,
+            minimum_price: document.getElementById('minimum_price').value,
+            offer_price: document.getElementById('offer_price').value,
+            higher_price: document.getElementById('higher_price').value,
+            other_codes: document.getElementById('other-code').value,
+            buy_tax: document.getElementById('buy_tax').value,
+            sale_tax: document.getElementById('sale_tax').value
+        };
+
+        console.log("Enviando datos del producto:", data);
+
+        // Enviar a la API
+        fetch('/shopping/api/product/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.ok) {
+                    alert('Producto enviado correctamente. Revisa la consola del servidor.');
+                    closeNewProductModal();
+                    // Opcional: Limpiar campos
+                    document.querySelectorAll('#new-product-modal input').forEach(input => input.value = '');
+                } else {
+                    alert('Error al guardar: ' + (result.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error en la petición:', error);
+                alert('Error de conexión al guardar el producto.');
+            });
     }
 </script>
