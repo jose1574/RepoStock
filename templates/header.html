@@ -114,9 +114,17 @@
                                 aria-labelledby="dropdownPurchasesLink">
                                 <li>
                                     <a href="{{ url_for('shopping.shopping') }}"
-                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Pedidos</a>
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Compra</a>
                                 </li>
                             </ul>
+                             <ul class="py-2 text-sm text-gray-700 dark:text-gray-400"
+                                aria-labelledby="dropdownPurchasesLink">
+                                <li>
+                                    <a href="{{ url_for('shopping.auto_order') }}"
+                                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Orden de Compra automatica</a>
+                                </li>
+                            </ul>
+                            
                         </div>
                     </li>
 

@@ -13,6 +13,7 @@ from modules.shopping.services.shoppingDb import (
     create_product_codes,
     create_product_units,
     get_default_coin,
+    get_products_history_by_product_code,
     get_shopping_operations, 
     get_providers, 
     get_products_for_modal,
@@ -21,10 +22,12 @@ from modules.shopping.services.shoppingDb import (
     get_product_by_code,
     get_product_image_by_code,
     get_product_units_by_code,
+    get_stores,
     save_shopping_operation,
     save_shopping_operation_detail,
     get_coins,
-    create_product
+    create_product,
+    get_products_history_by_provider
 )
 
 shopping_bp = Blueprint('shopping', __name__, template_folder='templates', url_prefix='/shopping') 
@@ -43,6 +46,67 @@ def shopping():
         default_coin=default_coin  # Asumimos '02' como moneda predeterminada
         )
 
+#vista de orden de compra automatica
+@shopping_bp.route('/auto_order', methods=['GET'])
+def auto_order():
+    user = session.get('user', {})
+    coins = get_coins()
+    default_coin = get_default_coin()
+    stores = get_stores()
+    return render_template(
+        'auto_order.html', 
+        user=user, 
+        coins=coins, 
+        default_coin=default_coin,  # Asumimos '02' como moneda predeterminada
+        stores=stores
+        )
+
+
+# API para obtener el historial de productos por proveedor
+@shopping_bp.route('/api/products/history/<provider_code>', methods=['GET'])
+def api_products_history_by_provider(provider_code):
+    try:
+        print(f"Buscando historial para proveedor: {provider_code}")
+        products = get_products_history_by_provider(provider_code)        
+        # Procesar fechas para JSON
+        for p in products:
+            if p.get('last_purchase_date'):
+                p['last_purchase_date'] = p['last_purchase_date'].strftime('%Y-%m-%d')
+            # Calcular cantidad sugerida (ejemplo simple: max - stock actual)
+            # Esto es solo un placeholder, la lógica real puede ser más compleja
+            p['suggested_quantity'] = 0 
+            
+        return jsonify({'ok': True, 'items': products})
+    except Exception as e:
+        print(f"Error getting product history: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+# API para obtener el historial de productos por código de producto
+@shopping_bp.route('/api/products/history_by_code/<product_code>', methods=['GET'])
+def api_products_history_by_product_code(product_code):
+    try:
+        print(f"Buscando historial para producto: {product_code}")
+        item = get_products_history_by_product_code(product_code)
+        if not item:
+            return jsonify({'ok': False, 'error': 'Product history not found'}), 404
+
+        # Convertir Decimal a float
+        try:
+            from decimal import Decimal
+            for k, v in list(item.items()):
+                if isinstance(v, Decimal):
+                    item[k] = float(v)
+        except Exception:
+            pass
+
+        return jsonify({'ok': True, 'item': item})
+    except Exception as e:
+        print(f"Error getting product history by code: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 # API para buscar proveedores
 @shopping_bp.route('/api/providers/search', methods=['GET'])
