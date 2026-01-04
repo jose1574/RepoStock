@@ -357,15 +357,25 @@
         try {
             if (!code) return;
             console.log('Producto seleccionado desde modal:', code);
+
+            if (!selectedProvider || !selectedProvider.provider_code) {
+                alert('Por favor, seleccione un proveedor antes de buscar productos.');
+                return;
+            }
+
             // Fetch al endpoint para obtener el producto con el mismo shape que los demás
-            fetch(`/shopping/api/products/history_by_code/${encodeURIComponent(code)}`)
+            // Usamos query param para el proveedor para evitar problemas con caracteres especiales en la URL
+            const url = `/shopping/api/products/history_by_code/${encodeURIComponent(code)}?provider_code=${encodeURIComponent(selectedProvider.provider_code)}`;
+            
+            fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     if (!data || !data.ok || !data.item) {
                         alert(data && data.error ? data.error : 'Producto no encontrado');
                         return;
                     }
-                    const newItem = data.item;
+                    const newItem = data.item[0];
+                    console.log("Producto obtenido:", newItem);
                     // Marcar para resaltar en la tabla
                     newItem.highlight = true;
                     // Inicializar items si no existen

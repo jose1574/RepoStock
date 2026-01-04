@@ -68,7 +68,7 @@ def auto_order():
 def api_products_history_by_provider(provider_code):
     try:
         print(f"Buscando historial para proveedor: {provider_code}")
-        products = get_products_history_by_provider(provider_code)        
+        products = get_products_history_by_provider(provider_code, None)        
         # Procesar fechas para JSON
         for p in products:
             if p.get('last_purchase_date'):
@@ -100,16 +100,17 @@ def api_products_history_by_provider(provider_code):
         traceback.print_exc()
         return jsonify({'ok': False, 'error': str(e)}), 500
 
-# API para obtener el historial de productos por código de producto
-@shopping_bp.route('/api/products/history_by_code/<product_code>', methods=['GET'])
+# API para obtener el historial de productos por código de producto y codigo de proveedor
+@shopping_bp.route('/api/products/history_by_code/<path:product_code>', methods=['GET'])
 def api_products_history_by_product_code(product_code):
     try:
-        print(f"Buscando historial para producto: {product_code}")
-        item = get_products_history_by_product_code(product_code)
+        provider_code = request.args.get('provider_code')
+        print(f"Buscando historial para producto: {product_code} del proveedor {provider_code}")
+        item = get_products_history_by_provider(provider_code, product_code)
         if not item:
             return jsonify({'ok': False, 'error': 'Product history not found'}), 404
-
         # Convertir Decimal a float
+        print(f"Historial obtenido: {item}")
         try:
             from decimal import Decimal
             for k, v in list(item.items()):
