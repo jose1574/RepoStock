@@ -2,13 +2,11 @@
 
 {% block title %}Orden de Compra Automatica{% endblock %}
 {% block content %}
-<div class="w-full p-4">
-    <h1 class="text-2xl font-bold mb-4 text-gray-800">Orden de Compra Automática</h1>
-
-    <!-- Provider Selection Form -->
+<div id="auto-order-page" class="w-full p-4">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">Orden de Compra Automática</h1>    <!-- Provider Selection Form -->
     <div id="provider-selection-form"
         class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-2xl mx-auto">
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">Seleccionar Proveedor</h2>
+        <h2 id="provider-selection-title" class="text-lg font-semibold mb-4 text-gray-700">Seleccionar Proveedor</h2>
         <div class="flex gap-4 items-end">
             <div class="flex-1">
                 <label for="provider-code-input" class="block text-sm font-medium text-gray-700 mb-1">Código de
@@ -77,12 +75,16 @@
 
     <!-- Products Table (Hidden initially) -->
     <div id="products-table-container" class="hidden mt-6 bg-white rounded-lg shadow border border-gray-200">
-        <div class="p-4 border-b flex justify-between items-stretch bg-gray-50 rounded-t-lg">
-
-            <div id="section-provider" class="flex-shrink-0 basis-1/3 h-full" style="min-width:30%;">
-                <div class="lg:col-span-3 bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col h-full">
-                    <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Datos del Proveedor</h2>
-                    <div id="provider-info" class="space-y-2 text-xs flex-1">
+        <div id="products-top-panels" class="p-4 border-b bg-gray-50 rounded-t-lg grid grid-cols-3 gap-4 items-stretch">
+            <div id="section-provider" class="col-span-1">
+                <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
+                    <div class="flex items-center justify-between border-b pb-1 mb-2">
+                        <h2 id="provider-data-title" class="text-base font-semibo    |||||||||||||||ld text-gray-700">Datos del Proveedor</h2>
+                        <button id="btn-change-provider" class="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 border border-blue-200 rounded">
+                            Cambiar Proveedor
+                        </button>
+                    </div>
+                    <div id="provider-info" class="space-y-2 text-xs flex-1 overflow-y-auto">
                         <p id="selected-provider-label" class="text-sm text-gray-500">Proveedor: ---</p>
                         <div class="flex justify-between items-center border-b border-gray-100 pb-1">
                             <span class="text-gray-500">Días Crédito:</span>
@@ -103,11 +105,10 @@
                     </div>
                 </div>
             </div>
-
-            <div id="section-stores" class="flex-shrink-0 basis-1/4 h-full" style="min-width:25%;">
-                <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col h-full">
-                    <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Selecciona Depósitos</h2>
-                    <div class="space-y-2 text-xs">
+            <div id="section-stores" class="col-span-1">
+                <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
+                    <h2 id="stores-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Selecciona Depósitos</h2>
+                    <div class="space-y-2 text-xs flex-1 overflow-y-auto">
                         {% if stores %}
                         {% for store in stores %}
                         <label class="flex items-center">
@@ -121,47 +122,210 @@
                     </div>
                 </div>
             </div>
-            <div id="search-product-section" class="h-full" style="min-width:25%">
-                <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col h-full">
-                    <h2 class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Buscar Producto</h2>
-                    <div class="flex items-center gap-2 mt-auto">
-                        <input type="text" id="input-search-product" class="flex-1 border rounded px-3 py-2 text-sm"
-                            placeholder="Buscar en la tabla...">
-                        <button id="button-search-product" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium">
-                            Buscar
+            <div id="section-purchase-total" class="col-span-1">
+                <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
+                    <h2 id="purchase-total-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Total de la compra</h2>
+                    <div class="flex items-end gap-2 mt-auto">
+                        <span class="text-xs text-gray-500">Monto total:</span>
+                        <span id="top-total-purchase-amount" class="text-lg font-bold text-green-700">0.00</span>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button id="btn-open-summary-modal"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                            Ver detalle en modal
+                        </button>
+                        <button id="btn-save-order"
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium">
+                            Guardar pedido
                         </button>
                     </div>
                 </div>
             </div>
-            <button id="btn-change-provider" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Cambiar Proveedor
-            </button>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-gray-100 text-gray-600 font-medium border-b">
+        <div id="table-scroll-container" class="relative overflow-x-auto max-h-[65vh] overflow-y-auto">
+
+            <!-- Barra de filtros de tabla (departamentos, marcas y buscador) -->
+
+            <div id="table-filters" class="px-4 py-2 bg-white border-t border-b border-gray-200 hidden sticky top-0 z-20">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <!-- Dropdown Departamentos -->
+                    <div class="relative" id="dept-dropdown">
+                        <button type="button"
+                            class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1"
+                            id="dept-toggle" aria-haspopup="true" aria-expanded="false">
+                            <span class="font-medium">Departamentos</span>
+                            <span id="dept-selected-summary" class="text-xs text-gray-500">Todos</span>
+                            <svg width="14" height="14" fill="currentColor" class="text-gray-500" aria-hidden="true">
+                                <path d="M7 10l5-5H2z"></path>
+                            </svg>
+                        </button>
+                        <div id="dept-panel"
+                            class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="inline-flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="dept-all" class="mr-1">
+                                    <span>Todos</span>
+                                </label>
+                                <button type="button" id="dept-clear" class="text-xs text-blue-600">Limpiar</button>
+                            </div>
+                            <div class="space-y-1" id="dept-options"></div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Marcas -->
+                    <div class="relative" id="brand-dropdown">
+                        <button type="button"
+                            class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1"
+                            id="brand-toggle" aria-haspopup="true" aria-expanded="false">
+                            <span class="font-medium">Marcas</span>
+                            <span id="brand-selected-summary" class="text-xs text-gray-500">Todas</span>
+                            <svg width="14" height="14" fill="currentColor" class="text-gray-500" aria-hidden="true">
+                                <path d="M7 10l5-5H2z"></path>
+                            </svg>
+                        </button>
+                        <div id="brand-panel"
+                            class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="inline-flex items-center gap-2 text-sm">
+                                    <input type="checkbox" id="brand-all" class="mr-1">
+                                    <span>Todas</span>
+                                </label>
+                                <button type="button" id="brand-clear" class="text-xs text-blue-600">Limpiar</button>
+                            </div>
+                            <div class="space-y-1" id="brand-options"></div>
+                        </div>
+                    </div>
+
+                    <!-- Buscador de producto en tabla -->
+                     <div>
+                         <label for="table-product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
+                         <input id="table-product-search" type="search" placeholder="Buscar por código o descripción..."
+                         class="border rounded px-2 py-1 text-sm w-64" />
+                    </div>
+                    <div>
+                         <label for="input-search-product" class="text-sm font-medium text-gray-700">Agregar Producto</label>
+                         <input id="input-search-product" type="search" placeholder="agregar producto por codigo"
+                         class="border rounded px-2 py-1 text-sm w-64" />
+                         <button id="button-search-product"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium">
+                            Buscar
+                        </button>
+                    </div>
+                    <div id="products-count" class="flex items-center gap-4 ml-4">
+                        <span class="text-xs text-gray-500">Productos mostrados: <span id="displayed-products-count">0</span></span>
+                        <span class="text-xs text-gray-700">Productos seleccionados: <span id="selected-products-count">0</span></span>
+                    </div>
+                </div>
+            </div>
+            <table id="products-table" class="w-full text-sm text-left">
+                <colgroup>
+                    <col>
+                    <col style="width: 35%">
+                    <col>
+                    <col>
+                    <col>
+                    <col class="fecha-col">
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col style="width: 8rem">
+                    <col style="width: 8rem">
+                    <col>
+                    <col>
+                </colgroup>
+                <thead id="table-header" class="bg-gray-100 text-gray-600 font-medium border-b sticky z-10">
                     <tr>
                         <th class="px-4 py-3 text-center"><input type="checkbox" id="select-all-products"
                                 title="Seleccionar todos"></th>
-                        <th class="px-4 py-3">Código</th>
-                        <th class="px-4 py-3">Descripción</th>
+                        <th class="px-4 py-3">Producto</th>
+                        <th class="px-4 py-3">Marca</th>
                         <th class="px-4 py-3">Departamento</th>
                         <th class="px-4 py-3">Unidad</th>
-                        <th class="px-4 py-3">Fecha de ultima Compra</th>
+                        <th class="px-4 py-3 fecha-cell">Ultima Compra</th>
                         <th class="px-4 py-3">Existencia Minima</th>
                         <th class="px-4 py-3">Existencia Maxima</th>
                         <th class="px-4 py-3">Existencia actual</th>
                         <th class="px-4 py-3 text-right">Último Costo</th>
                         <th class="px-4 py-3 text-center">Última Compra</th>
-                        <th class="px-4 py-3 text-center">
-                            Cantidad a comprar
-                        </th>
+                        <th class="px-4 py-3 text-center">Cantidad a comprar</th>
+                        <th class="px-4 py-3 text-center">Costo de compra</th>
+                        <th class="px-4 py-3 text-right">Subtotal</th>
+                        <th class="px-4 py-3 text-center">Producto en espera</th>
+                        <th class="px-4 py-3 text-center">Opciones</th>
+
                     </tr>
                 </thead>
                 <tbody id="products-table-body" class="divide-y divide-gray-100">
                     <!-- Rows will be populated by JS -->
                 </tbody>
             </table>
+        </div>
+        <!-- Purchase Summary Section -->
+        <div id="purchase-summary-container" class="mt-4 bg-white rounded-lg shadow border border-gray-200 hidden">
+            <div class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
+                <h2 id="purchase-summary-panel-title" class="text-base font-semibold text-gray-700">Detalle de la compra</h2>
+                <div class="flex gap-6 text-sm">
+                    <span class="text-gray-700">Productos seleccionados: <strong id="total-selected-products-count">0</strong></span>
+                    <span class="text-gray-700">Cantidad total: <strong id="total-selected-quantity">0</strong></span>
+                    <span class="text-gray-700">Total de la compra: <strong id="total-purchase-amount">0.00</strong></span>
+                </div>
+            </div>
+            <div class="p-4 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <colgroup>
+                        <col style="width: 18%">
+                        <col>
+                        <col style="width: 10%">
+                        <col style="width: 12%">
+                        <col style="width: 12%">
+                    </colgroup>
+                    <thead class="bg-gray-100 text-gray-600 font-medium border-b">
+                        <tr>
+                            <th class="px-4 py-2">Código</th>
+                            <th class="px-4 py-2">Descripción</th>
+                            <th class="px-4 py-2 text-center">Unidad</th>
+                            <th class="px-4 py-2 text-right">Cantidad</th>
+                            <th class="px-4 py-2 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="selected-products-table-body" class="divide-y divide-gray-100">
+                        <!-- Se rellena dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div id="product-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.18);">
+    <div id="product-detail-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+        <div class="flex items-center justify-between p-3 border-b">
+            <h3 id="product-detail-title" class="text-base font-semibold text-gray-800">Detalle de producto</h3>
+            <button id="product-detail-close" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Cerrar">
+                <span class="text-2xl leading-none">&times;</span>
+            </button>
+        </div>
+        <div id="product-detail-content" class="p-4">
+            <!-- Contenido del detalle del producto se insertará aquí -->
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Summary Modal -->
+<div id="purchase-summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.18);">
+    <div id="purchase-summary-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4" role="dialog" aria-modal="true" aria-labelledby="purchase-summary-title">
+        <div class="flex items-center justify-between p-3 border-b">
+            <h3 id="purchase-summary-title" class="text-base font-semibold text-gray-800">Detalle de la compra</h3>
+            <button id="purchase-summary-close" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Cerrar">
+                <span class="text-2xl leading-none">&times;</span>
+            </button>
+        </div>
+        <div id="purchase-summary-content" class="p-4">
+            <!-- Contenido del detalle de compra se insertará aquí -->
         </div>
     </div>
 </div>
@@ -194,8 +358,10 @@
                         currentItems = [];
                     }
                     // Insertar al inicio y re-renderizar
-                    currentItems = [newItem, ...currentItems];
+                    currentItems = [newItem, ...(Array.isArray(currentItems) ? currentItems : [])];
                     renderTable(currentItems);
+                    initFilters(currentItems);
+                    try { filterRows(); } catch (e) { }
                 })
                 .catch(err => {
                     console.error('Error obteniendo producto por código:', err);
@@ -205,38 +371,62 @@
             console.error('Error en handleProductSelection:', e);
         }
     }
-        
-        // Product Search Button Handler
-        const btnProduct = document.getElementById('button-search-product');
-        if (btnProduct) {
-            btnProduct.addEventListener('click', function (e) {
-                e.preventDefault();
-                console.log('Click en buscar producto');
-                if (typeof openProductSearchModal === 'function') {
-                    console.log('Abriendo modal de productos...');
-                    openProductSearchModal(handleProductSelection);
-                } else {
-                    console.error('openProductSearchModal no está definida');
-                    alert('Error: La función para abrir el modal no está cargada.');
-                }
-            });
-        } else {
-            console.error('Button button-search-product not found');
-        }
 
-        // Input Enter Key Handler
-        const inputProduct = document.getElementById('input-search-product');
-        if (inputProduct) {
-            inputProduct.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const query = this.value.trim();
-                    if (query) {
-                        handleProductSelection(query);
-                    }
+    // Cálculo de subtotal por fila
+    function updateRowSubtotal(idx) {
+        try {
+            const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
+            const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
+            const cell = document.querySelector(`.subtotal-cell[data-index="${idx}"]`);
+            if (!cell) return;
+            const qty = qtyInput ? Number(qtyInput.value) : 0;
+            const cost = costInput ? Number(costInput.value) : 0;
+            const subtotal = (isFinite(qty) ? qty : 0) * (isFinite(cost) ? cost : 0);
+            cell.textContent = Number(subtotal).toFixed(2);
+        } catch (e) {}
+    }
+
+    // Forzar valores no negativos en inputs numéricos
+    function sanitizeNonNegative(inputEl) {
+        try {
+            const v = Number(inputEl && inputEl.value);
+            if (!isFinite(v) || v < 0) {
+                inputEl.value = '0';
+            }
+        } catch (e) {}
+    }
+
+    // Product Search Button Handler
+    const btnProduct = document.getElementById('button-search-product');
+    if (btnProduct) {
+        btnProduct.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log('Click en buscar producto');
+            if (typeof openProductSearchModal === 'function') {
+                console.log('Abriendo modal de productos...');
+                openProductSearchModal(handleProductSelection);
+            } else {
+                console.error('openProductSearchModal no está definida');
+                alert('Error: La función para abrir el modal no está cargada.');
+            }
+        });
+    } else {
+        console.error('Button button-search-product not found');
+    }
+
+    // Input Enter Key Handler
+    const inputProduct = document.getElementById('input-search-product');
+    if (inputProduct) {
+        inputProduct.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (query) {
+                    handleProductSelection(query);
                 }
-            });
-        }
+            }
+        });
+    }
 
 
     const providerInput = document.getElementById('provider-code-input');
@@ -255,7 +445,69 @@
     // Selección de productos
     const selectedIndices = new Set();
 
+    // Detalles del proveedor seleccionados (para guardar la orden)
+    let selectedProviderDetails = null;
+
     let selectedProvider = null;
+
+    // Delegado: abrir modal al hacer clic en el nombre del producto o en "Ver Detalles"
+    if (tableBody) {
+        tableBody.addEventListener('click', function (e) {
+            const target = e.target;
+            if (target && target.classList && target.classList.contains('product-detail-link')) {
+                e.preventDefault();
+                if (typeof openProductDetailModal === 'function') {
+                    // Modal en blanco, tal como se solicitó
+                    openProductDetailModal('');
+                }
+            } else if (target && target.classList && target.classList.contains('order-details-link')) {
+                e.preventDefault();
+                const idx = Number(target.getAttribute('data-index'));
+                if (!Number.isFinite(idx) || !Array.isArray(currentItems)) return;
+                const item = currentItems[idx];
+                const orders = (item && Array.isArray(item.product_in_order)) ? item.product_in_order : [];
+                const html = buildOrderDetailsHtml(orders);
+                if (typeof openProductDetailModal === 'function') {
+                    openProductDetailModal(html);
+                }
+            }
+        });
+    }
+
+    function buildOrderDetailsHtml(orders) {
+        try {
+            if (!Array.isArray(orders) || orders.length === 0) {
+                return '<div class="p-4 text-sm text-gray-600">Sin compras reportadas con otros proveedores.</div>';
+            }
+            const rows = orders.map(o => `
+                <tr class="border-b">
+                    <td class="px-2 py-1">${o.document_no || ''}</td>
+                    <td class="px-2 py-1">${o.emission_date || ''}</td>
+                    <td class="px-2 py-1">${o.provider_name || ''}</td>
+                    <td class="px-2 py-1 text-right">${o.unitary_cost != null ? Number(o.unitary_cost).toFixed(2) : ''}</td>
+                    <td class="px-2 py-1 text-right">${o.amount != null ? Number(o.amount) : ''}</td>
+                </tr>
+            `).join('');
+            return `
+                <div class="p-2">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-gray-700">
+                            <tr>
+                                <th class="px-2 py-1">Documento</th>
+                                <th class="px-2 py-1">Fecha</th>
+                                <th class="px-2 py-1">Proveedor</th>
+                                <th class="px-2 py-1 text-right">Costo Unitario</th>
+                                <th class="px-2 py-1 text-right">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        } catch (e) {
+            return '<div class="p-4 text-sm text-red-600">Error al construir detalles.</div>';
+        }
+    }
 
     // Open Modal provider search
     searchBtn.addEventListener('click', () => {
@@ -315,6 +567,7 @@
                 }
             });
             const data = await response.json();
+            
             console.log('Fetched data:', data);
 
             if (data.ok) {
@@ -335,11 +588,14 @@
                 currentItems = data.items;
                 // Re-render con datos y depósitos seleccionados
                 renderTable(currentItems);
+                // Inicializar filtros con los datos cargados
+                initFilters(currentItems);
                 // Re-adjuntar listeners en los checkboxes (por seguridad)
                 storeCheckboxes.forEach(cb => {
                     cb.addEventListener('change', () => {
                         if (currentItems) {
                             renderTable(currentItems);
+                            try { filterRows(); } catch (e) { }
                         }
                     });
                 });
@@ -369,58 +625,201 @@
         }
         const selectedStores = getSelectedStores();
 
-        tableBody.innerHTML = items.map(item => {
+        // 1. Preservar selección actual por código antes de reordenar
+        const selectedCodes = new Set();
+        if (selectedIndices) {
+            // Nota: items suele ser la misma referencia que currentItems, pero usamos items por seguridad
+            // Sin embargo, selectedIndices se basa en el estado ANTERIOR de items.
+            // Si items ya viene reordenado (no debería si es la primera vez), esto podría fallar si no tenemos cuidado.
+            // Asumimos que selectedIndices es válido para el estado actual de items antes del sort.
+            selectedIndices.forEach(idx => {
+                const it = items[idx]; 
+                if (it && it.product_code) selectedCodes.add(it.product_code);
+            });
+        }
+
+        // 2. Calcular stock actual para cada item y guardarlo temporalmente
+        items.forEach(item => {
+            let currentStock = 0;
+            if (item.stocks && Array.isArray(item.stocks)) {
+                item.stocks.forEach(s => {
+                    const storeId = s.store || s.store_code || s.store_Code;
+                    if (!storeId) return;
+                    if (selectedStores.includes(String(storeId))) {
+                        currentStock += Number(s.stock || 0);
+                    }
+                });
+            }
+            item._calculatedStock = currentStock;
+        });
+
+        // 3. Ordenar items de menor a mayor existencia actual
+        items.sort((a, b) => a._calculatedStock - b._calculatedStock);
+
+        // 4. Reconstruir selectedIndices con los nuevos índices
+        selectedIndices.clear();
+        items.forEach((item, idx) => {
+            if (selectedCodes.has(item.product_code)) {
+                selectedIndices.add(idx);
+            }
+        });
+
+        const rowsHtml = [];
+        const hiddenIndices = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            // Recuperar valores calculados
+            let currentStock = item._calculatedStock;
+            
             // Sumar existencia mínima y máxima por depósitos seleccionados
             let minStock = 0;
             let maxStock = 0;
-            let currentStock = 0;
 
-            // Datos de mínimos/máximos suelen venir de products_failures en item.parameters
             if (item.parameters && Array.isArray(item.parameters)) {
                 item.parameters.forEach(p => {
                     const storeId = p.store_Code || p.store_code || p.store;
                     if (!storeId) return;
-                    // Sumar SOLO los depósitos seleccionados
                     if (selectedStores.includes(String(storeId))) {
                         minStock += Number(p.minimal_stock || 0);
                         maxStock += Number(p.maximum_stock || 0);
                     }
                 });
             }
+            
+            // (El cálculo de currentStock ya se hizo arriba y se guardó en item._calculatedStock)
 
-            // Existencia actual viene de item.stocks: [{ store, stock }]
-            if (item.stocks && Array.isArray(item.stocks)) {
-                item.stocks.forEach(s => {
-                    const storeId = s.store || s.store_code || s.store_Code;
-                    if (!storeId) return;
-                    // Sumar SOLO los depósitos seleccionados
-                    if (selectedStores.includes(String(storeId))) {
-                        currentStock += Number(s.stock || 0);
-                    }
-                });
+            // Ocultar solo si existe configuración de stock máximo (> 0) y la existencia actual lo supera
+            const maxNum = Number(maxStock);
+            const curNum = Number(currentStock);
+            if (isFinite(maxNum) && maxNum > 0 && isFinite(curNum) && curNum > maxNum) {
+                hiddenIndices.push(i);
+                continue;
             }
-            let indexedItem = items.indexOf(item); // ubicaicon de item en el array
+
             const suggestedQuantity = Math.max(0, Number(maxStock) - Number(currentStock));
-            return `
-            <tr class="hover:bg-gray-50 ${item.highlight ? 'bg-yellow-50' : ''}">
-                <td class="px-4 py-3 text-center"><input type="checkbox" class="select-product" value="${item.product_code}" data-index="${indexedItem}" ${selectedIndices.has(indexedItem) ? 'checked' : ''}></td>
-                <td class="px-4 py-3 font-medium text-gray-900">${item.product_code}</td>
-                <td class="px-4 py-3">${item.product_description}</td>
+            const deptVal = (item.department_description || item.product_department || '').toString();
+            const brandVal = (item.product_mark || '').toString();
+            const hasOtherProviders = Array.isArray(item.product_in_order) && item.product_in_order.length > 0;
+            const rowHighlightClass = (item.highlight || hasOtherProviders) ? 'bg-yellow-100' : '';
+            rowsHtml.push(`
+            <tr class="hover:bg-gray-50 ${rowHighlightClass}" data-department="${deptVal}" data-brand="${brandVal}" data-code="${item.product_code}" data-desc="${item.product_description}">
+                <td class="px-4 py-3 text-center"><input type="checkbox" class="select-product" value="${item.product_code}" data-index="${i}" ${selectedIndices.has(i) ? 'checked' : ''}></td>
+                <td class="px-4 py-3">
+                    <button type="button" class="product-detail-link text-blue-600 hover:underline" data-code="${item.product_code}">${item.product_description} (${item.product_code})</button>
+                </td>
+                <td class="px-4 py-3">${item.product_mark}</td>
                 <td class="px-4 py-3">${item.department_description || item.product_department || ''}</td>
-                <td class="px-4 py-3">${getDefaultUnit(item)}</td>
-                <td class="px-4 py-3">${item.product_provider_emission_date || ''}</td>
+                <td class="px-4 py-3">
+                    ${(() => {
+                        try {
+                            const units = (Array.isArray(item.units) && item.units.length)
+                                ? item.units
+                                : [{ unit_description: getDefaultUnit(item), conversion_factor: 1 }];
+                            const defaultIdx = units.findIndex(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)));
+                            const selectedIdx = defaultIdx >= 0 ? defaultIdx : 0;
+                            const options = units.map((u, ui) => {
+                                const text = (u && (u.unit_description || u.description || u.unit || u.unit_name)) || '';
+                                const value = (u && (u.unit_code || u.unit || text)) || '';
+                                const factor = (u && u.conversion_factor != null) ? u.conversion_factor : 1;
+                                const cost = (u && u.unitary_cost != null) ? u.unitary_cost : '';
+                                const sel = ui === selectedIdx ? 'selected' : '';
+                                return `<option value="${String(value)}" data-factor="${String(factor)}" data-cost="${String(cost)}" ${sel}>${String(text)}</option>`;
+                            }).join('');
+                            return `<select class="unit-select border rounded px-2 py-1 text-sm" data-index="${i}">${options}</select>`;
+                        } catch (e) {
+                            return `<span>${getDefaultUnit(item)}</span>`;
+                        }
+                    })()}
+                </td>
+                <td class="px-4 py-3 fecha-cell">${item.product_provider_emission_date || ''}</td>
                 <td class="px-4 py-3 text-center">${minStock}</td>
                 <td class="px-4 py-3 text-center">${maxStock}</td>
-                <td class="px-4 py-3 text-center">${currentStock}</td>
-                <td class="px-4 py-3 text-right">${item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : ''}</td>
+                <td class="px-4 py-3 text-center current-stock-cell" data-index="${i}" data-base-stock="${currentStock}">
+                    ${(() => {
+                        try {
+                            const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                            const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                            const factor = (selUnit && Number(selUnit.conversion_factor) > 0) ? Number(selUnit.conversion_factor) : 1;
+                            return Number(Number(currentStock) / factor).toFixed(2);
+                        } catch (e) {
+                            return Number(currentStock).toFixed(2);
+                        }
+                    })()}
+                </td>
+                <td class="px-4 py-3 text-right last-cost-cell" data-index="${i}">
+                    ${(() => {
+                        try {
+                            const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                            const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                            const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                            return cost != null ? cost.toFixed(2) : '';
+                        } catch (e) {
+                            return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                        }
+                    })()}
+                </td>
                 <td class="px-4 py-3 text-center">${item.product_provider_document_no || ''}</td>
                 <td class="px-4 py-3 text-center font-bold text-blue-600">
-                <input type="number" value="${suggestedQuantity}" min="0" class="w-20 border rounded px-2 py-1 text-sm" data-index="${indexedItem}">
-                    
-                    </td>
-            </tr>`;
-        }).join('');
+                <input type="number" value="${Number(suggestedQuantity).toFixed(2)}" min="0" class="w-20 border rounded px-2 py-1 text-sm purchase-qty-input" data-index="${i}">
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <input type="number" step="0.01" min="0" class="w-20 border rounded px-2 py-1 text-sm purchase-cost-input" data-index="${i}"
+                           value="${(() => {
+                               try {
+                                   const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                                   const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                                   const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                                   return cost != null ? cost.toFixed(2) : '';
+                               } catch (e) {
+                                   return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                               }
+                           })()}">
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <span class="subtotal-cell" data-index="${i}">0.00</span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                    ${ (Array.isArray(item.product_in_order) && item.product_in_order.length > 0)
+                        ? `<button type="button" class="order-details-link text-sm text-blue-600 hover:underline" data-index="${i}">Ver Detalles</button>`
+                        : '' }
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-medium remove-product-btn flex items-center gap-1" data-index="${i}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                        
+                    </button>
+                </td>
+            </tr>`);
+        }
+        if (rowsHtml.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="12" class="px-4 py-8 text-center text-gray-500">No hay productos para mostrar según los filtros y existencias.</td></tr>';
+        } else {
+            tableBody.innerHTML = rowsHtml.join('');
+        }
+        // Limpiar selecciones de los índices ocultos
+        hiddenIndices.forEach(idx => selectedIndices.delete(idx));
         attachRowSelectionHandlers();
+        // Mostrar/actualizar resumen de compra
+        try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+        // Inicializar subtotales por fila
+        try {
+            document.querySelectorAll('.subtotal-cell').forEach(cell => {
+                const idx = Number(cell.getAttribute('data-index'));
+                if (Number.isFinite(idx)) {
+                    updateRowSubtotal(idx);
+                }
+            });
+        } catch (e) {}
+        // Ajustar cabecera sticky según altura de filtros
+        try { applyStickyLayout(); } catch (e) {}
+        try { filterRows(); } catch (e) { }
+        try { updateDisplayedProductsCount(); updateSelectedProductsCount(); } catch (e) { }
     }
 
     // Re-render al cambiar selección de depósitos
@@ -434,6 +833,12 @@
 
     function attachRowSelectionHandlers() {
         const rowCbs = document.querySelectorAll('.select-product');
+        function getVisibleRowCheckboxes() {
+            return Array.from(document.querySelectorAll('.select-product')).filter(cb => {
+                const tr = cb.closest('tr');
+                return tr && tr.style.display !== 'none';
+            });
+        }
         rowCbs.forEach(cb => {
             cb.addEventListener('change', () => {
                 const idx = Number(cb.dataset.index);
@@ -442,21 +847,120 @@
                 } else {
                     selectedIndices.delete(idx);
                 }
+                // Recalcular resumen
+                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+                try { updateRowSubtotal(idx); } catch (e) {}
+                // Actualizar estado de "Seleccionar todos" solo considerando filas visibles
+                const selectAllCb = document.getElementById('select-all-products');
+                if (selectAllCb) {
+                    const visibleCbs = getVisibleRowCheckboxes();
+                    selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(x => x.checked);
+                }
+                try { updateSelectedProductsCount(); } catch (e) {}
             });
         });
         const selectAllCb = document.getElementById('select-all-products');
         if (selectAllCb) {
-            selectAllCb.checked = rowCbs.length > 0 && Array.from(rowCbs).every(cb => cb.checked);
+            const visibleCbs = getVisibleRowCheckboxes();
+            selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(cb => cb.checked);
             selectAllCb.onclick = () => {
                 const check = selectAllCb.checked;
-                rowCbs.forEach(cb => {
+                const visibleCbs = getVisibleRowCheckboxes();
+                visibleCbs.forEach(cb => {
                     cb.checked = check;
                     const idx = Number(cb.dataset.index);
                     if (check) selectedIndices.add(idx);
                     else selectedIndices.delete(idx);
                 });
+                // Recalcular resumen
+                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+                try { updateSelectedProductsCount(); } catch (e) {}
             };
         }
+
+        // Botones de eliminar producto: remueven la fila y actualizan el estado
+        const removeBtns = document.querySelectorAll('.remove-product-btn');
+        removeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const idx = Number(btn.getAttribute('data-index'));
+                if (!Number.isFinite(idx)) return;
+                if (Array.isArray(currentItems)) {
+                    // 1. Guardar códigos de productos seleccionados antes de eliminar
+                    const selectedCodes = new Set();
+                    if (selectedIndices) {
+                        selectedIndices.forEach(i => {
+                            const it = currentItems[i];
+                            if (it && it.product_code) selectedCodes.add(it.product_code);
+                        });
+                    }
+
+                    // 2. Eliminar del arreglo principal
+                    currentItems = currentItems.filter((_, i) => i !== idx);
+                    
+                    // 3. Limpiar selección (índices cambian tras eliminar)
+                    selectedIndices.clear();
+
+                    // 4. Restaurar selección basada en códigos
+                    currentItems.forEach((item, newIdx) => {
+                        if (selectedCodes.has(item.product_code)) {
+                            selectedIndices.add(newIdx);
+                        }
+                    });
+
+                    // Re-render y re-aplicar filtros activos
+                    renderTable(currentItems);
+                    try { filterRows(); } catch (e) { }
+                    // Recalcular resumen
+                    try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+                }
+            });
+        });
+
+        // Cambio de unidad: recalcular existencia actual mostrada según conversion_factor
+        const unitSelects = document.querySelectorAll('.unit-select');
+        unitSelects.forEach(sel => {
+            sel.addEventListener('change', () => {
+                const idx = Number(sel.getAttribute('data-index'));
+                const opt = sel.options[sel.selectedIndex];
+                const factor = (() => { const v = Number(opt && opt.getAttribute('data-factor')); return (isFinite(v) && v > 0) ? v : 1; })();
+                const cell = document.querySelector(`.current-stock-cell[data-index="${idx}"]`);
+                if (!cell) return;
+                const base = Number(cell.getAttribute('data-base-stock')) || 0;
+                const converted = base / factor;
+                cell.textContent = Number(converted).toFixed(2);
+
+                // Actualizar "Último Costo" segun unidad seleccionada
+                const costAttr = opt ? opt.getAttribute('data-cost') : null;
+                const costNum = costAttr != null && costAttr !== '' ? Number(costAttr) : null;
+                const lastCell = document.querySelector(`.last-cost-cell[data-index="${idx}"]`);
+                if (lastCell) {
+                    lastCell.textContent = (costNum != null && isFinite(costNum)) ? costNum.toFixed(2) : '';
+                }
+                // Si el usuario desea que el costo de compra siga el costo de unidad seleccionada
+                try {
+                    const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
+                    if (costInput && (costNum != null && isFinite(costNum))) {
+                        costInput.value = costNum.toFixed(2);
+                    }
+                } catch (e) {}
+                // Recalcular resumen
+                try { computeAndRenderPurchaseSummary(); } catch (e) {}
+                try { updateRowSubtotal(idx); } catch (e) {}
+            });
+        });
+
+        // Cambios en cantidad y costo de compra
+        const qtyInputs = document.querySelectorAll('.purchase-qty-input');
+        qtyInputs.forEach(inp => {
+            inp.addEventListener('input', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+            inp.addEventListener('change', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+        });
+        const costInputs = document.querySelectorAll('.purchase-cost-input');
+        costInputs.forEach(inp => {
+            inp.addEventListener('input', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+            inp.addEventListener('change', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+        });
     }
 
     async function fetchProviderDetails(code) {
@@ -474,10 +978,733 @@
 
     function renderProviderDetails(provider) {
         if (!providerDetailsEl || !provider) return;
+        // Persistir detalles del proveedor para el guardado
+        selectedProviderDetails = provider;
         const rif = provider.provider_id || provider.rif || '---';
         const tel = provider.provider_phone || provider.phone || '---';
         const dir = provider.address || provider.provider_address || '---';
-        providerDetailsEl.textContent = `Detalles: RIF ${rif} | Tel ${tel} | ${dir}`;
     }
+
+    // ----- Filtros de tabla (departamentos, marcas y buscador) -----
+    const filtersBar = document.getElementById('table-filters');
+    const deptToggle = document.getElementById('dept-toggle');
+    const deptPanel = document.getElementById('dept-panel');
+    const deptSummary = document.getElementById('dept-selected-summary');
+    const deptOptions = document.getElementById('dept-options');
+    const deptAllCheckbox = document.getElementById('dept-all');
+    const deptClearBtn = document.getElementById('dept-clear');
+
+    const brandToggle = document.getElementById('brand-toggle');
+    const brandPanel = document.getElementById('brand-panel');
+    const brandSummary = document.getElementById('brand-selected-summary');
+    const brandOptions = document.getElementById('brand-options');
+    const brandAllCheckbox = document.getElementById('brand-all');
+    const brandClearBtn = document.getElementById('brand-clear');
+
+    const tableSearchInput = document.getElementById('table-product-search');
+
+    function normalizeText(s) { return (s || '').toString().trim().toLowerCase(); }
+
+    function buildOptions(container, values, cls) {
+        if (!container) return;
+        container.innerHTML = '';
+        values.forEach(v => {
+            const label = document.createElement('label');
+            label.className = 'flex items-center gap-2 text-sm';
+            label.innerHTML = `<input type="checkbox" class="${cls}" value="${v}"><span>${v || '(vacío)'}</span>`;
+            container.appendChild(label);
+        });
+    }
+
+    function uniqueSorted(vals) {
+        return Array.from(new Set(vals.map(v => (v || '').toString().trim()))).sort((a, b) => a.localeCompare(b));
+    }
+
+    function initFilters(items) {
+        try {
+            if (!Array.isArray(items) || items.length === 0) return;
+            // Construir valores únicos
+            const depts = uniqueSorted(items.map(i => i.department_description || i.product_department || ''));
+            const brands = uniqueSorted(items.map(i => i.product_mark || ''));
+            // Pintar opciones
+            buildOptions(deptOptions, depts, 'dept-check');
+            buildOptions(brandOptions, brands, 'brand-check');
+            // Mostrar barra de filtros
+            if (filtersBar) filtersBar.classList.remove('hidden');
+
+            updateDropdownSummary();
+            filterRows();
+
+            // Botones limpiar
+            deptClearBtn && deptClearBtn.addEventListener('click', () => {
+                document.querySelectorAll('.dept-check').forEach(c => c.checked = false);
+                if (deptAllCheckbox) deptAllCheckbox.checked = false;
+                updateDropdownSummary();
+                filterRows();
+            });
+            brandClearBtn && brandClearBtn.addEventListener('click', () => {
+                document.querySelectorAll('.brand-check').forEach(c => c.checked = false);
+                if (brandAllCheckbox) brandAllCheckbox.checked = false;
+                updateDropdownSummary();
+                filterRows();
+            });
+
+            // 'Todos'
+            deptAllCheckbox && deptAllCheckbox.addEventListener('change', function () {
+                const checked = !!this.checked;
+                document.querySelectorAll('.dept-check').forEach(c => c.checked = checked);
+                updateDropdownSummary();
+                filterRows();
+            });
+            brandAllCheckbox && brandAllCheckbox.addEventListener('change', function () {
+                const checked = !!this.checked;
+                document.querySelectorAll('.brand-check').forEach(c => c.checked = checked);
+                updateDropdownSummary();
+                filterRows();
+            });
+
+            // Cambios individuales
+            document.addEventListener('change', (e) => {
+                if (e.target.classList && e.target.classList.contains('dept-check')) {
+                    const anyUnchecked = Array.from(document.querySelectorAll('.dept-check')).some(c => !c.checked);
+                    if (deptAllCheckbox) deptAllCheckbox.checked = !anyUnchecked && document.querySelectorAll('.dept-check').length > 0;
+                    updateDropdownSummary();
+                    filterRows();
+                }
+                if (e.target.classList && e.target.classList.contains('brand-check')) {
+                    const anyUncheckedB = Array.from(document.querySelectorAll('.brand-check')).some(c => !c.checked);
+                    if (brandAllCheckbox) brandAllCheckbox.checked = !anyUncheckedB && document.querySelectorAll('.brand-check').length > 0;
+                    updateDropdownSummary();
+                    filterRows();
+                }
+            });
+
+            // Toggle panels
+            function togglePanel(panel, btn) {
+                const isOpen = !panel.classList.contains('hidden');
+                [deptPanel, brandPanel].forEach(p => p && p.classList.add('hidden'));
+                if (!isOpen) { panel.classList.remove('hidden'); btn && btn.setAttribute('aria-expanded', 'true'); }
+                else { panel.classList.add('hidden'); btn && btn.setAttribute('aria-expanded', 'false'); }
+            }
+            deptToggle && deptToggle.addEventListener('click', () => togglePanel(deptPanel, deptToggle));
+            brandToggle && brandToggle.addEventListener('click', () => togglePanel(brandPanel, brandToggle));
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#dept-dropdown') && !e.target.closest('#brand-dropdown')) {
+                    deptPanel && deptPanel.classList.add('hidden');
+                    brandPanel && brandPanel.classList.add('hidden');
+                }
+            });
+
+            tableSearchInput && tableSearchInput.addEventListener('input', filterRows);
+
+            // Reaplicar sticky al mostrar filtros
+            try { applyStickyLayout(); } catch (e) {}
+        } catch (e) { console.error('initFilters error:', e); }
+    }
+
+    function getCheckedValues(selector) {
+        return Array.from(document.querySelectorAll(selector))
+            .filter(c => c.checked)
+            .map(c => normalizeText(c.value));
+    }
+
+    function updateDropdownSummary() {
+        try {
+            const dVals = getCheckedValues('.dept-check');
+            deptSummary && (deptSummary.textContent = dVals.length ? (dVals.length === 1 ? dVals[0] : dVals.length + ' seleccionados') : 'Todos');
+            const bVals = getCheckedValues('.brand-check');
+            brandSummary && (brandSummary.textContent = bVals.length ? (bVals.length === 1 ? bVals[0] : bVals.length + ' seleccionadas') : 'Todas');
+        } catch (e) { }
+    }
+
+    // Contadores: productos mostrados y seleccionados
+    function updateDisplayedProductsCount() {
+        try {
+            const rows = Array.from(document.querySelectorAll('#products-table-body tr'));
+            const count = rows.filter(tr => tr.style.display !== 'none' && tr.querySelector('.select-product')).length;
+            const el = document.getElementById('displayed-products-count');
+            if (el) el.textContent = String(count);
+        } catch (e) { }
+    }
+    function updateSelectedProductsCount() {
+        try {
+            const el = document.getElementById('selected-products-count');
+            if (el) el.textContent = String(selectedIndices ? selectedIndices.size : 0);
+        } catch (e) { }
+    }
+
+    function filterRows() {
+        try {
+            const q = normalizeText(tableSearchInput && tableSearchInput.value);
+            const depts = getCheckedValues('.dept-check');
+            const brands = getCheckedValues('.brand-check');
+            const rows = Array.from(document.querySelectorAll('#products-table-body tr'));
+            rows.forEach(row => {
+                const rowDept = normalizeText(row.getAttribute('data-department'));
+                const rowBrand = normalizeText(row.getAttribute('data-brand'));
+                const code = normalizeText(row.getAttribute('data-code'));
+                const desc = normalizeText(row.getAttribute('data-desc'));
+                const matchesDept = (depts.length === 0) || depts.includes(rowDept);
+                const matchesBrand = (brands.length === 0) || brands.includes(rowBrand);
+                const matchesQuery = !q || code.includes(q) || desc.includes(q);
+                row.style.display = (matchesDept && matchesBrand && matchesQuery) ? '' : 'none';
+            });
+            // Actualizar el estado del checkbox "Seleccionar todos" considerando solo filas visibles
+            const selectAllCb = document.getElementById('select-all-products');
+            if (selectAllCb) {
+                const visibleCbs = Array.from(document.querySelectorAll('.select-product')).filter(cb => {
+                    const tr = cb.closest('tr');
+                    return tr && tr.style.display !== 'none';
+                });
+                selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(cb => cb.checked);
+            }
+            // Actualizar contador de productos mostrados
+            updateDisplayedProductsCount();
+        } catch (e) { }
+    }
+
+    // Sticky: calcular offset de cabecera basado en altura de filtros
+    function applyStickyLayout() {
+        const filters = document.getElementById('table-filters');
+        const thead = document.getElementById('table-header');
+        if (!thead) return;
+        const isHidden = filters && filters.classList.contains('hidden');
+        const h = (!filters || isHidden) ? 0 : filters.offsetHeight;
+        thead.style.top = h + 'px';
+    }
+
+    // Ajustar en resize
+    window.addEventListener('resize', function () { try { applyStickyLayout(); } catch (e) {} });
 </script>
+
+<!-- Summary Script: cálculo de detalle y totales de la compra -->
+<script>
+    function updatePurchaseSummaryVisibility() {
+        try {
+            const container = document.getElementById('purchase-summary-container');
+            const anySelected = selectedIndices && selectedIndices.size > 0;
+            if (!container) return;
+            if (anySelected) container.classList.remove('hidden');
+            else container.classList.add('hidden');
+            // Actualizar estado de botones
+            const btnToggle = document.getElementById('btn-toggle-summary');
+            const btnModal = document.getElementById('btn-open-summary-modal');
+            if (btnToggle) {
+                btnToggle.disabled = !anySelected;
+                const isHidden = container.classList.contains('hidden');
+                btnToggle.textContent = isHidden ? 'Mostrar detalle' : 'Ocultar detalle';
+            }
+            if (btnModal) {
+                btnModal.disabled = !anySelected;
+            }
+        } catch (e) {}
+    }
+
+    function computeAndRenderPurchaseSummary() {
+        try {
+            const tbody = document.getElementById('selected-products-table-body');
+            const totalProductsEl = document.getElementById('total-selected-products-count');
+            const totalQtyEl = document.getElementById('total-selected-quantity');
+            const totalAmountEl = document.getElementById('total-purchase-amount');
+            const topTotalAmountEl = document.getElementById('top-total-purchase-amount');
+
+            if (!tbody || !Array.isArray(currentItems)) return;
+
+            const rowsData = [];
+            let totalProducts = 0;
+            let totalQty = 0;
+            let totalAmount = 0;
+
+            selectedIndices.forEach(idx => {
+                const item = currentItems[idx];
+                if (!item) return;
+                const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
+                const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
+                const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                const unitText = unitSel ? unitSel.options[unitSel.selectedIndex].textContent : (getDefaultUnit(item) || '');
+                const qty = qtyInput ? Number(qtyInput.value) : 0;
+                const cost = costInput ? Number(costInput.value) : 0;
+                const subtotal = (isFinite(qty) ? qty : 0) * (isFinite(cost) ? cost : 0);
+                if ((isFinite(qty) && qty > 0)) {
+                    totalProducts += 1;
+                    totalQty += qty;
+                    totalAmount += subtotal;
+                }
+                rowsData.push({
+                    code: item.product_code,
+                    desc: item.product_description,
+                    unit: unitText,
+                    qty: qty,
+                    subtotal: subtotal
+                });
+            });
+
+            // Pintar tabla
+            if (rowsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No hay productos seleccionados</td></tr>';
+            } else {
+                tbody.innerHTML = rowsData.map(r => `
+                    <tr>
+                        <td class="px-4 py-2">${r.code || ''}</td>
+                        <td class="px-4 py-2">${r.desc || ''}</td>
+                        <td class="px-4 py-2 text-center">${r.unit || ''}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(r.qty) ? Number(r.qty).toFixed(2) : '0.00'}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(r.subtotal) ? Number(r.subtotal).toFixed(2) : '0.00'}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Totales
+            if (totalProductsEl) totalProductsEl.textContent = String(totalProducts);
+            if (totalQtyEl) totalQtyEl.textContent = isFinite(totalQty) ? Number(totalQty).toFixed(2) : '0.00';
+            if (totalAmountEl) totalAmountEl.textContent = isFinite(totalAmount) ? Number(totalAmount).toFixed(2) : '0.00';
+            if (topTotalAmountEl) topTotalAmountEl.textContent = isFinite(totalAmount) ? Number(totalAmount).toFixed(2) : '0.00';
+
+            // Visibilidad
+            updatePurchaseSummaryVisibility();
+        } catch (e) { console.error('computeAndRenderPurchaseSummary error:', e); }
+    }
+
+    function buildPurchaseSummaryHtml() {
+        try {
+            if (!Array.isArray(currentItems) || !selectedIndices || selectedIndices.size === 0) {
+                return '<div class="p-4 text-sm text-gray-600">No hay productos seleccionados.</div>';
+            }
+            const rows = [];
+            let totalProducts = 0, totalQty = 0, totalAmount = 0;
+            selectedIndices.forEach(idx => {
+                const item = currentItems[idx];
+                if (!item) return;
+                const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
+                const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
+                const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                const unitText = unitSel ? unitSel.options[unitSel.selectedIndex].textContent : (getDefaultUnit(item) || '');
+                const qty = qtyInput ? Number(qtyInput.value) : 0;
+                const cost = costInput ? Number(costInput.value) : 0;
+                const subtotal = (isFinite(qty) ? qty : 0) * (isFinite(cost) ? cost : 0);
+                if ((isFinite(qty) && qty > 0)) {
+                    totalProducts += 1;
+                    totalQty += qty;
+                    totalAmount += subtotal;
+                }
+                rows.push(`
+                    <tr>
+                        <td class="px-4 py-2">${item.product_code || ''}</td>
+                        <td class="px-4 py-2">${item.product_description || ''}</td>
+                        <td class="px-4 py-2 text-center">${unitText || ''}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(qty) ? Number(qty).toFixed(2) : '0.00'}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(subtotal) ? Number(subtotal).toFixed(2) : '0.00'}</td>
+                    </tr>
+                `);
+            });
+            const header = `
+                <div class="mb-3 flex gap-6 text-sm">
+                    <span class="text-gray-700">Productos seleccionados: <strong>${String(totalProducts)}</strong></span>
+                    <span class="text-gray-700">Cantidad total: <strong>${isFinite(totalQty) ? Number(totalQty).toFixed(2) : '0.00'}</strong></span>
+                    <span class="text-gray-700">Total de la compra: <strong>${isFinite(totalAmount) ? Number(totalAmount).toFixed(2) : '0.00'}</strong></span>
+                </div>`;
+            const table = `
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-gray-600 font-medium border-b">
+                        <tr>
+                            <th class="px-4 py-2">Código</th>
+                            <th class="px-4 py-2">Descripción</th>
+                            <th class="px-4 py-2 text-center">Unidad</th>
+                            <th class="px-4 py-2 text-right">Cantidad</th>
+                            <th class="px-4 py-2 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows.join('')}</tbody>
+                </table>`;
+            return header + table;
+        } catch (e) {
+            return '<div class="p-4 text-sm text-red-600">Error al construir detalle de compra.</div>';
+        }
+    }
+
+    // Botones de acciones
+    (function(){
+        const btnToggle = document.getElementById('btn-toggle-summary');
+        const btnModal = document.getElementById('btn-open-summary-modal');
+        const btnSave = document.getElementById('btn-save-order');
+        const summaryContainer = document.getElementById('purchase-summary-container');
+        if (btnToggle && summaryContainer) {
+            btnToggle.addEventListener('click', function(){
+                const isHidden = summaryContainer.classList.contains('hidden');
+                if (isHidden) summaryContainer.classList.remove('hidden');
+                else summaryContainer.classList.add('hidden');
+                // Actualizar texto y estados
+                try { updatePurchaseSummaryVisibility(); } catch (e) {}
+            });
+        }
+        if (btnModal) {
+            btnModal.addEventListener('click', function(){
+                const html = buildPurchaseSummaryHtml();
+                if (typeof openPurchaseSummaryModal === 'function') {
+                    openPurchaseSummaryModal(html);
+                }
+            });
+        }
+
+        // Guardar pedido: construir payload y enviar al backend
+        if (btnSave) {
+            btnSave.addEventListener('click', async function(){
+                try {
+                    // Validaciones básicas
+                    if (!selectedProvider) {
+                        alert('Primero seleccione un proveedor.');
+                        return;
+                    }
+                    if (!Array.from(storeCheckboxes).some(cb => cb.checked)) {
+                        alert('Seleccione al menos un depósito.');
+                        return;
+                    }
+                    if (!selectedIndices || selectedIndices.size === 0) {
+                        alert('Seleccione al menos un producto y cantidad > 0.');
+                        return;
+                    }
+
+                    // Construir header
+                    const coinSel = document.getElementById('select-coin');
+                    const coinCode = coinSel ? String(coinSel.value || '02') : '02';
+                    const creditDaysInput = document.getElementById('input-provider-credit-days');
+                    const creditDays = creditDaysInput ? Number(creditDaysInput.value || 0) : 0;
+                    const provider = selectedProviderDetails || selectedProvider || {};
+                    const storeList = getSelectedStores();
+                    const header = {
+                        correlative: 0,
+                        operation_type: 'ORDER',
+                        document_no: '',
+                        control_no: '',
+                        // Las fechas se asignan en backend si faltan
+                        provider_code: provider.provider_code || provider.code || '',
+                        provider_name: provider.provider_name || provider.description || '',
+                        provider_id: provider.provider_id || '',
+                        provider_address: provider.address || '',
+                        provider_phone: provider.provider_phone || provider.phone || '',
+                        credit_days: creditDays,
+                        expiration_date: '',
+                        wait: false,
+                        description: 'Orden de compra automática',
+                        store: storeList && storeList.length ? String(storeList[0]) : '00',
+                        locations: '00',
+                        user_code: '00',
+                        station: '00',
+                        percent_discount: 0,
+                        discount: 0,
+                        percent_freight: 0,
+                        freight: 0,
+                        freight_tax: '00',
+                        freight_aliquot: 0,
+                        credit: 0,
+                        cash: 0,
+                        operation_comments: '',
+                        pending: true,
+                        buyer: '',
+                        total_amount: 0,
+                        total_net_details: 0,
+                        total_tax_details: 0,
+                        total_details: 0,
+                        total_net: 0,
+                        total_tax: 0,
+                        total: 0,
+                        total_retention_tax: 0,
+                        total_retention_municipal: 0,
+                        total_retention_islr: 0,
+                        total_operation: 0,
+                        retention_tax_prorration: 0,
+                        retention_islr_prorration: 0,
+                        retention_municipal_prorration: 0,
+                        coin_code: coinCode,
+                        free_tax: false,
+                        total_exempt: 0,
+                        secondary_coin: coinCode,
+                        base_igtf: 0,
+                        percent_igtf: 0,
+                        igtf: 0,
+                    };
+
+                    // Construir detalles
+                    const details = [];
+                    let lineNo = 1;
+                    let grandTotal = 0;
+                    selectedIndices.forEach(idx => {
+                        const item = Array.isArray(currentItems) ? currentItems[idx] : null;
+                        if (!item) return;
+                        const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
+                        const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
+                        const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                        const qty = qtyInput ? Number(qtyInput.value || 0) : 0;
+                        const cost = costInput ? Number(costInput.value || 0) : 0;
+                        if (!isFinite(qty) || qty <= 0) return;
+                        const opt = unitSel ? unitSel.options[unitSel.selectedIndex] : null;
+                        const unitValRaw = opt ? (opt.value || '') : '';
+                        const convFactorRaw = opt ? opt.getAttribute('data-factor') : '1';
+                        const convFactor = (() => { const v = Number(convFactorRaw); return isFinite(v) && v > 0 ? v : 1; })();
+                        const unitParsed = (() => { const n = parseInt(unitValRaw, 10); return isFinite(n) ? n : 0; })();
+                        const lineTotal = qty * cost;
+                        grandTotal += lineTotal;
+
+                        details.push({
+                            line: lineNo++,
+                            code_product: item.product_code || '',
+                            description_product: item.product_description || '',
+                            referenc: '',
+                            mark: item.product_mark || '',
+                            model: '',
+                            amount: qty,
+                            store: storeList && storeList.length ? String(storeList[0]) : '00',
+                            locations: '00',
+                            unit: unitParsed,
+                            conversion_factor: convFactor,
+                            unit_type: 0,
+                            unitary_cost: cost,
+                            sale_tax: '00',
+                            sale_aliquot: 0,
+                            buy_tax: '01',
+                            buy_aliquot: 0,
+                            price: 0,
+                            type_price: 0,
+                            percent_discount: 0,
+                            discount: 0,
+                            product_type: 'T',
+                            total_net_cost: lineTotal,
+                            total_tax_cost: 0,
+                            total_cost: lineTotal,
+                            total_net_gross: lineTotal,
+                            total_tax_gross: 0,
+                            total_gross: lineTotal,
+                            total_net: lineTotal,
+                            total_tax: 0,
+                            total: lineTotal,
+                            description: '',
+                            technician: '00',
+                            coin_code: coinCode,
+                            total_weight: 0,
+                            unit_desc: opt ? opt.textContent || '' : ''
+                        });
+                    });
+
+                    if (details.length === 0) {
+                        alert('No hay productos válidos (cantidad > 0) para guardar.');
+                        return;
+                    }
+
+                    // Totales del header
+                    header.total_amount = grandTotal;
+                    header.total_details = grandTotal;
+                    header.total_net_details = grandTotal;
+                    header.total_net = grandTotal;
+                    header.total = grandTotal;
+                    header.total_operation = grandTotal;
+
+                    const payload = { ...header, details };
+
+                    // Enviar al backend
+                    const resp = await fetch('/shopping/api/shopping/operation/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data && data.ok) {
+                        alert(`Orden guardada. ID: ${data.message}`);
+                        // Opcional: limpiar selección y recomputar
+                        // selectedIndices.clear();
+                        // computeAndRenderPurchaseSummary();
+                    } else {
+                        alert(`Error al guardar: ${data && data.error ? data.error : 'Error desconocido'}`);
+                    }
+                } catch (err) {
+                    console.error('Error al guardar orden:', err);
+                    alert('Error inesperado al guardar la orden.');
+                }
+            });
+        }
+    })();
+</script>
+
+<!-- Modal Script: abrir/cerrar y tecla ESC para resumen -->
+<script>
+    (function () {
+        const modal = document.getElementById('purchase-summary-modal');
+        const dialog = document.getElementById('purchase-summary-dialog');
+        const closeBtn = document.getElementById('purchase-summary-close');
+        const content = document.getElementById('purchase-summary-content');
+
+        const style = document.createElement('style');
+        style.textContent = `
+        #purchase-summary-modal { opacity: 0; transition: opacity 200ms ease; }
+        #purchase-summary-modal.modal-show { opacity: 1; }
+        #purchase-summary-dialog { transform: scale(0.98); opacity: 0; transition: transform 200ms ease, opacity 200ms ease; }
+        #purchase-summary-dialog.dialog-show { transform: scale(1); opacity: 1; }
+        `;
+        document.head.appendChild(style);
+
+        function openPurchaseSummaryModal(htmlContent) {
+            if (content) {
+                content.innerHTML = htmlContent || '';
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    modal.classList.add('modal-show');
+                    if (dialog) dialog.classList.add('dialog-show');
+                });
+            }
+        }
+
+        function closePurchaseSummaryModal() {
+            if (modal) {
+                modal.classList.remove('modal-show');
+                if (dialog) dialog.classList.remove('dialog-show');
+                const onEnd = () => {
+                    modal.classList.add('hidden');
+                    modal.removeEventListener('transitionend', onEnd);
+                };
+                modal.addEventListener('transitionend', onEnd, { once: true });
+            }
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closePurchaseSummaryModal);
+        }
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closePurchaseSummaryModal();
+                }
+            });
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (modal && !modal.classList.contains('hidden')) {
+                    closePurchaseSummaryModal();
+                }
+            }
+        });
+
+        window.openPurchaseSummaryModal = openPurchaseSummaryModal;
+        window.closePurchaseSummaryModal = closePurchaseSummaryModal;
+    })();
+</script>
+</script>
+
+<!-- Modal Script: abrir/cerrar y tecla ESC -->
+<script>
+    (function () {
+        const modal = document.getElementById('product-detail-modal');
+        const dialog = document.getElementById('product-detail-dialog');
+        const closeBtn = document.getElementById('product-detail-close');
+        const content = document.getElementById('product-detail-content');
+
+        // Animaciones suaves para overlay y diálogo
+        const style = document.createElement('style');
+        style.textContent = `
+        #product-detail-modal { opacity: 0; transition: opacity 200ms ease; }
+        #product-detail-modal.modal-show { opacity: 1; }
+        #product-detail-dialog { transform: scale(0.98); opacity: 0; transition: transform 200ms ease, opacity 200ms ease; }
+        #product-detail-dialog.dialog-show { transform: scale(1); opacity: 1; }
+        `;
+        document.head.appendChild(style);
+
+        function openProductDetailModal(htmlContent) {
+            if (content) {
+                content.innerHTML = htmlContent || '';
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Forzar animación en el siguiente frame
+                requestAnimationFrame(() => {
+                    modal.classList.add('modal-show');
+                    if (dialog) dialog.classList.add('dialog-show');
+                });
+            }
+        }
+
+        function closeProductDetailModal() {
+            if (modal) {
+                modal.classList.remove('modal-show');
+                if (dialog) dialog.classList.remove('dialog-show');
+                const onEnd = () => {
+                    modal.classList.add('hidden');
+                    modal.removeEventListener('transitionend', onEnd);
+                };
+                modal.addEventListener('transitionend', onEnd, { once: true });
+            }
+        }
+
+        // Cerrar con botón de cerrar
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeProductDetailModal);
+        }
+
+        // Cerrar al hacer click en el fondo (fuera del diálogo)
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closeProductDetailModal();
+                }
+            });
+        }
+
+        // Cerrar con tecla ESCAPE
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeProductDetailModal();
+                }
+            }
+        });
+
+        // Exponer funciones globalmente para uso externo
+        window.openProductDetailModal = openProductDetailModal;
+        window.closeProductDetailModal = closeProductDetailModal;
+    })();
+</script>
+<style>
+    /* Reducción de fuente para toda la vista auto-order */
+    #auto-order-page { font-size: 12px !important; }
+    #auto-order-page table,
+    #auto-order-page th,
+    #auto-order-page td,
+    #auto-order-page h1,
+    #auto-order-page h2,
+    #auto-order-page h3,
+    #auto-order-page p,
+    #auto-order-page label,
+    #auto-order-page .text-xs,
+    #auto-order-page .text-sm,
+    #auto-order-page .text-base,
+    #auto-order-page .text-lg,
+    #auto-order-page .text-xl,
+    #auto-order-page .text-2xl { font-size: 12px !important; }
+
+    #auto-order-page input,
+    #auto-order-page select,
+    #auto-order-page button,
+    #auto-order-page textarea { font-size: 12px !important; }
+
+    /* Separadores de columnas y filas para mejor legibilidad */
+    #auto-order-page table thead th,
+    #auto-order-page table tbody td {
+        border-right: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    #auto-order-page table thead th:last-child,
+    #auto-order-page table tbody td:last-child {
+        border-right: none;
+    }
+    #auto-order-page table tbody tr {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Hover más oscuro en filas */
+    #auto-order-page table tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.07) !important;
+    }
+
+    /* Columna Fecha: sin salto de línea y ancho según contenido */
+    #auto-order-page .fecha-cell { white-space: nowrap; }
+    #auto-order-page col.fecha-col { width: 1%; }
+</style>
 {% endblock %}

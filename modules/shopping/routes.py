@@ -27,7 +27,7 @@ from modules.shopping.services.shoppingDb import (
     save_shopping_operation_detail,
     get_coins,
     create_product,
-    get_products_history_by_provider
+    get_products_history_by_provider,
 )
 
 shopping_bp = Blueprint('shopping', __name__, template_folder='templates', url_prefix='/shopping') 
@@ -76,6 +76,15 @@ def api_products_history_by_provider(provider_code):
             # Esto es solo un placeholder, la lógica real puede ser más compleja
             p['suggested_quantity'] = 0 
             
+        # --- NUEVO: Guardar en sesión ---
+        # Convertimos la lista en un diccionario indexado por código de producto
+        # para recuperarlo fácilmente en el guardado.
+        products_map = {p['product_code']: p for p in products if 'product_code' in p}
+        session['current_auto_order_products'] = products_map
+        session.modified = True
+        print(f"--- DEBUG: {len(products_map)} productos guardados en sesión ---")
+        # --------------------------------
+
         return jsonify({'ok': True, 'items': products})
     except Exception as e:
         print(f"Error getting product history: {e}")
@@ -233,6 +242,10 @@ def api_save_shopping_operation():
         if not data:
             return jsonify({'ok': False, 'error': 'No JSON data received'}), 400
 
+        # --- NUEVO: Recuperar datos de la sesión ---
+        cached_products = session.get('current_auto_order_products', {})
+        # -------------------------------------------
+
         # 2. Separar Header y Details
         details_data = data.get('details', [])
         
@@ -273,6 +286,24 @@ def api_save_shopping_operation():
             # Limpiar datos del item
             item_clean = item.copy()
             
+            # --- NUEVO: Rellenar datos desde la sesión ---
+            product_code = item_clean.get('code_product')
+            if product_code and product_code in cached_products:
+                cached_item = cached_products[product_code]
+                
+                # Aquí rellenamos los datos que faltan o aseguramos la integridad
+                # Si el frontend no envió descripción, marca o modelo, los tomamos del cache
+                if not item_clean.get('description_product'):
+                    item_clean['description_product'] = cached_item.get('product_description', '')
+                
+                if not item_clean.get('mark'):
+                    item_clean['mark'] = cached_item.get('product_mark', '')
+                
+                # Puedes agregar más campos aquí si es necesario, por ejemplo:
+                # item_clean['model'] = cached_item.get('product_model', '')
+                # item_clean['referenc'] = cached_item.get('product_reference', '')
+            # ---------------------------------------------
+
             # Remover campos de UI que no están en el dataclass
             if 'unit_desc' in item_clean:
                 del item_clean['unit_desc']

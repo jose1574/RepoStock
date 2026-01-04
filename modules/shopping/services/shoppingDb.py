@@ -747,6 +747,7 @@ def get_products_history_by_provider(provider_code: str) -> list[dict]:
             LEFT JOIN products as p ON (p.code = pv.product_code)
             LEFT JOIN department as d ON (d.code = p.department)
             WHERE pv.rn = 1
+            AND p.status = '01'
             ORDER BY p.code
         """
 
@@ -829,12 +830,50 @@ def get_products_history_by_provider(provider_code: str) -> list[dict]:
                     params_by_code[p_code_val] = []
                 params_by_code[p_code_val].append(d)
 
+          # devuelve las compras relacionadas al producto con otros proveedores
+        sql_product_in_order = """
+            select 
+            pp.product_code,
+            so.document_no,
+            so.emission_date,
+            so.provider_code,
+            so.provider_name,
+            pp.amount,
+            pp.unitary_cost
+            from shopping_operation as so
+            left join products_provider as pp on (pp.document_no = so.document_no )
+            where so.operation_type = 'ORDER'
+            and pp.product_code IN %s
+            order by so.document_no desc
+            """
+        cur.execute(sql_product_in_order, (product_codes_tuple,))
+        order_rows = cur.fetchall()
+        order_cols = [desc[0] for desc in cur.description]
+
+        product_in_order = {}
+        for row in order_rows: 
+            d = dict(zip(order_cols, row))
+            p_code_val = d.get('product_code')
+            if p_code_val:
+                if p_code_val not in product_in_order:
+                    product_in_order[p_code_val] = []
+                product_in_order[p_code_val].append(d)
+
         # 3. Asignar detalles a cada producto
         for product in products_provider_list:
             code = product.get('product_code')
             product['stocks'] = stocks_by_code.get(code, [])
             product['units'] = units_by_code.get(code, [])
             product['parameters'] = params_by_code.get(code, [])
+            product['product_in_order'] = product_in_order.get(code, [])
+
+        
+
+      
+
+
+
+
 
         return products_provider_list
 
@@ -870,6 +909,8 @@ def get_stores() -> list[dict]:
         return []
     finally:
         close_connection(conn)
+         
+
 
 def get_products_history_by_product_code(product_code: str) -> Optional[dict]:
     """
@@ -924,12 +965,14 @@ def get_products_history_by_product_code(product_code: str) -> Optional[dict]:
             ORDER BY pv.emission_date DESC
             LIMIT 1
         """
+
+        
+
         cur.execute(sql_last_purchase, (main_code,))
         last_purchase_row = cur.fetchone()
         if last_purchase_row:
             last_cols = [desc[0] for desc in cur.description]
             product_info.update(dict(zip(last_cols, last_purchase_row)))
-
         # Stock por tienda
         sql_stocks = """
             SELECT 
@@ -944,7 +987,8 @@ def get_products_history_by_product_code(product_code: str) -> Optional[dict]:
         cur.execute(sql_stocks, (main_code,))
         stock_rows = cur.fetchall()
         stock_cols = [desc[0] for desc in cur.description]
-        product_info["stocks"] = [dict(zip(stock_cols, r)) for r in stock_rows]
+        product_info["stocks"] = [dict(zip(stock_cols, r)) for r in stock_rows]    
+
 
         # Unidades configuradas
         sql_units = """
@@ -1000,5 +1044,6 @@ __all__ = [
     "get_products_history_by_provider",
     "get_products_history_by_product_code",
     "get_stores",
+    "get_product_in_order_by_code",
 ]
 

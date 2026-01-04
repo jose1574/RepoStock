@@ -423,7 +423,7 @@ def login():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=os.environ.get("APP_PORT", 5002))
+    app.run(debug=True, host="127.0.0.1", port=os.environ.get("APP_PORT", 5002))
 #    Servidor WSGI de producción (waitress) si está disponible; si no, fallback a Flask
     # host = os.environ.get("REPOSTOCK_HOST", "0.0.0.0")
     # try:
