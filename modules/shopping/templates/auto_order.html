@@ -48,30 +48,45 @@
             </div>
             <p class="text-center text-sm font-medium text-gray-600 mt-2 animate-pulse">Buscando productos, por favor
                 espere...</p>
-            <style>
-                @keyframes indeterminate {
-                    0% {
-                        left: -35%;
-                        width: 35%;
-                    }
-
-                    60% {
-                        left: 100%;
-                        width: 10%;
-                    }
-
-                    100% {
-                        left: 100%;
-                        width: 10%;
-                    }
-                }
-
-                .progress-bar-value {
-                    animation: indeterminate 1.5s infinite linear;
-                }
-            </style>
         </div>
     </div>
+
+    <style>
+        @keyframes indeterminate {
+            0% {
+                left: -35%;
+                width: 35%;
+            }
+
+            60% {
+                left: 100%;
+                width: 10%;
+            }
+
+            100% {
+                left: 100%;
+                width: 10%;
+            }
+        }
+
+        .progress-bar-value {
+            animation: indeterminate 1.5s infinite linear;
+        }
+
+        /* Estilo para resaltar errores en cantidad */
+        .purchase-qty-input.qty-error {
+            border-color: #fca5a5; /* Rojo suave constante para que se note algo */
+            transition: all 0.2s ease;
+        }
+
+        .purchase-qty-input.qty-error:hover, 
+        .purchase-qty-input.qty-error:focus {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+            outline: none;
+        }
+    </style>
 
     <!-- Products Table (Hidden initially) -->
     <div id="products-table-container" class="hidden mt-6 bg-white rounded-lg shadow border border-gray-200">
@@ -514,6 +529,7 @@
         if (typeof openProviderModal === 'function') {
             openProviderModal((provider) => {
                 selectedProvider = provider;
+                selectedIndices.clear();
                 providerInput.value = provider.provider_code;
                 providerNameDisplay.value = provider.provider_name;
                 loadBtn.disabled = false;
@@ -625,20 +641,7 @@
         }
         const selectedStores = getSelectedStores();
 
-        // 1. Preservar selección actual por código antes de reordenar
-        const selectedCodes = new Set();
-        if (selectedIndices) {
-            // Nota: items suele ser la misma referencia que currentItems, pero usamos items por seguridad
-            // Sin embargo, selectedIndices se basa en el estado ANTERIOR de items.
-            // Si items ya viene reordenado (no debería si es la primera vez), esto podría fallar si no tenemos cuidado.
-            // Asumimos que selectedIndices es válido para el estado actual de items antes del sort.
-            selectedIndices.forEach(idx => {
-                const it = items[idx]; 
-                if (it && it.product_code) selectedCodes.add(it.product_code);
-            });
-        }
-
-        // 2. Calcular stock actual para cada item y guardarlo temporalmente
+        // 1. Calcular stock actual para cada item y guardarlo temporalmente
         items.forEach(item => {
             let currentStock = 0;
             if (item.stocks && Array.isArray(item.stocks)) {
@@ -653,16 +656,8 @@
             item._calculatedStock = currentStock;
         });
 
-        // 3. Ordenar items de menor a mayor existencia actual
+        // 2. Ordenar items de menor a mayor existencia actual
         items.sort((a, b) => a._calculatedStock - b._calculatedStock);
-
-        // 4. Reconstruir selectedIndices con los nuevos índices
-        selectedIndices.clear();
-        items.forEach((item, idx) => {
-            if (selectedCodes.has(item.product_code)) {
-                selectedIndices.add(idx);
-            }
-        });
 
         const rowsHtml = [];
         const hiddenIndices = [];
@@ -691,9 +686,9 @@
             // Ocultar solo si existe configuración de stock máximo (> 0) y la existencia actual lo supera
             const maxNum = Number(maxStock);
             const curNum = Number(currentStock);
-            if (isFinite(maxNum) && maxNum > 0 && isFinite(curNum) && curNum > maxNum) {
+            const isOverMax = isFinite(maxNum) && maxNum > 0 && isFinite(curNum) && curNum > maxNum;
+            if (isOverMax) {
                 hiddenIndices.push(i);
-                continue;
             }
 
             const suggestedQuantity = Math.max(0, Number(maxStock) - Number(currentStock));
@@ -702,8 +697,14 @@
             const hasOtherProviders = Array.isArray(item.product_in_order) && item.product_in_order.length > 0;
             const rowHighlightClass = (item.highlight || hasOtherProviders) ? 'bg-yellow-100' : '';
             rowsHtml.push(`
-            <tr class="hover:bg-gray-50 ${rowHighlightClass}" data-department="${deptVal}" data-brand="${brandVal}" data-code="${item.product_code}" data-desc="${item.product_description}">
-                <td class="px-4 py-3 text-center"><input type="checkbox" class="select-product" value="${item.product_code}" data-index="${i}" ${selectedIndices.has(i) ? 'checked' : ''}></td>
+            <tr class="hover:bg-gray-50 ${rowHighlightClass}" 
+                data-department="${deptVal}" 
+                data-brand="${brandVal}" 
+                data-code="${item.product_code}" 
+                data-desc="${item.product_description}"
+                data-over-max="${isOverMax}"
+                style="display: ${isOverMax ? 'none' : ''}">
+                <td class="px-4 py-3 text-center"><input type="checkbox" class="select-product" value="${item.product_code}" data-index="${i}" ${selectedIndices.has(item.product_code) ? 'checked' : ''}></td>
                 <td class="px-4 py-3">
                     <button type="button" class="product-detail-link text-blue-600 hover:underline" data-code="${item.product_code}">${item.product_description} (${item.product_code})</button>
                 </td>
@@ -718,12 +719,13 @@
                             const defaultIdx = units.findIndex(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)));
                             const selectedIdx = defaultIdx >= 0 ? defaultIdx : 0;
                             const options = units.map((u, ui) => {
-                                const text = (u && (u.unit_description || u.description || u.unit || u.unit_name)) || '';
-                                const value = (u && (u.unit_code || u.unit || text)) || '';
+                                const text = (u && (u.unit_description)) || '';
+                                // Asegurar que value sea el correlativo numérico o string vacío si no existe
+                                const value = (u && u.correlative !== undefined && u.correlative !== null) ? u.correlative : '';
                                 const factor = (u && u.conversion_factor != null) ? u.conversion_factor : 1;
                                 const cost = (u && u.unitary_cost != null) ? u.unitary_cost : '';
                                 const sel = ui === selectedIdx ? 'selected' : '';
-                                return `<option value="${String(value)}" data-factor="${String(factor)}" data-cost="${String(cost)}" ${sel}>${String(text)}</option>`;
+                                return `<option value="${value}" data-factor="${String(factor)}" data-cost="${String(cost)}" ${sel}>${String(text)}</option>`;
                             }).join('');
                             return `<select class="unit-select border rounded px-2 py-1 text-sm" data-index="${i}">${options}</select>`;
                         } catch (e) {
@@ -802,8 +804,6 @@
         } else {
             tableBody.innerHTML = rowsHtml.join('');
         }
-        // Limpiar selecciones de los índices ocultos
-        hiddenIndices.forEach(idx => selectedIndices.delete(idx));
         attachRowSelectionHandlers();
         // Mostrar/actualizar resumen de compra
         try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
@@ -841,11 +841,12 @@
         }
         rowCbs.forEach(cb => {
             cb.addEventListener('change', () => {
+                const code = cb.value;
                 const idx = Number(cb.dataset.index);
                 if (cb.checked) {
-                    selectedIndices.add(idx);
+                    selectedIndices.add(code);
                 } else {
-                    selectedIndices.delete(idx);
+                    selectedIndices.delete(code);
                 }
                 // Recalcular resumen
                 try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
@@ -868,9 +869,9 @@
                 const visibleCbs = getVisibleRowCheckboxes();
                 visibleCbs.forEach(cb => {
                     cb.checked = check;
-                    const idx = Number(cb.dataset.index);
-                    if (check) selectedIndices.add(idx);
-                    else selectedIndices.delete(idx);
+                    const code = cb.value;
+                    if (check) selectedIndices.add(code);
+                    else selectedIndices.delete(code);
                 });
                 // Recalcular resumen
                 try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
@@ -886,28 +887,14 @@
                 const idx = Number(btn.getAttribute('data-index'));
                 if (!Number.isFinite(idx)) return;
                 if (Array.isArray(currentItems)) {
-                    // 1. Guardar códigos de productos seleccionados antes de eliminar
-                    const selectedCodes = new Set();
-                    if (selectedIndices) {
-                        selectedIndices.forEach(i => {
-                            const it = currentItems[i];
-                            if (it && it.product_code) selectedCodes.add(it.product_code);
-                        });
+                    const itemToRemove = currentItems[idx];
+                    if (itemToRemove) {
+                        selectedIndices.delete(itemToRemove.product_code);
                     }
 
                     // 2. Eliminar del arreglo principal
                     currentItems = currentItems.filter((_, i) => i !== idx);
                     
-                    // 3. Limpiar selección (índices cambian tras eliminar)
-                    selectedIndices.clear();
-
-                    // 4. Restaurar selección basada en códigos
-                    currentItems.forEach((item, newIdx) => {
-                        if (selectedCodes.has(item.product_code)) {
-                            selectedIndices.add(newIdx);
-                        }
-                    });
-
                     // Re-render y re-aplicar filtros activos
                     renderTable(currentItems);
                     try { filterRows(); } catch (e) { }
@@ -953,8 +940,25 @@
         // Cambios en cantidad y costo de compra
         const qtyInputs = document.querySelectorAll('.purchase-qty-input');
         qtyInputs.forEach(inp => {
-            inp.addEventListener('input', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
-            inp.addEventListener('change', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+            const updateError = () => {
+                const val = Number(inp.value);
+                if (val <= 0) inp.classList.add('qty-error');
+                else inp.classList.remove('qty-error');
+            };
+            inp.addEventListener('input', () => { 
+                try { sanitizeNonNegative(inp); } catch (e) {} 
+                try { updateError(); } catch (e) {}
+                try { computeAndRenderPurchaseSummary(); } catch (e) {} 
+                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} 
+            });
+            inp.addEventListener('change', () => { 
+                try { sanitizeNonNegative(inp); } catch (e) {} 
+                try { updateError(); } catch (e) {}
+                try { computeAndRenderPurchaseSummary(); } catch (e) {} 
+                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} 
+            });
+            // Verificación inicial
+            updateError();
         });
         const costInputs = document.querySelectorAll('.purchase-cost-input');
         costInputs.forEach(inp => {
@@ -1144,10 +1148,12 @@
                 const rowBrand = normalizeText(row.getAttribute('data-brand'));
                 const code = normalizeText(row.getAttribute('data-code'));
                 const desc = normalizeText(row.getAttribute('data-desc'));
+                const isOverMax = row.getAttribute('data-over-max') === 'true';
+
                 const matchesDept = (depts.length === 0) || depts.includes(rowDept);
                 const matchesBrand = (brands.length === 0) || brands.includes(rowBrand);
                 const matchesQuery = !q || code.includes(q) || desc.includes(q);
-                row.style.display = (matchesDept && matchesBrand && matchesQuery) ? '' : 'none';
+                row.style.display = (matchesDept && matchesBrand && matchesQuery && !isOverMax) ? '' : 'none';
             });
             // Actualizar el estado del checkbox "Seleccionar todos" considerando solo filas visibles
             const selectAllCb = document.getElementById('select-all-products');
@@ -1215,12 +1221,15 @@
             let totalQty = 0;
             let totalAmount = 0;
 
-            selectedIndices.forEach(idx => {
+            selectedIndices.forEach(code => {
+                const row = document.querySelector(`#products-table-body tr[data-code="${code}"]`);
+                if (!row) return;
+                const idx = row.querySelector('.select-product').dataset.index;
                 const item = currentItems[idx];
                 if (!item) return;
-                const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
-                const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
-                const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                const qtyInput = row.querySelector('.purchase-qty-input');
+                const costInput = row.querySelector('.purchase-cost-input');
+                const unitSel = row.querySelector('.unit-select');
                 const unitText = unitSel ? unitSel.options[unitSel.selectedIndex].textContent : (getDefaultUnit(item) || '');
                 const qty = qtyInput ? Number(qtyInput.value) : 0;
                 const cost = costInput ? Number(costInput.value) : 0;
@@ -1272,12 +1281,15 @@
             }
             const rows = [];
             let totalProducts = 0, totalQty = 0, totalAmount = 0;
-            selectedIndices.forEach(idx => {
+            selectedIndices.forEach(code => {
+                const row = document.querySelector(`#products-table-body tr[data-code="${code}"]`);
+                if (!row) return;
+                const idx = row.querySelector('.select-product').dataset.index;
                 const item = currentItems[idx];
                 if (!item) return;
-                const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
-                const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
-                const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                const qtyInput = row.querySelector('.purchase-qty-input');
+                const costInput = row.querySelector('.purchase-cost-input');
+                const unitSel = row.querySelector('.unit-select');
                 const unitText = unitSel ? unitSel.options[unitSel.selectedIndex].textContent : (getDefaultUnit(item) || '');
                 const qty = qtyInput ? Number(qtyInput.value) : 0;
                 const cost = costInput ? Number(costInput.value) : 0;
@@ -1372,121 +1384,62 @@
                     const provider = selectedProviderDetails || selectedProvider || {};
                     const storeList = getSelectedStores();
                     const header = {
-                        correlative: 0,
-                        operation_type: 'ORDER',
-                        document_no: '',
-                        control_no: '',
-                        // Las fechas se asignan en backend si faltan
-                        provider_code: provider.provider_code || provider.code || '',
-                        provider_name: provider.provider_name || provider.description || '',
-                        provider_id: provider.provider_id || '',
-                        provider_address: provider.address || '',
-                        provider_phone: provider.provider_phone || provider.phone || '',
+                        provider_code: provider.provider_code,
                         credit_days: creditDays,
-                        expiration_date: '',
-                        wait: false,
-                        description: 'Orden de compra automática',
-                        store: storeList && storeList.length ? String(storeList[0]) : '00',
-                        locations: '00',
-                        user_code: '00',
-                        station: '00',
-                        percent_discount: 0,
-                        discount: 0,
-                        percent_freight: 0,
-                        freight: 0,
-                        freight_tax: '00',
-                        freight_aliquot: 0,
-                        credit: 0,
-                        cash: 0,
-                        operation_comments: '',
-                        pending: true,
-                        buyer: '',
-                        total_amount: 0,
-                        total_net_details: 0,
-                        total_tax_details: 0,
-                        total_details: 0,
-                        total_net: 0,
-                        total_tax: 0,
-                        total: 0,
-                        total_retention_tax: 0,
-                        total_retention_municipal: 0,
-                        total_retention_islr: 0,
-                        total_operation: 0,
-                        retention_tax_prorration: 0,
-                        retention_islr_prorration: 0,
-                        retention_municipal_prorration: 0,
                         coin_code: coinCode,
-                        free_tax: false,
-                        total_exempt: 0,
-                        secondary_coin: coinCode,
-                        base_igtf: 0,
-                        percent_igtf: 0,
-                        igtf: 0,
                     };
 
                     // Construir detalles
                     const details = [];
                     let lineNo = 1;
                     let grandTotal = 0;
-                    selectedIndices.forEach(idx => {
+
+                    for (const code of selectedIndices) {
+                        const row = document.querySelector(`#products-table-body tr[data-code="${code}"]`);
+                        if (!row) continue;
+                        const idx = row.querySelector('.select-product').dataset.index;
                         const item = Array.isArray(currentItems) ? currentItems[idx] : null;
-                        if (!item) return;
-                        const qtyInput = document.querySelector(`.purchase-qty-input[data-index="${idx}"]`);
-                        const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
-                        const unitSel = document.querySelector(`.unit-select[data-index="${idx}"]`);
+                        if (!item) continue;
+
+                        const qtyInput = row.querySelector('.purchase-qty-input');
+                        const costInput = row.querySelector('.purchase-cost-input');
+                        const unitSel = row.querySelector('.unit-select');
                         const qty = qtyInput ? Number(qtyInput.value || 0) : 0;
                         const cost = costInput ? Number(costInput.value || 0) : 0;
-                        if (!isFinite(qty) || qty <= 0) return;
+
+                        if (!isFinite(qty) || qty <= 0) {
+                            alert(`El producto "${item.product_description || item.product_code}" tiene una cantidad inválida (debe ser mayor a 0).`);
+                            return;
+                        }
+
                         const opt = unitSel ? unitSel.options[unitSel.selectedIndex] : null;
                         const unitValRaw = opt ? (opt.value || '') : '';
                         const convFactorRaw = opt ? opt.getAttribute('data-factor') : '1';
                         const convFactor = (() => { const v = Number(convFactorRaw); return isFinite(v) && v > 0 ? v : 1; })();
-                        const unitParsed = (() => { const n = parseInt(unitValRaw, 10); return isFinite(n) ? n : 0; })();
+                        // Si unitValRaw es vacío, unitParsed será NaN, lo convertimos a null o 0 según requiera el backend
+                        const unitParsed = unitValRaw !== '' ? parseInt(unitValRaw, 10) : null;
                         const lineTotal = qty * cost;
                         grandTotal += lineTotal;
 
                         details.push({
-                            line: lineNo++,
                             code_product: item.product_code || '',
-                            description_product: item.product_description || '',
-                            referenc: '',
-                            mark: item.product_mark || '',
-                            model: '',
                             amount: qty,
-                            store: storeList && storeList.length ? String(storeList[0]) : '00',
-                            locations: '00',
-                            unit: unitParsed,
-                            conversion_factor: convFactor,
-                            unit_type: 0,
+                            unit: unitParsed, // Puede ser null si no hay unidad seleccionada
                             unitary_cost: cost,
-                            sale_tax: '00',
-                            sale_aliquot: 0,
-                            buy_tax: '01',
-                            buy_aliquot: 0,
-                            price: 0,
-                            type_price: 0,
-                            percent_discount: 0,
-                            discount: 0,
-                            product_type: 'T',
                             total_net_cost: lineTotal,
-                            total_tax_cost: 0,
                             total_cost: lineTotal,
                             total_net_gross: lineTotal,
-                            total_tax_gross: 0,
                             total_gross: lineTotal,
                             total_net: lineTotal,
-                            total_tax: 0,
                             total: lineTotal,
-                            description: '',
-                            technician: '00',
                             coin_code: coinCode,
-                            total_weight: 0,
                             unit_desc: opt ? opt.textContent || '' : ''
                         });
-                    });
+                        console.log('Detalle agregado:', details[details.length - 1]);
+                    }
 
                     if (details.length === 0) {
-                        alert('No hay productos válidos (cantidad > 0) para guardar.');
+                        alert('No hay productos seleccionados para guardar.');
                         return;
                     }
 

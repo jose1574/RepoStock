@@ -212,6 +212,7 @@ def save_shopping_operation_detail(data: SetShoppingOperationDetailData) -> None
                 %s, %s, %s, %s, %s, %s, %s
             );
         """
+        print("Saving shopping operation detail with data:", data)
         params = (
             data.main_correlative,
             data.line,
@@ -221,8 +222,8 @@ def save_shopping_operation_detail(data: SetShoppingOperationDetailData) -> None
             data.mark,
             data.model,
             data.amount,
-            data.store or '00',
-            data.locations or '00',
+            data.store,
+            data.locations,
             data.unit,
             data.conversion_factor,
             data.unit_type,
@@ -238,7 +239,7 @@ def save_shopping_operation_detail(data: SetShoppingOperationDetailData) -> None
             data.total_net,
             data.total_tax,
             data.total,
-            data.coin_code or '02',
+            data.coin_code,
             False # change_price
         )
         cur.execute(sql, params)
@@ -1025,6 +1026,48 @@ def get_products_history_by_product_code(product_code: str) -> Optional[dict]:
     finally:
         close_connection(conn)
 
+# devuelve una lista de productos
+def get_products_by_codes_list(product_codes: list[str]) -> list[dict]:
+    """Obtiene detalles completos de una lista de productos por sus códigos."""
+    if not product_codes:
+        return []
+
+    conn = get_connection()
+    try:
+        cur = None
+        try:
+            import psycopg2.extras as _extras
+
+            # Check if conn supports cursor_factory (psycopg2 connection)
+            if hasattr(conn, "cursor"):
+                cur = conn.cursor(cursor_factory=_extras.RealDictCursor)
+        except Exception:
+            pass
+
+        if cur is None:
+            cur = conn.cursor()
+
+        # Construir la consulta con IN y los placeholders necesarios
+        placeholders = ','.join(['%s'] * len(product_codes))
+        sql = f"""
+            select 
+            p.*
+            from products as p 
+            where p.code IN ({placeholders})
+            """
+        cur.execute(sql, tuple(product_codes))
+        rows = cur.fetchall()
+
+        # Convert to dicts if necessary
+        if rows and isinstance(rows[0], tuple):
+            columns = [desc[0] for desc in cur.description]
+            return [dict(zip(columns, row)) for row in rows]
+
+        return rows
+    finally:
+        close_connection(conn)
+
+
 __all__ = [
     "get_db_connection",
     "execute_query",
@@ -1045,5 +1088,6 @@ __all__ = [
     "get_products_history_by_product_code",
     "get_stores",
     "get_product_in_order_by_code",
+    "get_products_by_codes_list",
 ]
 
