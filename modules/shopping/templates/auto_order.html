@@ -280,7 +280,7 @@
         </div>
         <!-- Purchase Summary Section -->
         <div id="purchase-summary-container" class="mt-4 bg-white rounded-lg shadow border border-gray-200 hidden">
-            <div class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
+            <div id="shopping-detail" class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
                 <h2 id="purchase-summary-panel-title" class="text-base font-semibold text-gray-700">Detalle de la compra</h2>
                 <div class="flex gap-6 text-sm">
                     <span class="text-gray-700">Productos seleccionados: <strong id="total-selected-products-count">0</strong></span>
@@ -288,12 +288,13 @@
                     <span class="text-gray-700">Total de la compra: <strong id="total-purchase-amount">0.00</strong></span>
                 </div>
             </div>
-            <div class="p-4 overflow-x-auto">
+            <div class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
                 <table class="w-full text-sm text-left">
                     <colgroup>
                         <col style="width: 18%">
                         <col>
                         <col style="width: 10%">
+                        <col style="width: 12%">
                         <col style="width: 12%">
                         <col style="width: 12%">
                     </colgroup>
@@ -303,6 +304,7 @@
                             <th class="px-4 py-2">Descripción</th>
                             <th class="px-4 py-2 text-center">Unidad</th>
                             <th class="px-4 py-2 text-right">Cantidad</th>
+                            <th class="px-4 py-2 text-right">Costo</th>
                             <th class="px-4 py-2 text-right">Subtotal</th>
                         </tr>
                     </thead>
@@ -332,14 +334,14 @@
 
 <!-- Purchase Summary Modal -->
 <div id="purchase-summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.18);">
-    <div id="purchase-summary-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4" role="dialog" aria-modal="true" aria-labelledby="purchase-summary-title">
+    <div id="purchase-summary-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4" role="dialog" aria-modal="true" aria-labelledby="purchase-summary-title" style="max-height: 80vh; display: flex; flex-direction: column;">
         <div class="flex items-center justify-between p-3 border-b">
             <h3 id="purchase-summary-title" class="text-base font-semibold text-gray-800">Detalle de la compra</h3>
             <button id="purchase-summary-close" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Cerrar">
                 <span class="text-2xl leading-none">&times;</span>
             </button>
         </div>
-        <div id="purchase-summary-content" class="p-4">
+        <div id="purchase-summary-content" class="p-4" style="overflow-y: auto;">
             <!-- Contenido del detalle de compra se insertará aquí -->
         </div>
     </div>
@@ -1254,13 +1256,14 @@
                     desc: item.product_description,
                     unit: unitText,
                     qty: qty,
+                    cost: cost,
                     subtotal: subtotal
                 });
             });
 
             // Pintar tabla
             if (rowsData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No hay productos seleccionados</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No hay productos seleccionados</td></tr>';
             } else {
                 tbody.innerHTML = rowsData.map(r => `
                     <tr>
@@ -1268,6 +1271,7 @@
                         <td class="px-4 py-2">${r.desc || ''}</td>
                         <td class="px-4 py-2 text-center">${r.unit || ''}</td>
                         <td class="px-4 py-2 text-right">${isFinite(r.qty) ? Number(r.qty).toFixed(2) : '0.00'}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(r.cost) ? Number(r.cost).toFixed(2) : '0.00'}</td>
                         <td class="px-4 py-2 text-right">${isFinite(r.subtotal) ? Number(r.subtotal).toFixed(2) : '0.00'}</td>
                     </tr>
                 `).join('');
@@ -1315,24 +1319,26 @@
                         <td class="px-4 py-2">${item.product_description || ''}</td>
                         <td class="px-4 py-2 text-center">${unitText || ''}</td>
                         <td class="px-4 py-2 text-right">${isFinite(qty) ? Number(qty).toFixed(2) : '0.00'}</td>
+                        <td class="px-4 py-2 text-right">${isFinite(cost) ? Number(cost).toFixed(2) : '0.00'}</td>
                         <td class="px-4 py-2 text-right">${isFinite(subtotal) ? Number(subtotal).toFixed(2) : '0.00'}</td>
                     </tr>
                 `);
             });
             const header = `
-                <div class="mb-3 flex gap-6 text-sm">
+                <div id="shopping-detail" class="flex gap-6 text-sm px-4 py-2 bg-white border-b" style="position: sticky; top: 0; z-index: 20;">
                     <span class="text-gray-700">Productos seleccionados: <strong>${String(totalProducts)}</strong></span>
                     <span class="text-gray-700">Cantidad total: <strong>${isFinite(totalQty) ? Number(totalQty).toFixed(2) : '0.00'}</strong></span>
                     <span class="text-gray-700">Total de la compra: <strong>${isFinite(totalAmount) ? Number(totalAmount).toFixed(2) : '0.00'}</strong></span>
                 </div>`;
             const table = `
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-100 text-gray-600 font-medium border-b">
+                    <thead class="bg-gray-100 text-gray-600 font-medium border-b" style="position: sticky; z-index: 10; background-color: #f3f4f6;">
                         <tr>
                             <th class="px-4 py-2">Código</th>
                             <th class="px-4 py-2">Descripción</th>
                             <th class="px-4 py-2 text-center">Unidad</th>
                             <th class="px-4 py-2 text-right">Cantidad</th>
+                            <th class="px-4 py-2 text-right">Costo</th>
                             <th class="px-4 py-2 text-right">Subtotal</th>
                         </tr>
                     </thead>
