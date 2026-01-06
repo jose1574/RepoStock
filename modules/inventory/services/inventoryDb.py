@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from database import get_connection, close_connection
 from modules.inventory.schemas.set_inventory_operation import SetInventoryOperationData
+from modules.inventory.schemas.set_inventory_operation_details import SetInventoryOperationDetailsData
 
 
 @contextmanager
@@ -25,12 +26,12 @@ def get_db_connection():
 
 def save_inventory_operation_header(data: SetInventoryOperationData) -> Any:
     with get_db_connection() as conn:
-        conn = get_db_connection()
+        print("Guardando encabezado de operación de inventario con los siguientes datos:", data)
         try:
             cur = conn.cursor()
             sql = """
                 SELECT set_inventory_operation(
-                    %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
                     %s, %s, %s, %s, %s, %s, %s, %s, %s
                 );
                 """
@@ -63,8 +64,9 @@ def save_inventory_operation_header(data: SetInventoryOperationData) -> Any:
             if result:
                 return result[0]
             return 0
-        finally:
-            conn.close(conn)
+        except Exception as e:
+            conn.rollback()
+            raise e
             
         
 def get_product_s_for_order_collection( store_origin: str, store_destination: str, product_code: Optional[str] = None) -> Sequence[dict[str, Any]]:
@@ -178,6 +180,45 @@ def get_departments() -> Iterable[dict[str, Any]]:
     finally:
         close_connection(conn)
 
+#obtiene una lista de productos por códigos
+def get_products_by_codes(product_codes: list[str]) -> Iterable[dict[str, Any]]:
+    if not product_codes:
+        return []
+    
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            SELECT 
+            p.code,
+            p.description,
+            p.referenc,
+            p.mark,
+            p.model,
+            pu.correlative as unit_correlative,
+            pu.conversion_factor,
+            pu.unit_type,
+            pu.unitary_cost,
+            p.buy_tax,
+            p.aliquot,
+            p.coin
+            FROM products AS p
+            LEFT JOIN department as d on p.department = d.code  
+            LEFT JOIN products_units pu ON p.code = pu.product_code AND pu.main_unit = true
+            LEFT JOIN units u ON pu.unit = u.code 
+            LEFT JOIN marks m ON m.code = p.mark 
+            WHERE p.code = ANY(%s)
+        """
+        cur.execute(sql, (product_codes,))
+        columns = [desc[0] for desc in cur.description]
+        products = [dict(zip(columns, row)) for row in cur.fetchall()]
+        return products
+    except Exception as e:
+        print(f"Error al Buscar Productos por Códigos: {e}")
+        return []
+    finally:
+        close_connection(conn)
+    
 
 def get_marks() -> Iterable[dict[str, Any]]:
     conn = get_connection()
@@ -217,10 +258,131 @@ def get_stores() -> Iterable[dict[str, Any]]:
     finally:
         close_connection(conn)
 
+def get_coins():
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql_coins = """
+            SELECT 
+            * 
+            FROM coin as c
+        """
+        cur.execute(sql_coins)
+        columns = [desc[0] for desc in cur.description]
+        coins = [dict(zip(columns, row)) for row in cur.fetchall()]
+        return coins
+    except Exception as e:
+        print(f"Error al Buscar Monedas: {e}")
+        return []
+    finally:
+        close_connection(conn)
+
+
+# obtiene moneda por defecto
+def get_default_coin() -> str:    
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = "select system_value from system_properties where code = 65"
+        cur.execute(sql)
+        row = cur.fetchone()
+
+        if row and row[0]:
+            return row[0]  # Asumiendo que el código de moneda está en la primera columna
+        return "02"  # Retorna '02' como moneda por defecto si no se encuentra ninguna
+
+    except Exception as e:
+        print(f"Error fetching default coin: {e}")
+        return "02"
+    finally:
+        close_connection(conn)
+
+
+
+
+def save_inventory_operation_details(details: list[SetInventoryOperationDetailsData]) -> None:
+    if not details:
+        return
+
+    with get_db_connection() as conn:
+        try:
+            print(f"Guardando {len(details)} detalles de operación de inventario.")
+            cur = conn.cursor()
+            sql = """
+                SELECT set_inventory_operation_details(
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                    %s, %s, %s
+                );
+            """
+            
+            for d in details:
+                params = (
+                    d.main_correlative,
+                    d.line, 
+                    d.code_product,
+                    d.description_product,
+                    d.referenc,
+                    d.mark,
+                    d.model,
+                    d.amount,
+                    d.store,
+                    d.locations,
+                    d.destination_store,
+                    d.destination_location,
+                    d.unit,
+                    d.conversion_factor,
+                    d.unit_type,
+                    d.unitary_cost,
+                    d.buy_tax,
+                    d.aliquot,
+                    d.total_cost,
+                    d.total_tax,
+                    d.total,
+                    d.coin_code,
+                    d.change_price
+                )
+                cur.execute(sql, params)
+            
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+def get_products_by_codes(codes):
+    conn = get_connection()
+    try:
+        sql = """
+        SELECT 
+        p.*,
+        pu.correlative as unit_correlative,
+        pu.conversion_factor
+        FROM products AS p
+        left join products_units pu on pu.product_code = p.code and pu.main_unit = true
+        WHERE p.code = ANY(%s);
+        """
+        cur = conn.cursor(cursor_factory=None)
+        cur.execute(sql, (codes,))
+        columns = [desc[0] for desc in cur.description]
+        products = [dict(zip(columns, row)) for row in cur.fetchall()]
+        return products
+    except Exception as e:
+        print(f"Error al Buscar Productos por Códigos: {e}")
+        return []
+    finally:
+        close_connection(conn)
+
+
+
 __all__ = [
     "save_inventory_operation_header",
     "get_product_s_for_order_collection",
     "get_departments",
     "get_marks",
     "get_stores",
+    "get_coins",
+    "get_default_coin",
+    "save_inventory_operation_details",
+    "get_products_by_codes",
+    "get_products_by_codes",
 ]

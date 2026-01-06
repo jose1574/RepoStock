@@ -30,10 +30,6 @@
             {% endfor %}
          </select>
       </div>
-      <div id="">
-
-      </div>
-
       <div class="flex items-center">
          <button type="button" id="apply-store-selection"
             class="w-full md:w-auto inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">Aplicar</button>
@@ -47,7 +43,7 @@
    {% endif %}
 
 
-   <div id="content">
+   <div id="content" class="hidden">
 
       <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
       <div class="mb-4 flex items-center gap-3 sticky top-0 z-40 bg-white border-b border-gray-200 py-2">
@@ -125,6 +121,7 @@
          </div>
 
 
+
          <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
          <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
             class="border rounded px-2 py-1 text-sm w-64" />
@@ -135,7 +132,7 @@
                products|length }} </span>
             <span class="text-xs text-gray-500">productos</span>
          </span>
-         <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
+         <!-- Botón que envía al servidor si quieres refinar por departamento en backend
          <form id="server-filter-form" method="post" action="{{ url_for('inventory.auto_collection_order') }}">
             <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
             <input type="hidden" name="store_stock_destination"
@@ -143,12 +140,14 @@
             <select name="department" id="server-department" class="hidden">
                <option value=""></option>
             </select>
-         </form>
+         </form> -->
       </div>
       <!-- Form que envía la selección de productos -->
       <!-- Barra flotante de acciones -->
       <div id="action-bar"
          class="fixed top-16 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
+         <button id="back-to-store-selection" type="button"
+            class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">Cambiar depósitos</button>
          <button id="select-all" type="button"
             class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
          <button id="clear-selection" type="button"
@@ -177,7 +176,7 @@
                      Departamento</th>
                   <th scope="col"
                      class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
-                     Depósito origen: <b>{{ store_origin.description if store_origin else '' }}</b></th>
+                     Depósito origen: <b id="header-store-origin">{{ store_origin.description if store_origin else '' }}</b></th>
                   <th scope="col"
                      class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Min
                   </th>
@@ -186,7 +185,7 @@
                   </th>
                   <th scope="col"
                      class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
-                     destino: <b>{{ store_destination.description if store_destination else '' }}</b></th>
+                     destino: <b id="header-store-destination">{{ store_destination.description if store_destination else '' }}</b></th>
                   <th scope="col"
                      class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Por
                      trasladar</th>
@@ -228,6 +227,21 @@
                </tbody>
             </table>
          </div>
+
+         <!-- Inputs para descripción y comentarios -->
+         <div class="mb-4 pt-2 border-t border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+               <div>
+                  <label for="order-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                  <input type="text" id="order-description" class="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500" placeholder="Ej: Traslado semanal..." value="Traslado Automático">
+               </div>
+               <div>
+                  <label for="order-comments" class="block text-sm font-medium text-gray-700">Comentarios</label>
+                  <input type="text" id="order-comments" class="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-teal-500 focus:border-teal-500" placeholder="Opcional">
+               </div>
+            </div>
+         </div>
+
          <div class="flex justify-end gap-2">
             <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
             <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Crear orden de
@@ -323,7 +337,14 @@
          const tr = document.createElement('tr');
          tr.setAttribute('data-department', product.department_description || '');
          tr.setAttribute('data-brand', product.mark_description || '');
-
+         // Atributos de datos para recuperación al guardar
+         tr.setAttribute('data-code', product.code || '');
+         tr.setAttribute('data-description', product.description || '');
+         tr.setAttribute('data-unit', product.unit_code || '1');
+         tr.setAttribute('data-mark', product.mark_description || '');
+         tr.setAttribute('data-model', product.model || ''); // Si existiera
+         tr.setAttribute('data-reference', product.reference || ''); // Si existiera
+         
          tr.innerHTML = `
             <td class="px-4 py-2">
                <input type="checkbox" class="product-checkbox" value="${product.code}">
@@ -350,10 +371,64 @@
 
    // Carpturar el evento click del boton aplicar 
    document.getElementById('apply-store-selection').addEventListener('click', async function () {
+      const storeOrigin = document.getElementById('store_origin').value;
+      const storeDest = document.getElementById('store_destination').value;
+      
+      if (!storeOrigin || !storeDest) {
+         alert("Debe seleccionar ambos depósitos.");
+         return;
+      }
+      
+      if (storeOrigin === storeDest) {
+         alert("El depósito de origen y destino no pueden ser el mismo.");
+         return;
+      }
+
+      // Obtener textos de los depósitos seleccionados
+      const originSelect = document.getElementById('store_origin');
+      const destSelect = document.getElementById('store_destination');
+      const originText = originSelect.options[originSelect.selectedIndex].text;
+      const destText = destSelect.options[destSelect.selectedIndex].text;
+
       const products = await handlerProducts();
-      renderProducts(products);
+      if (products && products.length > 0) {
+         // Actualizar cabeceras de la tabla
+         const headerOrigin = document.getElementById('header-store-origin');
+         const headerDest = document.getElementById('header-store-destination');
+         if (headerOrigin) headerOrigin.textContent = originText;
+         if (headerDest) headerDest.textContent = destText;
+
+         renderProducts(products);
+         // Ocultar selección y mostrar contenido
+         document.getElementById('form-select-store').classList.add('hidden');
+         const contentDiv = document.getElementById('content');
+         contentDiv.classList.remove('hidden');
+         // Asegurar que action-bar se muestre si estaba oculto por CSS
+         const ab = document.getElementById('action-bar');
+         if(ab) ab.style.display = ''; 
+      } else {
+         alert("No se encontraron productos para los depósitos seleccionados.");
+      }
    });
+
+   // Botón para cambiar depósitos (volver atrás)
+   const backToStoreSelectionBtn = document.getElementById('back-to-store-selection');
+   if(backToStoreSelectionBtn){
+      backToStoreSelectionBtn.addEventListener('click', function(){
+         document.getElementById('content').classList.add('hidden');
+         document.getElementById('form-select-store').classList.remove('hidden');
+         // Ocultar action bar
+         const ab = document.getElementById('action-bar');
+         if(ab) ab.style.display = 'none';
+      });
+   }
+
    document.addEventListener('DOMContentLoaded', function () {
+      // Inicialmente ocultar action-bar si content está oculto
+      const ab = document.getElementById('action-bar');
+      if(ab && document.getElementById('content').classList.contains('hidden')) {
+         ab.style.display = 'none';
+      }
       // --- Modal edición de parámetros por producto desde la tabla ---
       const editModal = document.getElementById('edit-param-modal');
       const editClose = document.getElementById('edit-param-close');
@@ -850,7 +925,7 @@
       window.__openPreview = openPreview;
       previewAddMore && previewAddMore.addEventListener('click', closePreview);
       previewClose && previewClose.addEventListener('click', closePreview);
-      previewSubmit && previewSubmit.addEventListener('click', function () {
+      previewSubmit && previewSubmit.addEventListener('click', async function () {
          // Validar que haya selección y cantidades válidas para los seleccionados
          const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
          if (checked.length === 0) {
@@ -871,19 +946,80 @@
             return;
          }
 
-         // 1) Crear la orden y abrir el PDF en una nueva pestaña usando target="_blank"
-         const prevTarget = form.getAttribute('target');
-         form.setAttribute('target', '_blank');
-         if (form.requestSubmit) {
-            form.requestSubmit();
-         } else {
-            form.submit();
-         }
-         // Restaurar target original (por limpieza)
-         if (prevTarget !== null) form.setAttribute('target', prevTarget); else form.removeAttribute('target');
+         // Enviar datos vía JSON como solicitado
+         const storeOrigin = document.getElementById('store_origin').value;
+         const storeDestination = document.getElementById('store_destination').value;
+         const description = document.getElementById('order-description').value;
+         const comments = document.getElementById('order-comments').value;
 
-         // 2) Redirigir la pestaña actual a la selección de depósito de destino
-         window.location.href = "{{ url_for('inventory.auto_collection_order') }}";
+         // Recopilar items seleccionados
+         const items = [];
+         for (const cb of checked) {
+            const code = cb.value;
+            // Buscar la fila correspondiente
+            const row = cb.closest('tr');
+            if (row) {
+               const amountInput = row.querySelector(`.to-transfer-input[name="to_transfer_${code}"]`);
+               const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
+               
+               if (amount > 0) {
+                  items.push({
+                     code_product: row.getAttribute('data-code'),
+                     description_product: row.getAttribute('data-description'),
+                     unit: row.getAttribute('data-unit'),
+                     mark: row.getAttribute('data-mark'),
+                     model: row.getAttribute('data-model'),
+                     referenc: row.getAttribute('data-reference'),
+                     amount: amount,
+                     // Valores por defecto o calculados
+                     unitary_cost: 0.0,
+                     total_cost: 0.0,
+                     total: 0.0
+                  });
+               }
+            }
+         }
+
+         const payload = {
+            store_origin: storeOrigin,
+            store_destination: storeDestination,
+            description: description,
+            operation_comments: comments,
+            items: items
+         };
+
+         previewSubmit.disabled = true;
+         previewSubmit.textContent = "Guardando...";
+
+         try {
+            const resp = await fetch("{{ url_for('inventory.save_collection_order') }}", {
+               method: 'POST',
+               headers: {
+                  'Content-Type': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+               },
+               body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (data.ok) {
+               // Abrir PDF en nueva pestaña si existe correlativo
+               if (data.correlative) {
+                  const pdfUrl = "{{ url_for('inventory.collection_preview_pdf') }}?correlative=" + data.correlative + "&wait=true";
+                  window.open(pdfUrl, '_blank');
+               }
+               alert(data.message || 'Orden guardada exitosamente.');
+               window.location.href = "{{ url_for('inventory.auto_collection_order') }}";
+            } else {
+               alert('Error: ' + (data.error || 'No se pudo guardar'));
+               previewSubmit.disabled = false;
+               previewSubmit.textContent = "Crear orden de Recolección";
+            }
+         } catch (e) {
+            console.error(e);
+            alert('Error de conexión.');
+            previewSubmit.disabled = false;
+            previewSubmit.textContent = "Crear orden de Recolección";
+         }
       });
       previewPdfBtn && previewPdfBtn.addEventListener('click', function () {
          if (!currentPreviewItems || currentPreviewItems.length === 0) {

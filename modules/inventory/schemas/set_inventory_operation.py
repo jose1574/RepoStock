@@ -5,7 +5,7 @@ from typing import Optional
 
 @dataclass
 class SetInventoryOperationData:
-    correlative: int
+    correlative: Optional[int]
     operation_type: str
     document_no: str
     emission_date: date
@@ -15,7 +15,7 @@ class SetInventoryOperationData:
     station: str
     store: str
     locations: str
-    destination_store: str
+    destination_store: Optional[str]
     destination_location: str
     operation_comments: str
     total_amount: float

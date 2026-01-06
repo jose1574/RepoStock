@@ -537,21 +537,6 @@ def update_minmax_product_failure(
 
 
 # esta funcion optione un lote de codigos, y devuele todos los productos, correspondientes a una orden de traslado
-def get_products_by_codes(codes):
-    sql = """
-    SELECT 
-    *
-    FROM products AS p
-    WHERE p.code = ANY(%s);
-    """
-    conn = get_db_connection()
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (codes,))
-            rows = cur.fetchall()
-            return [dict(r) for r in rows]
-    finally:
-        close_db_connection(conn)
 
 
 def update_description_inventory_operations(correlative: int, description: str):
@@ -730,7 +715,12 @@ def save_transfer_order_items(order_id, items):
                 )
                 location_to = item.get("to_location") or item.get("location_to") or "00"
 
-                unit = int(item.get("unit", 1))
+                # Asegurar unidad válida: si viene None, vacío o 0, usar 1 como fallback
+                unit_raw = item.get("unit", 1)
+                try:
+                    unit = int(unit_raw) if unit_raw not in (None, "", 0) else 1
+                except Exception:
+                    unit = 1
                 conversion_factor = float(item.get("conversion_factor", 1.0))
                 unit_type = int(item.get("unit_type", 1))
                 unit_price = float(item.get("unit_price", 0.0))

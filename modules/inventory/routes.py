@@ -13,6 +13,8 @@ from flask import (
     make_response,
 )
 
+from modules.inventory.schemas.set_inventory_operation_details import SetInventoryOperationDetailsData
+
 try:
     import pdfkit
 except Exception:
@@ -23,10 +25,12 @@ from modules.inventory.schemas.set_inventory_operation import SetInventoryOperat
 from modules.inventory.services.inventoryDb import (
     get_departments,
     save_inventory_operation_header,
+    save_inventory_operation_details,
     get_product_s_for_order_collection,
     get_departments,
     get_marks,
     get_stores,
+    get_products_by_codes,
 )
 
 # Configuración local de wkhtmltopdf para evitar import circular con app.py
@@ -59,7 +63,6 @@ from db import (
     get_inventory_operations_by_correlative,
     get_inventory_operations_details_by_correlative,
     get_product_stock,
-    get_products_by_codes,
     get_store_by_code,
     save_product_failure,
     save_transfer_order_in_wait,
@@ -158,133 +161,102 @@ def api_products():
 
 
 
-
-
-
-
-
-
-
-
-
-
 @inventory_bp.route("/save_collection_order", methods=["POST"])
 def save_collection_order():
-    if request.method == "POST":
-        # Si el formulario envía un store_code_destination, actualizar la sesión
-        if request.form.get("store_code_destination"):
-            session["store_code_destination"] = request.form.get(
-                "store_code_destination"
-            )
-        # Leer productos seleccionados y cantidades (permitir decimales, aceptar coma o punto)
-        selected = request.form.getlist("selected_products")
-        product_codes = [code for code in selected if code]
+   if request.method == "POST":
+       try:
+           data = request.get_json()
+           data_details = data.get("items", [])
+           inventory_operation_header = SetInventoryOperationData(
+                  correlative= None,
+                  operation_type="TRANSFER",
+                  document_no="",
+                  emission_date=datetime.date.today(),
+                  wait=True,
+                  description=data.get("description", ""),
+                  user_code="00",
+                  station="00",
+                  store=data.get("store_origin", ""),
+                  locations="00",
+                  destination_store=data.get("store_destination"),
+                  destination_location="00",
+                  operation_comments=data.get("operation_comments", ""),
+                  total_amount=0.0,
+                  total_net=0.0,
+                  total_tax=0.0,
+                  total=0.0,
+                  coin_code="02",
+                  internal_use=False,
+           )
+           correlative = save_inventory_operation_header(inventory_operation_header)
+           
+           #busca listado de productos en la base de datos para completar campos
+           products_info = {}
+           product_codes = [item.get("code_product", "") for item in data_details if item.get("code_product")]
+           
+           if product_codes:
+               try:
+                   # get_products_by_codes espera una lista y devuelve una lista de diccionarios
+                   products_list_db = get_products_by_codes(product_codes) or []
+                   for p in products_list_db:
+                       products_info[p['code']] = p
+               except Exception as e:
+                   print(f"Error recuperando productos: {e}")
 
-        # obtener datos base de los productos (descripcion u otros campos si hacen falta)
-        products_info = (
-            {p["code"]: p for p in get_products_by_codes(product_codes)}
-            if product_codes
-            else {}
-        )
-
-        # origen/destino (si vienen en el formulario) o por defecto
-        stock_store_origin = request.form.get(
-            "stock_store_origin", os.environ.get("DEFAULT_STORE_ORIGIN_CODE", "01")
-        )
-        store_stock_destination = session.get("store_code_destination", None)
-
-        items = []
-        for code in product_codes:
-            raw = request.form.get(f"to_transfer_{code}", "0")
-            if isinstance(raw, str):
-                raw = raw.replace(",", ".")
-            try:
-                qty = float(raw)
-            except (ValueError, TypeError):
-                qty = 0.0
-
-            if qty <= 0:
-                # saltar ítems con cantidad inválida
-                continue
-
-            prod = products_info.get(code, {})
-            # intentar usar unidad enviada por el formulario (unit_for_{code})
-            unit_raw = request.form.get(f"unit_for_{code}")
-            try:
-                unit_val = (
-                    int(unit_raw)
-                    if unit_raw is not None and str(unit_raw).strip() != ""
-                    else get_correlative_product_unit(code)
-                )
-            except Exception:
-                unit_val = get_correlative_product_unit(code)
-            item = {
-                "product_code": code,
-                "description": prod.get("description") if prod else None,
-                "quantity": qty,
-                "user_code": session.get("user_code"),
-                "from_store": stock_store_origin,
-                "to_store": store_stock_destination,
-                # valores por defecto para campos opcionales que espera la función
-                "unit": (
-                    int(unit_val) if unit_val else get_correlative_product_unit(code)
-                ),
-                "conversion_factor": 1.0,
-                "unit_type": 1,
-                "unit_price": 0.0,
-                "total_price": 0.0,
-                "total_cost": 0.0,
-                "coin_code": "02",
-            }
-            items.append(item)
-        if not items:
-            # nada que procesar
-            print("No hay items válidos para procesar")
-            return redirect(url_for("inventory.create_collection_order"))
-
-        # Crear la orden de transferencia
-        transfer_data = {
-            "emission_date": datetime.date.today(),
-            "wait": True,
-            "user_code": session.get("user_code"),  # usar usuario en sesión si existe
-            "station": "00",
-            "store": stock_store_origin,
-            "locations": "00",
-            "destination_store": session.get("store_code_destination", None),
-            "operation_comments": "Orden creada desde interfaz Repostock",
-            "total": sum([it["quantity"] for it in items]),
-        }
-        try:
-            # Crear la ORDER_COLLECTION con descripción inicial de no validada
-            order_id = save_transfer_order_in_wait(
-                transfer_data, "La operacion aun no ha sido validada"
-            )
-
-            if not order_id:
-                print("No se pudo crear la orden de transferencia")
-                return redirect(url_for("create_collection_order"))
-
-            # Guardar los items
-            save_transfer_order_items(order_id, items)
-            # abre una ventana con el pdf de la orden creada usando la ruta collection_preview_pdf()
-            print(
-                "Orden de traslado creada con éxito. Correlativo:",
-                order_id,
-            )
-
-        except Exception as e:
-            print("Error procesando la orden de traslado:", e)
-            # aquí podrías usar flash() para mostrar el error al usuario
-            return redirect(url_for("inventory.create_collection_order"))
-
-        return redirect(
-            url_for(
-                "inventory.collection_preview_pdf",
-                correlative=order_id,
-                wait="true",
-                operation_type="TRANSFER",
-            )
-        )
+           
+           # Guardar detalles en lote
+           details_list = []
+           for item in data_details:
+               code = item.get("code_product", "")
+               prod_db = products_info.get(code, {})
+               
+               # Priorizar datos de BD para descripciones estáticas, pero datos del cliente para transaccionales
+               description = prod_db.get("description") or item.get("description_product", "")
+               reference = prod_db.get("referenc") or item.get("referenc", "")
+               mark = prod_db.get("mark") or item.get("mark", "")
+               model = prod_db.get("model") or item.get("model", "")
+               # Validar buy_tax: si viene vacío, usar "03" (Exento) o "01" (General) según lógica de negocio.
+               # Aquí asumo '03' como fallback seguro si no hay dato, para evitar error de FK.
+               buy_tax = prod_db.get("buy_tax") or item.get("buy_tax") or "03"
+               
+               # Usar unit_correlative de la BD, o el enviado por el cliente, o 1 por defecto.
+               unit_val = prod_db.get("unit_correlative") or item.get("unit") or 1
+               
+               detail = SetInventoryOperationDetailsData(
+                    main_correlative=correlative,
+                    line=None,
+                    code_product=code,
+                    description_product=description,
+                    referenc=reference,
+                    mark=mark,
+                    model=model,
+                    amount=float(item.get("amount", 0.0)),
+                    store=data.get("store_origin", ""),
+                    locations="00",
+                    destination_store=data.get("store_destination", ""),
+                    destination_location="00",
+                    unit=int(unit_val),
+                    conversion_factor=1.0,
+                    unit_type=1,
+                    unitary_cost=float(item.get("unitary_cost", 0.0)),
+                    buy_tax=buy_tax,
+                    aliquot=float(item.get("aliquot", 0.0)),
+                    total_cost=float(item.get("total_cost", 0.0)),
+                    total_tax=float(item.get("total_tax", 0.0)),
+                    total=float(item.get("total", 0.0)),
+                    coin_code="02",
+                    change_price=False
+               )
+               details_list.append(detail)
+           
+           if details_list:
+               save_inventory_operation_details(details_list)
+           
+           print("Guardando orden de recolección con datos:", correlative)
+           return jsonify({"ok": True, "message": "Orden de recolección guardada exitosamente.", "correlative": correlative})
+       except Exception as e:
+           print("Error save_collection_order:", e)
+           return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @inventory_bp.route("/destination-store-selection")
