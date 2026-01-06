@@ -153,10 +153,6 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\markupsafe\\_speedups.cp313-win_amd64.pyd',
    'EXTENSION'),
-  ('_sqlite3.pyd',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_sqlite3.pyd',
-   'EXTENSION'),
   ('_uuid.pyd',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_uuid.pyd',
@@ -165,65 +161,17 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2\\_psycopg.cp313-win_amd64.pyd',
    'EXTENSION'),
-  ('api-ms-win-crt-conio-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-conio-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-time-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-time-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-string-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-string-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-convert-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-convert-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-heap-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-heap-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-environment-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-environment-l1-1-0.dll',
-   'BINARY'),
+  ('_sqlite3.pyd',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\_sqlite3.pyd',
+   'EXTENSION'),
   ('VCRUNTIME140.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140.dll',
    'BINARY'),
-  ('api-ms-win-crt-stdio-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-stdio-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-filesystem-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-filesystem-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-math-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-math-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-locale-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-locale-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-runtime-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-runtime-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-crt-process-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-process-l1-1-0.dll',
-   'BINARY'),
   ('libcrypto-3.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\libcrypto-3.dll',
-   'BINARY'),
-  ('api-ms-win-crt-utility-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-crt-utility-l1-1-0.dll',
    'BINARY'),
   ('libssl-3.dll',
    'C:\\Users\\Jose '
@@ -237,129 +185,21 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\VCRUNTIME140_1.dll',
    'BINARY'),
-  ('sqlite3.dll',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\sqlite3.dll',
-   'BINARY'),
   ('psycopg2_binary.libs\\libpq-2d95d8c8be26654a630220107eb268e7.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libpq-2d95d8c8be26654a630220107eb268e7.dll',
    'BINARY'),
-  ('ucrtbase.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\ucrtbase.dll',
-   'BINARY'),
-  ('psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
+  ('sqlite3.dll',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\sqlite3.dll',
    'BINARY'),
   ('psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
    'BINARY'),
-  ('api-ms-win-core-string-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-string-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-console-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-console-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-datetime-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-datetime-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processenvironment-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processenvironment-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-synch-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-synch-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-memory-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-memory-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processthreads-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processthreads-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-localization-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-localization-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-namedpipe-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-namedpipe-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-synch-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-synch-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l1-2-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l1-2-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-interlocked-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-interlocked-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-heap-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-heap-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-libraryloader-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-libraryloader-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-fibers-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-fibers-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-util-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-util-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-errorhandling-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-errorhandling-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-timezone-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-timezone-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-debug-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-debug-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-file-l2-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-file-l2-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-rtlsupport-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-rtlsupport-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-handle-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-handle-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-processthreads-l1-1-1.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-processthreads-l1-1-1.dll',
-   'BINARY'),
-  ('api-ms-win-core-sysinfo-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-sysinfo-l1-1-0.dll',
-   'BINARY'),
-  ('api-ms-win-core-profile-l1-1-0.dll',
-   'C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance '
-   'Toolkit\\api-ms-win-core-profile-l1-1-0.dll',
+  ('psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
    'BINARY'),
   ('.env',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment programing\\RepoStock\\.env',
@@ -448,6 +288,26 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\sales\\templates\\partials\\product_search_modal.html',
    'DATA'),
+  ('modules\\shopping\\templates\\auto_order.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\templates\\auto_order.html',
+   'DATA'),
+  ('modules\\shopping\\templates\\partials\\bowser_products.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\templates\\partials\\bowser_products.html',
+   'DATA'),
+  ('modules\\shopping\\templates\\partials\\browser_providers.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\templates\\partials\\browser_providers.html',
+   'DATA'),
+  ('modules\\shopping\\templates\\partials\\new_product.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\templates\\partials\\new_product.html',
+   'DATA'),
+  ('modules\\shopping\\templates\\shopping.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\templates\\shopping.html',
+   'DATA'),
   ('modules\\systems\\templates\\assign_profile.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\systems\\templates\\assign_profile.html',
@@ -512,13 +372,9 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\templates\\users.html',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
-   'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
    'C:\\Users\\Jose '
@@ -536,46 +392,114 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
    'DATA'),
   ('setuptools\\_vendor\\jaraco\\text\\Lorem ipsum.txt',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\jaraco\\text\\Lorem '
    'ipsum.txt',
    'DATA'),
-  ('werkzeug-3.1.3.dist-info\\INSTALLER',
+  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'DATA'),
-  ('flask-3.1.1.dist-info\\RECORD',
+  ('itsdangerous-2.2.0.dist-info\\RECORD',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\RECORD',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
    'DATA'),
   ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
    'DATA'),
+  ('werkzeug-3.1.3.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\REQUESTED',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
+   'DATA'),
   ('click-8.2.1.dist-info\\METADATA',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
    'DATA'),
-  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
    'DATA'),
-  ('werkzeug-3.1.3.dist-info\\WHEEL',
+  ('MarkupSafe-3.0.2.dist-info\\METADATA',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('click-8.2.1.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
+   'DATA'),
+  ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\entry_points.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
    'DATA'),
   ('click-8.2.1.dist-info\\WHEEL',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\WHEEL',
    'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
   ('werkzeug-3.1.3.dist-info\\METADATA',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\METADATA',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
    'DATA'),
   ('itsdangerous-2.2.0.dist-info\\METADATA',
    'C:\\Users\\Jose '
@@ -585,77 +509,13 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\INSTALLER',
    'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
-   'DATA'),
-  ('click-8.2.1.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\REQUESTED',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
-   'DATA'),
   ('flask-3.1.1.dist-info\\WHEEL',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\WHEEL',
    'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
+  ('flask-3.1.1.dist-info\\RECORD',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
-   'DATA'),
-  ('click-8.2.1.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\entry_points.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\RECORD',
    'DATA'),
   ('base_library.zip',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
@@ -664,7 +524,7 @@
  [],
  False,
  False,
- 1765816034,
+ 1767628114,
  [('run.exe',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',

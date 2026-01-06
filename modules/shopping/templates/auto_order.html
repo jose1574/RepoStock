@@ -3,7 +3,8 @@
 {% block title %}Orden de Compra Automatica{% endblock %}
 {% block content %}
 <div id="auto-order-page" class="w-full p-4">
-    <h1 class="text-2xl font-bold mb-4 text-gray-800">Orden de Compra Automática</h1>    <!-- Provider Selection Form -->
+    <h1 class="text-2xl font-semibold mb-4 text-gray-800">Orden de Compra Automática</h1>
+    <!-- Provider Selection Form -->
     <div id="provider-selection-form"
         class="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-2xl mx-auto">
         <h2 id="provider-selection-title" class="text-lg font-semibold mb-4 text-gray-700">Seleccionar Proveedor</h2>
@@ -75,11 +76,12 @@
 
         /* Estilo para resaltar errores en cantidad */
         .purchase-qty-input.qty-error {
-            border-color: #fca5a5; /* Rojo suave constante para que se note algo */
+            border-color: #fca5a5;
+            /* Rojo suave constante para que se note algo */
             transition: all 0.2s ease;
         }
 
-        .purchase-qty-input.qty-error:hover, 
+        .purchase-qty-input.qty-error:hover,
         .purchase-qty-input.qty-error:focus {
             border-color: #ef4444 !important;
             background-color: #fef2f2 !important;
@@ -94,8 +96,10 @@
             <div id="section-provider" class="col-span-1">
                 <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
                     <div class="flex items-center justify-between border-b pb-1 mb-2">
-                        <h2 id="provider-data-title" class="text-base font-semibo    |||||||||||||||ld text-gray-700">Datos del Proveedor</h2>
-                        <button id="btn-change-provider" class="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 border border-blue-200 rounded">
+                        <h2 id="provider-data-title" class="text-base font-semibo    |||||||||||||||ld text-gray-700">
+                            Datos del Proveedor</h2>
+                        <button id="btn-change-provider"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 border border-blue-200 rounded">
                             Cambiar Proveedor
                         </button>
                     </div>
@@ -122,7 +126,8 @@
             </div>
             <div id="section-stores" class="col-span-1">
                 <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
-                    <h2 id="stores-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Selecciona Depósitos</h2>
+                    <h2 id="stores-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Selecciona
+                        Depósitos</h2>
                     <div class="space-y-2 text-xs flex-1 overflow-y-auto">
                         {% if stores %}
                         {% for store in stores %}
@@ -139,7 +144,8 @@
             </div>
             <div id="section-purchase-total" class="col-span-1">
                 <div class="bg-white rounded-lg shadow p-3 border border-gray-200 flex flex-col" style="height: 160px;">
-                    <h2 id="purchase-total-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Total de la compra</h2>
+                    <h2 id="purchase-total-title" class="text-base font-semibold mb-2 text-gray-700 border-b pb-1">Total
+                        de la compra</h2>
                     <div class="flex items-end gap-2 mt-auto">
                         <span class="text-xs text-gray-500">Monto total:</span>
                         <span id="top-total-purchase-amount" class="text-lg font-bold text-green-700">0.00</span>
@@ -147,7 +153,7 @@
                     <div class="flex gap-2 mt-3">
                         <button id="btn-open-summary-modal"
                             class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-                            Ver detalle en modal
+                            Ver detalles de Compras
                         </button>
                         <button id="btn-save-order"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium">
@@ -161,7 +167,8 @@
 
             <!-- Barra de filtros de tabla (departamentos, marcas y buscador) -->
 
-            <div id="table-filters" class="px-4 py-2 bg-white border-t border-b border-gray-200 hidden sticky top-0 z-20">
+            <div id="table-filters"
+                class="px-4 py-2 bg-white border-t border-b border-gray-200 hidden sticky top-0 z-20">
                 <div class="flex items-center gap-3 flex-wrap">
                     <!-- Dropdown Departamentos -->
                     <div class="relative" id="dept-dropdown">
@@ -212,23 +219,27 @@
                     </div>
 
                     <!-- Buscador de producto en tabla -->
-                     <div>
-                         <label for="table-product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
-                         <input id="table-product-search" type="search" placeholder="Buscar por código o descripción..."
-                         class="border rounded px-2 py-1 text-sm w-64" />
+                    <div>
+                        <label for="table-product-search" class="text-sm font-medium text-gray-700">Buscar
+                            producto</label>
+                        <input id="table-product-search" type="search" placeholder="Buscar por código o descripción..."
+                            class="border rounded px-2 py-1 text-sm w-64" />
                     </div>
                     <div>
-                         <label for="input-search-product" class="text-sm font-medium text-gray-700">Agregar Producto</label>
-                         <input id="input-search-product" type="search" placeholder="agregar producto por codigo"
-                         class="border rounded px-2 py-1 text-sm w-64" />
-                         <button id="button-search-product"
+                        <label for="input-search-product" class="text-sm font-medium text-gray-700">Agregar
+                            Producto</label>
+                        <input id="input-search-product" type="search" placeholder="agregar producto por codigo"
+                            class="border rounded px-2 py-1 text-sm w-64" />
+                        <button id="button-search-product"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium">
                             Buscar
                         </button>
                     </div>
                     <div id="products-count" class="flex items-center gap-4 ml-4">
-                        <span class="text-xs text-gray-500">Productos mostrados: <span id="displayed-products-count">0</span></span>
-                        <span class="text-xs text-gray-700">Productos seleccionados: <span id="selected-products-count">0</span></span>
+                        <span class="text-xs text-gray-500">Productos mostrados: <span
+                                id="displayed-products-count">0</span></span>
+                        <span class="text-xs text-gray-700">Productos seleccionados: <span
+                                id="selected-products-count">0</span></span>
                     </div>
                 </div>
             </div>
@@ -281,14 +292,17 @@
         <!-- Purchase Summary Section -->
         <div id="purchase-summary-container" class="mt-4 bg-white rounded-lg shadow border border-gray-200 hidden">
             <div id="shopping-detail" class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
-                <h2 id="purchase-summary-panel-title" class="text-base font-semibold text-gray-700">Detalle de la compra</h2>
+                <h2 id="purchase-summary-panel-title" class="text-base font-semibold text-gray-700">Detalle de la compra
+                </h2>
                 <div class="flex gap-6 text-sm">
-                    <span class="text-gray-700">Productos seleccionados: <strong id="total-selected-products-count">0</strong></span>
+                    <span class="text-gray-700">Productos seleccionados: <strong
+                            id="total-selected-products-count">0</strong></span>
                     <span class="text-gray-700">Cantidad total: <strong id="total-selected-quantity">0</strong></span>
-                    <span class="text-gray-700">Total de la compra: <strong id="total-purchase-amount">0.00</strong></span>
+                    <span class="text-gray-700">Total de la compra: <strong
+                            id="total-purchase-amount">0.00</strong></span>
                 </div>
             </div>
-            <div class="p-4 border-b bg-gray-50 rounded-t-lg flex items-center justify-between">
+            <div class="p-4 overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <colgroup>
                         <col style="width: 18%">
@@ -318,23 +332,155 @@
 </div>
 
 <!-- Product Detail Modal -->
-<div id="product-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.18);">
-    <div id="product-detail-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+<div id="product-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center"
+    style="background-color: rgba(0,0,0,0.18);">
+    <div id="product-detail-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4" role="dialog"
+        aria-modal="true" aria-labelledby="product-detail-title">
         <div class="flex items-center justify-between p-3 border-b">
             <h3 id="product-detail-title" class="text-base font-semibold text-gray-800">Detalle de producto</h3>
             <button id="product-detail-close" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Cerrar">
                 <span class="text-2xl leading-none">&times;</span>
             </button>
         </div>
-        <div id="product-detail-content" class="p-4">
-            <!-- Contenido del detalle del producto se insertará aquí -->
+        <!-- Contenedor de pestañas -->
+        <div class="px-4 pt-3">
+            <div id="product-detail-tabs" class="flex gap-4 border-b">
+                <button type="button"
+                    class="tab-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border-b-2 border-transparent"
+                    data-tab="general" aria-controls="product-detail-tab-general" aria-selected="true">General</button>
+                <button type="button"
+                    class="tab-link px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border-b-2 border-transparent"
+                    data-tab="parametros" aria-controls="product-detail-tab-parametros"
+                    aria-selected="false">Parametros</button>
+            </div>
+        </div>
+        <!-- Paneles de contenido de pestañas -->
+        <div id="product-detail-content" class="p-6">
+            <div id="product-detail-tab-general" class="tab-panel space-y-6">
+                <div id="product-detail-tab-general-content">
+                    <!-- Sección Descripción -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Descripción del Producto</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="product-code" class="block text-xs font-medium text-gray-500 mb-1">Código</label>
+                                <input type="text" id="product-code" name="product-code" value="" disabled
+                                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="product-description" class="block text-xs font-medium text-gray-500 mb-1">Nombre</label>
+                                <input type="text" id="product-description" name="product-description" value=""
+                                    class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Precios -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Lista de Precios</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="maximum-price" class="block text-xs font-medium text-gray-500 mb-1">Precio Máximo</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="maximum-price" name="maximum-price" value=""
+                                        class="pl-7 w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-right">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="offer-price" class="block text-xs font-medium text-gray-500 mb-1">Precio Oferta</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="offer-price" name="offer-price" value=""
+                                        class="pl-7 w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-right">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="higher-price" class="block text-xs font-medium text-gray-500 mb-1">Precio Mayor</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="higher-price" name="higher-price" value=""
+                                        class="pl-7 w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-right">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="minimum-price" class="block text-xs font-medium text-gray-500 mb-1">Precio Mínimo</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="minimum-price" name="minimum-price" value=""
+                                        class="pl-7 w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-right">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="product-detail-tab-parametros" class="tab-panel hidden">
+                <div id="product-detail-tab-parametros-content">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Parámetros por Depósito</h4>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Ejemplo de tarjeta de depósito -->
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                            <h5 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Depósito Principal
+                            </h5>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Stock Máximo</label>
+                                    <input type="number" class="w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" value="100">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Stock Mínimo</label>
+                                    <input type="number" class="w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" value="10">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Repetir para otros depósitos (ejemplo estático) -->
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                            <h5 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Depósito Secundario
+                            </h5>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Stock Máximo</label>
+                                    <input type="number" class="w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" value="50">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Stock Mínimo</label>
+                                    <input type="number" class="w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" value="5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Purchase Summary Modal -->
-<div id="purchase-summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.18);">
-    <div id="purchase-summary-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4" role="dialog" aria-modal="true" aria-labelledby="purchase-summary-title" style="max-height: 80vh; display: flex; flex-direction: column;">
+<div id="purchase-summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center"
+    style="background-color: rgba(0,0,0,0.18);">
+    <div id="purchase-summary-dialog" class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4" role="dialog"
+        aria-modal="true" aria-labelledby="purchase-summary-title"
+        style="max-height: 80vh; display: flex; flex-direction: column;">
         <div class="flex items-center justify-between p-3 border-b">
             <h3 id="purchase-summary-title" class="text-base font-semibold text-gray-800">Detalle de la compra</h3>
             <button id="purchase-summary-close" class="text-gray-500 hover:text-gray-700 p-2" aria-label="Cerrar">
@@ -354,6 +500,8 @@
 
 
 <script>
+
+
     // Handler mínimo para selección de producto desde el modal
     function handleProductSelection(code) {
         try {
@@ -368,7 +516,7 @@
             // Fetch al endpoint para obtener el producto con el mismo shape que los demás
             // Usamos query param para el proveedor para evitar problemas con caracteres especiales en la URL
             const url = `/shopping/api/products/history_by_code/${encodeURIComponent(code)}?provider_code=${encodeURIComponent(selectedProvider.provider_code)}`;
-            
+
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
@@ -410,7 +558,7 @@
             const cost = costInput ? Number(costInput.value) : 0;
             const subtotal = (isFinite(qty) ? qty : 0) * (isFinite(cost) ? cost : 0);
             cell.textContent = Number(subtotal).toFixed(2);
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // Forzar valores no negativos en inputs numéricos
@@ -420,7 +568,7 @@
             if (!isFinite(v) || v < 0) {
                 inputEl.value = '0';
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // Product Search Button Handler
@@ -479,13 +627,27 @@
 
     // Delegado: abrir modal al hacer clic en el nombre del producto o en "Ver Detalles"
     if (tableBody) {
-        tableBody.addEventListener('click', function (e) {
+        tableBody.addEventListener('click', async function (e) {
             const target = e.target;
             if (target && target.classList && target.classList.contains('product-detail-link')) {
                 e.preventDefault();
-                if (typeof openProductDetailModal === 'function') {
-                    // Modal en blanco, tal como se solicitó
-                    openProductDetailModal('');
+                try {
+                    const code = target.getAttribute('data-code');
+                    if (!code) return;
+                    if (!selectedProvider || !selectedProvider.provider_code) {
+                        alert('Seleccione un proveedor antes de ver el detalle del producto.');
+                        return;
+                    }
+                    const product = await fetchProductHistoryByCode(code, selectedProvider.provider_code);
+                    console.log('Producto obtenido para modal:', product);
+                    // Renderizar en el modal y abrirlo
+                    renderProductDetailInModal(product);
+                    if (typeof openProductDetailModal === 'function') {
+                        openProductDetailModal('');
+                    }
+                } catch (err) {
+                    console.error('Error al obtener el producto:', err);
+                    alert('No se pudo obtener el detalle del producto.');
                 }
             } else if (target && target.classList && target.classList.contains('order-details-link')) {
                 e.preventDefault();
@@ -500,6 +662,54 @@
             }
         });
     }
+
+    // Función reutilizable: obtener historial del producto por código
+    async function fetchProductHistoryByCode(productCode, providerCode) {
+        const url = `/shopping/api/products/history_by_code/${encodeURIComponent(productCode)}?provider_code=${encodeURIComponent(providerCode || '')}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log('Respuesta API producto por código:', data);
+        if (!data || !data.ok || !data.item) {
+            throw new Error(data && data.error ? data.error : 'Producto no encontrado');
+        }
+        return data.item;
+    }
+    // Exponer opcionalmente para reutilizar desde otros scripts
+    window.fetchProductHistoryByCode = fetchProductHistoryByCode;
+
+    // Función reutilizable: renderizar el producto en el modal (pestaña General)
+    function renderProductDetailInModal(item) {
+        try {
+            const codeEl = document.getElementById('product-code');
+            const descEl = document.getElementById('product-description');
+            const maxEl = document.getElementById('maximum-price');
+            const offerEl = document.getElementById('offer-price');
+            const higherEl = document.getElementById('higher-price');
+            const minEl = document.getElementById('minimum-price');
+
+            const code = item.product_code || item.code || '';
+            const description = item.product_description || item.description || '';
+            if (codeEl) codeEl.value = code;
+            if (descEl) descEl.value = description;
+
+            // Seleccionar unidad principal si existe
+            const units = Array.isArray(item.units) ? item.units : [];
+            const mainUnit = units.find(u => u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)) || units[0] || {};
+            const getNum = (v) => (v != null && v !== '' && isFinite(Number(v))) ? Number(v).toFixed(2) : '';
+            const maximum = mainUnit.maximum_price ?? item.maximum_price;
+            const offer = mainUnit.offer_price ?? item.offer_price;
+            const higher = mainUnit.higher_price ?? item.higher_price;
+            const minimum = mainUnit.minimum_price ?? item.minimum_price;
+
+            if (maxEl) maxEl.value = getNum(maximum);
+            if (offerEl) offerEl.value = getNum(offer);
+            if (higherEl) higherEl.value = getNum(higher);
+            if (minEl) minEl.value = getNum(minimum);
+        } catch (e) {
+            console.error('Error renderizando producto en modal:', e);
+        }
+    }
+    window.renderProductDetailInModal = renderProductDetailInModal;
 
     function buildOrderDetailsHtml(orders) {
         try {
@@ -578,6 +788,19 @@
         }
     }
 
+    // devuelve el historico de un producto
+    async function getHistoryProductByCode(productCode) {
+        return await fetch(`/shopping/api/products/history_by_code/${encodeURIComponent(productCode)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json());
+    }
+
+
+
+
     // Load Products
     loadBtn.addEventListener('click', async () => {
         if (!selectedProvider) return;
@@ -595,7 +818,7 @@
                 }
             });
             const data = await response.json();
-            
+
             console.log('Fetched data:', data);
 
             if (data.ok) {
@@ -677,7 +900,7 @@
             const item = items[i];
             // Recuperar valores calculados
             let currentStock = item._calculatedStock;
-            
+
             // Sumar existencia mínima y máxima por depósitos seleccionados
             let minStock = 0;
             let maxStock = 0;
@@ -692,7 +915,7 @@
                     }
                 });
             }
-            
+
             // (El cálculo de currentStock ya se hizo arriba y se guardó en item._calculatedStock)
 
             // Ocultar solo si existe configuración de stock máximo (> 0) y la existencia actual lo supera
@@ -724,53 +947,53 @@
                 <td class="px-4 py-3">${item.department_description || item.product_department || ''}</td>
                 <td class="px-4 py-3">
                     ${(() => {
-                        try {
-                            const units = (Array.isArray(item.units) && item.units.length)
-                                ? item.units
-                                : [{ unit_description: getDefaultUnit(item), conversion_factor: 1 }];
-                            const defaultIdx = units.findIndex(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)));
-                            const selectedIdx = defaultIdx >= 0 ? defaultIdx : 0;
-                            const options = units.map((u, ui) => {
-                                const text = (u && (u.unit_description)) || '';
-                                // Asegurar que value sea el correlativo numérico o string vacío si no existe
-                                const value = (u && u.correlative !== undefined && u.correlative !== null) ? u.correlative : '';
-                                const factor = (u && u.conversion_factor != null) ? u.conversion_factor : 1;
-                                const cost = (u && u.unitary_cost != null) ? u.unitary_cost : '';
-                                const sel = ui === selectedIdx ? 'selected' : '';
-                                return `<option value="${value}" data-factor="${String(factor)}" data-cost="${String(cost)}" ${sel}>${String(text)}</option>`;
-                            }).join('');
-                            return `<select class="unit-select border rounded px-2 py-1 text-sm" data-index="${i}">${options}</select>`;
-                        } catch (e) {
-                            return `<span>${getDefaultUnit(item)}</span>`;
-                        }
-                    })()}
+                    try {
+                        const units = (Array.isArray(item.units) && item.units.length)
+                            ? item.units
+                            : [{ unit_description: getDefaultUnit(item), conversion_factor: 1 }];
+                        const defaultIdx = units.findIndex(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)));
+                        const selectedIdx = defaultIdx >= 0 ? defaultIdx : 0;
+                        const options = units.map((u, ui) => {
+                            const text = (u && (u.unit_description)) || '';
+                            // Asegurar que value sea el correlativo numérico o string vacío si no existe
+                            const value = (u && u.correlative !== undefined && u.correlative !== null) ? u.correlative : '';
+                            const factor = (u && u.conversion_factor != null) ? u.conversion_factor : 1;
+                            const cost = (u && u.unitary_cost != null) ? u.unitary_cost : '';
+                            const sel = ui === selectedIdx ? 'selected' : '';
+                            return `<option value="${value}" data-factor="${String(factor)}" data-cost="${String(cost)}" ${sel}>${String(text)}</option>`;
+                        }).join('');
+                        return `<select class="unit-select border rounded px-2 py-1 text-sm" data-index="${i}">${options}</select>`;
+                    } catch (e) {
+                        return `<span>${getDefaultUnit(item)}</span>`;
+                    }
+                })()}
                 </td>
                 <td class="px-4 py-3 fecha-cell">${item.product_provider_emission_date || ''}</td>
                 <td class="px-4 py-3 text-center">${minStock}</td>
                 <td class="px-4 py-3 text-center">${maxStock}</td>
                 <td class="px-4 py-3 text-center current-stock-cell" data-index="${i}" data-base-stock="${currentStock}">
                     ${(() => {
-                        try {
-                            const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
-                            const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
-                            const factor = (selUnit && Number(selUnit.conversion_factor) > 0) ? Number(selUnit.conversion_factor) : 1;
-                            return Number(Number(currentStock) / factor).toFixed(2);
-                        } catch (e) {
-                            return Number(currentStock).toFixed(2);
-                        }
-                    })()}
+                    try {
+                        const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                        const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                        const factor = (selUnit && Number(selUnit.conversion_factor) > 0) ? Number(selUnit.conversion_factor) : 1;
+                        return Number(Number(currentStock) / factor).toFixed(2);
+                    } catch (e) {
+                        return Number(currentStock).toFixed(2);
+                    }
+                })()}
                 </td>
                 <td class="px-4 py-3 text-right last-cost-cell" data-index="${i}">
                     ${(() => {
-                        try {
-                            const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
-                            const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
-                            const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
-                            return cost != null ? cost.toFixed(2) : '';
-                        } catch (e) {
-                            return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
-                        }
-                    })()}
+                    try {
+                        const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                        const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                        const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                        return cost != null ? cost.toFixed(2) : '';
+                    } catch (e) {
+                        return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                    }
+                })()}
                 </td>
                 <td class="px-4 py-3 text-center">${item.product_provider_document_no || ''}</td>
                 <td class="px-4 py-3 text-center font-bold text-blue-600">
@@ -779,23 +1002,23 @@
                 <td class="px-4 py-3 text-center">
                     <input type="number" step="0.01" min="0" class="w-20 border rounded px-2 py-1 text-sm purchase-cost-input" data-index="${i}"
                            value="${(() => {
-                               try {
-                                   const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
-                                   const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
-                                   const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
-                                   return cost != null ? cost.toFixed(2) : '';
-                               } catch (e) {
-                                   return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
-                               }
-                           })()}">
+                    try {
+                        const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
+                        const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
+                        const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                        return cost != null ? cost.toFixed(2) : '';
+                    } catch (e) {
+                        return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                    }
+                })()}">
                 </td>
                 <td class="px-4 py-3 text-right">
                     <span class="subtotal-cell" data-index="${i}">0.00</span>
                 </td>
                 <td class="px-4 py-3 text-center">
-                    ${ (Array.isArray(item.product_in_order) && item.product_in_order.length > 0)
-                        ? `<button type="button" class="order-details-link text-sm text-blue-600 hover:underline" data-index="${i}">Ver Detalles</button>`
-                        : '' }
+                    ${(Array.isArray(item.product_in_order) && item.product_in_order.length > 0)
+                    ? `<button type="button" class="order-details-link text-sm text-blue-600 hover:underline" data-index="${i}">Ver Detalles</button>`
+                    : ''}
                 </td>
 
                 <td class="px-4 py-3 text-center">
@@ -818,7 +1041,7 @@
         }
         attachRowSelectionHandlers();
         // Mostrar/actualizar resumen de compra
-        try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+        try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) { }
         // Inicializar subtotales por fila
         try {
             document.querySelectorAll('.subtotal-cell').forEach(cell => {
@@ -827,9 +1050,9 @@
                     updateRowSubtotal(idx);
                 }
             });
-        } catch (e) {}
+        } catch (e) { }
         // Ajustar cabecera sticky según altura de filtros
-        try { applyStickyLayout(); } catch (e) {}
+        try { applyStickyLayout(); } catch (e) { }
         try { filterRows(); } catch (e) { }
         try { updateDisplayedProductsCount(); updateSelectedProductsCount(); } catch (e) { }
     }
@@ -861,15 +1084,15 @@
                     selectedIndices.delete(code);
                 }
                 // Recalcular resumen
-                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
-                try { updateRowSubtotal(idx); } catch (e) {}
+                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) { }
+                try { updateRowSubtotal(idx); } catch (e) { }
                 // Actualizar estado de "Seleccionar todos" solo considerando filas visibles
                 const selectAllCb = document.getElementById('select-all-products');
                 if (selectAllCb) {
                     const visibleCbs = getVisibleRowCheckboxes();
                     selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(x => x.checked);
                 }
-                try { updateSelectedProductsCount(); } catch (e) {}
+                try { updateSelectedProductsCount(); } catch (e) { }
             });
         });
         const selectAllCb = document.getElementById('select-all-products');
@@ -886,8 +1109,8 @@
                     else selectedIndices.delete(code);
                 });
                 // Recalcular resumen
-                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
-                try { updateSelectedProductsCount(); } catch (e) {}
+                try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) { }
+                try { updateSelectedProductsCount(); } catch (e) { }
             };
         }
 
@@ -906,12 +1129,12 @@
 
                     // 2. Eliminar del arreglo principal
                     currentItems = currentItems.filter((_, i) => i !== idx);
-                    
+
                     // Re-render y re-aplicar filtros activos
                     renderTable(currentItems);
                     try { filterRows(); } catch (e) { }
                     // Recalcular resumen
-                    try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) {}
+                    try { updatePurchaseSummaryVisibility(); computeAndRenderPurchaseSummary(); } catch (e) { }
                 }
             });
         });
@@ -942,10 +1165,10 @@
                     if (costInput && (costNum != null && isFinite(costNum))) {
                         costInput.value = costNum.toFixed(2);
                     }
-                } catch (e) {}
+                } catch (e) { }
                 // Recalcular resumen
-                try { computeAndRenderPurchaseSummary(); } catch (e) {}
-                try { updateRowSubtotal(idx); } catch (e) {}
+                try { computeAndRenderPurchaseSummary(); } catch (e) { }
+                try { updateRowSubtotal(idx); } catch (e) { }
             });
         });
 
@@ -957,25 +1180,25 @@
                 if (val <= 0) inp.classList.add('qty-error');
                 else inp.classList.remove('qty-error');
             };
-            inp.addEventListener('input', () => { 
-                try { sanitizeNonNegative(inp); } catch (e) {} 
-                try { updateError(); } catch (e) {}
-                try { computeAndRenderPurchaseSummary(); } catch (e) {} 
-                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} 
+            inp.addEventListener('input', () => {
+                try { sanitizeNonNegative(inp); } catch (e) { }
+                try { updateError(); } catch (e) { }
+                try { computeAndRenderPurchaseSummary(); } catch (e) { }
+                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) { }
             });
-            inp.addEventListener('change', () => { 
-                try { sanitizeNonNegative(inp); } catch (e) {} 
-                try { updateError(); } catch (e) {}
-                try { computeAndRenderPurchaseSummary(); } catch (e) {} 
-                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} 
+            inp.addEventListener('change', () => {
+                try { sanitizeNonNegative(inp); } catch (e) { }
+                try { updateError(); } catch (e) { }
+                try { computeAndRenderPurchaseSummary(); } catch (e) { }
+                try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) { }
             });
             // Verificación inicial
             updateError();
         });
         const costInputs = document.querySelectorAll('.purchase-cost-input');
         costInputs.forEach(inp => {
-            inp.addEventListener('input', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
-            inp.addEventListener('change', () => { try { sanitizeNonNegative(inp); } catch (e) {} try { computeAndRenderPurchaseSummary(); } catch (e) {} try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) {} });
+            inp.addEventListener('input', () => { try { sanitizeNonNegative(inp); } catch (e) { } try { computeAndRenderPurchaseSummary(); } catch (e) { } try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) { } });
+            inp.addEventListener('change', () => { try { sanitizeNonNegative(inp); } catch (e) { } try { computeAndRenderPurchaseSummary(); } catch (e) { } try { updateRowSubtotal(Number(inp.dataset.index)); } catch (e) { } });
         });
     }
 
@@ -1114,7 +1337,7 @@
             tableSearchInput && tableSearchInput.addEventListener('input', filterRows);
 
             // Reaplicar sticky al mostrar filtros
-            try { applyStickyLayout(); } catch (e) {}
+            try { applyStickyLayout(); } catch (e) { }
         } catch (e) { console.error('initFilters error:', e); }
     }
 
@@ -1192,7 +1415,7 @@
     }
 
     // Ajustar en resize
-    window.addEventListener('resize', function () { try { applyStickyLayout(); } catch (e) {} });
+    window.addEventListener('resize', function () { try { applyStickyLayout(); } catch (e) { } });
 </script>
 
 <!-- Summary Script: cálculo de detalle y totales de la compra -->
@@ -1215,7 +1438,7 @@
             if (btnModal) {
                 btnModal.disabled = !anySelected;
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     function computeAndRenderPurchaseSummary() {
@@ -1351,22 +1574,22 @@
     }
 
     // Botones de acciones
-    (function(){
+    (function () {
         const btnToggle = document.getElementById('btn-toggle-summary');
         const btnModal = document.getElementById('btn-open-summary-modal');
         const btnSave = document.getElementById('btn-save-order');
         const summaryContainer = document.getElementById('purchase-summary-container');
         if (btnToggle && summaryContainer) {
-            btnToggle.addEventListener('click', function(){
+            btnToggle.addEventListener('click', function () {
                 const isHidden = summaryContainer.classList.contains('hidden');
                 if (isHidden) summaryContainer.classList.remove('hidden');
                 else summaryContainer.classList.add('hidden');
                 // Actualizar texto y estados
-                try { updatePurchaseSummaryVisibility(); } catch (e) {}
+                try { updatePurchaseSummaryVisibility(); } catch (e) { }
             });
         }
         if (btnModal) {
-            btnModal.addEventListener('click', function(){
+            btnModal.addEventListener('click', function () {
                 const html = buildPurchaseSummaryHtml();
                 if (typeof openPurchaseSummaryModal === 'function') {
                     openPurchaseSummaryModal(html);
@@ -1376,7 +1599,7 @@
 
         // Guardar pedido: construir payload y enviar al backend
         if (btnSave) {
-            btnSave.addEventListener('click', async function(){
+            btnSave.addEventListener('click', async function () {
                 try {
                     // Validaciones básicas
                     if (!selectedProvider) {
@@ -1557,7 +1780,6 @@
         window.closePurchaseSummaryModal = closePurchaseSummaryModal;
     })();
 </script>
-</script>
 
 <!-- Modal Script: abrir/cerrar y tecla ESC -->
 <script>
@@ -1565,7 +1787,10 @@
         const modal = document.getElementById('product-detail-modal');
         const dialog = document.getElementById('product-detail-dialog');
         const closeBtn = document.getElementById('product-detail-close');
-        const content = document.getElementById('product-detail-content');
+        const tabsBar = document.getElementById('product-detail-tabs');
+        const generalPanel = document.getElementById('product-detail-tab-general');
+        const parametrosPanel = document.getElementById('product-detail-tab-parametros');
+        const generalContent = document.getElementById('product-detail-tab-general-content');
 
         // Animaciones suaves para overlay y diálogo
         const style = document.createElement('style');
@@ -1577,12 +1802,53 @@
         `;
         document.head.appendChild(style);
 
+        // Activación de pestañas
+        function activateTab(name) {
+            try {
+                const buttons = (tabsBar ? tabsBar.querySelectorAll('.tab-link') : []);
+                buttons.forEach(btn => {
+                    const isActive = btn.getAttribute('data-tab') === name;
+                    // Estado visual activo/inactivo
+                    btn.classList.toggle('text-indigo-600', isActive);
+                    btn.classList.toggle('text-gray-600', !isActive);
+                    btn.classList.toggle('border-indigo-600', isActive);
+                    btn.classList.toggle('border-transparent', !isActive);
+                    btn.classList.toggle('border-b-2', true);
+                    btn.setAttribute('aria-selected', String(isActive));
+                });
+                if (generalPanel && parametrosPanel) {
+                    if (name === 'general') {
+                        generalPanel.classList.remove('hidden');
+                        parametrosPanel.classList.add('hidden');
+                    } else {
+                        parametrosPanel.classList.remove('hidden');
+                        generalPanel.classList.add('hidden');
+                    }
+                }
+            } catch (e) { }
+        }
+
+        // Listeners para cambio de pestañas
+        if (tabsBar) {
+            tabsBar.addEventListener('click', (e) => {
+                const target = e.target.closest('.tab-link');
+                if (!target) return;
+                const tab = target.getAttribute('data-tab');
+                if (tab) activateTab(tab);
+            });
+        }
+
         function openProductDetailModal(htmlContent) {
-            if (content) {
-                content.innerHTML = htmlContent || '';
+            if (generalContent) {
+                if (htmlContent && String(htmlContent).trim().length > 0) {
+                    generalContent.innerHTML = htmlContent;
+                }
+                // Si no hay contenido proporcionado, mantenemos el HTML existente (párrafo por defecto)
             }
             if (modal) {
                 modal.classList.remove('hidden');
+                // Activar por defecto la pestaña General
+                activateTab('general');
                 // Forzar animación en el siguiente frame
                 requestAnimationFrame(() => {
                     modal.classList.add('modal-show');
@@ -1633,7 +1899,10 @@
 </script>
 <style>
     /* Reducción de fuente para toda la vista auto-order */
-    #auto-order-page { font-size: 12px !important; }
+    #auto-order-page {
+        font-size: 12px !important;
+    }
+
     #auto-order-page table,
     #auto-order-page th,
     #auto-order-page td,
@@ -1647,22 +1916,28 @@
     #auto-order-page .text-base,
     #auto-order-page .text-lg,
     #auto-order-page .text-xl,
-    #auto-order-page .text-2xl { font-size: 12px !important; }
+    #auto-order-page .text-2xl {
+        font-size: 12px !important;
+    }
 
     #auto-order-page input,
     #auto-order-page select,
     #auto-order-page button,
-    #auto-order-page textarea { font-size: 12px !important; }
+    #auto-order-page textarea {
+        font-size: 12px !important;
+    }
 
     /* Separadores de columnas y filas para mejor legibilidad */
     #auto-order-page table thead th,
     #auto-order-page table tbody td {
         border-right: 1px solid rgba(0, 0, 0, 0.08);
     }
+
     #auto-order-page table thead th:last-child,
     #auto-order-page table tbody td:last-child {
         border-right: none;
     }
+
     #auto-order-page table tbody tr {
         border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
@@ -1673,7 +1948,12 @@
     }
 
     /* Columna Fecha: sin salto de línea y ancho según contenido */
-    #auto-order-page .fecha-cell { white-space: nowrap; }
-    #auto-order-page col.fecha-col { width: 1%; }
+    #auto-order-page .fecha-cell {
+        white-space: nowrap;
+    }
+
+    #auto-order-page col.fecha-col {
+        width: 1%;
+    }
 </style>
 {% endblock %}

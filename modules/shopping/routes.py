@@ -14,8 +14,6 @@ from modules.shopping.services.shoppingDb import (
     create_product_units,
     get_default_coin,
     get_products_by_codes_list,
-    get_products_history_by_product_code,
-    get_shopping_operations, 
     get_providers, 
     get_products_for_modal,
     get_product_stock_by_code,
@@ -106,7 +104,7 @@ def api_products_history_by_product_code(product_code):
     try:
         provider_code = request.args.get('provider_code')
         print(f"Buscando historial para producto: {product_code} del proveedor {provider_code}")
-        item = get_products_history_by_provider(provider_code, product_code)
+        item = get_products_history_by_provider(None, product_code)
         if not item:
             return jsonify({'ok': False, 'error': 'Product history not found'}), 404
         # Convertir Decimal a float

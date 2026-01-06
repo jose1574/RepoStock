@@ -516,6 +516,14 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\curses\\has_key.py',
    'PYMODULE'),
+  ('database',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\database\\__init__.py',
+   'PYMODULE'),
+  ('database.connection',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\database\\connection.py',
+   'PYMODULE'),
   ('dataclasses',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\dataclasses.py',
@@ -1077,6 +1085,44 @@
   ('modules.sales.routes',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\sales\\routes.py',
+   'PYMODULE'),
+  ('modules.shopping',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\__init__.py',
+   'PYMODULE'),
+  ('modules.shopping.routes',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\routes.py',
+   'PYMODULE'),
+  ('modules.shopping.services', '-', 'PYMODULE'),
+  ('modules.shopping.services.schemas', '-', 'PYMODULE'),
+  ('modules.shopping.services.schemas.product',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\product.py',
+   'PYMODULE'),
+  ('modules.shopping.services.schemas.product_codes',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\product_codes.py',
+   'PYMODULE'),
+  ('modules.shopping.services.schemas.product_units',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\product_units.py',
+   'PYMODULE'),
+  ('modules.shopping.services.schemas.provider',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\provider.py',
+   'PYMODULE'),
+  ('modules.shopping.services.schemas.set_shopping_operation',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\set_shopping_operation.py',
+   'PYMODULE'),
+  ('modules.shopping.services.schemas.set_shopping_operation_details',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\schemas\\set_shopping_operation_details.py',
+   'PYMODULE'),
+  ('modules.shopping.services.shoppingDb',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\shopping\\services\\shoppingDb.py',
    'PYMODULE'),
   ('modules.systems',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '

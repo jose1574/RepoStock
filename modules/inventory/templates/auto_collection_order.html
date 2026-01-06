@@ -1,0 +1,914 @@
+{% extends 'base.html' %}
+
+{% block title %}Seleccionar tienda de destino - Repostock{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 pt-6 pb-12">
+   <!-- Selección de Depósitos (Origen/Destino) -->
+   <div id="form-select-store" class="bg-white shadow-md rounded-lg p-4 mb-4 border border-gray-200">
+      <h2 class="text-base font-semibold text-gray-800 mb-3">Seleccionar Depósitos</h2>
+      <div>
+         <label for="store_origin" class="block text-sm font-medium text-gray-700">Depósito origen</label>
+         <select id="store_origin" name="store_origin"
+            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+            <option value="">-- Seleccionar depósito origen --</option>
+            {% for store in stores %}
+            <option value="{{ store.code }}">
+               {{ store.description }}</option>
+            {% endfor %}
+         </select>
+      </div>
+      <div>
+         <label for="store_destination" class="block text-sm font-medium text-gray-700">Depósito destino</label>
+         <select id="store_destination" name="store_destination"
+            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm">
+            <option value="">-- Seleccionar depósito destino --</option>
+            {% for s in stores %}
+            <option value="{{ s.code }}">
+               {{ s.description}}
+            </option>
+            {% endfor %}
+         </select>
+      </div>
+      <div id="">
+
+      </div>
+
+      <div class="flex items-center">
+         <button type="button" id="apply-store-selection"
+            class="w-full md:w-auto inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium py-2 px-4 rounded shadow">Aplicar</button>
+      </div>
+   </div>
+   {% if store_selection_error %}
+   <div class="mb-4 rounded border border-red-200 bg-red-50 text-red-800 p-3">
+      <strong class="block font-medium">Error de selección</strong>
+      <div class="text-sm">{{ store_selection_error }}</div>
+   </div>
+   {% endif %}
+
+
+   <div id="content">
+
+      <!-- Controles: filtro por departamento (cliente) y buscador de producto -->
+      <div class="mb-4 flex items-center gap-3 sticky top-0 z-40 bg-white border-b border-gray-200 py-2">
+         <!-- Dropdown multi-filtro Departamentos -->
+         <div class="relative" id="dept-dropdown">
+            <button type="button"
+               class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1"
+               id="dept-toggle" aria-haspopup="true" aria-expanded="false">
+               <span class="font-medium">Departamentos</span>
+               <span id="dept-selected-summary" class="text-xs text-gray-500">Todos</span>
+               <svg width="14" height="14" fill="currentColor" class="text-gray-500">
+                  <path d="M4 5l3 3 3-3" />
+               </svg>
+            </button>
+            <div id="dept-panel"
+               class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+               <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-600">Filtrar departamentos</span>
+                  <button type="button" id="dept-clear"
+                     class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+               </div>
+               <div class="mb-2">
+                  <label class="inline-flex items-center gap-2 text-sm">
+                     <input type="checkbox" id="dept-all" class="form-checkbox h-4 w-4 text-indigo-600">
+                     <span class="text-sm text-gray-700">Todos</span>
+                  </label>
+               </div>
+               <div class="space-y-1" id="dept-options">
+                  {% if departments %}
+                  {% for d in departments %}
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                     <input type="checkbox" class="dept-check" value="{{ d.description }}">
+                     <span>{{ d.description }}</span>
+                  </label>
+                  {% endfor %}
+                  {% endif %}
+               </div>
+            </div>
+         </div>
+         <!-- Dropdown multi-filtro Marcas -->
+         <div class="relative" id="brand-dropdown">
+            <button type="button"
+               class="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-50 flex items-center gap-1"
+               id="brand-toggle" aria-haspopup="true" aria-expanded="false">
+               <span class="font-medium">Marcas</span>
+               <span id="brand-selected-summary" class="text-xs text-gray-500">Todas</span>
+               <svg width="14" height="14" fill="currentColor" class="text-gray-500">
+                  <path d="M4 5l3 3 3-3" />
+               </svg>
+            </button>
+            <div id="brand-panel"
+               class="absolute mt-1 left-0 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-50 hidden p-2 space-y-1">
+               <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-600">Filtrar marcas</span>
+                  <button type="button" id="brand-clear"
+                     class="text-xs text-gray-500 hover:text-gray-700">Limpiar</button>
+               </div>
+               <div class="mb-2">
+                  <label class="inline-flex items-center gap-2 text-sm">
+                     <input type="checkbox" id="brand-all" class="form-checkbox h-4 w-4 text-indigo-600">
+                     <span class="text-sm text-gray-700">Todos</span>
+                  </label>
+               </div>
+               <div class="space-y-1" id="brand-options">
+                  {% if brands %}
+                  {% for b in brands %}
+                  <label class="flex items-center gap-2 text-xs cursor-pointer">
+                     <input type="checkbox" class="brand-check" value="{{ b.description }}">
+                     <span>{{ b.description }}</span>
+                  </label>
+                  {% endfor %}
+                  {% endif %}
+               </div>
+            </div>
+         </div>
+
+
+         <label for="product-search" class="text-sm font-medium text-gray-700">Buscar producto</label>
+         <input id="product-search" type="search" placeholder="Buscar por código o descripción..."
+            class="border rounded px-2 py-1 text-sm w-64" />
+
+         <span id="selected-count" class="text-sm font-medium text-gray-700"></span>
+         <span id="products-count" class="ml-3 inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+            <span class="inline-block bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full border border-gray-200">{{
+               products|length }} </span>
+            <span class="text-xs text-gray-500">productos</span>
+         </span>
+         <!-- Botón que envía al servidor si quieres refinar por departamento en backend -->
+         <form id="server-filter-form" method="post" action="{{ url_for('inventory.auto_collection_order') }}">
+            <input type="hidden" name="stock_store_origin" value="{{ store_origin.code if store_origin else '' }}">
+            <input type="hidden" name="store_stock_destination"
+               value="{{ store_destination.code if store_destination else '' }}">
+            <select name="department" id="server-department" class="hidden">
+               <option value=""></option>
+            </select>
+         </form>
+      </div>
+      <!-- Form que envía la selección de productos -->
+      <!-- Barra flotante de acciones -->
+      <div id="action-bar"
+         class="fixed top-16 right-4 z-50 bg-white border border-gray-200 shadow-lg rounded-md p-3 flex items-center gap-2">
+         <button id="select-all" type="button"
+            class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Seleccionar todos</button>
+         <button id="clear-selection" type="button"
+            class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Limpiar</button>
+         <button id="open-preview" type="button" data-js-hook="open-preview"
+            class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+            onclick="window.__openPreview && window.__openPreview()">Previsualizar</button>
+      </div>
+
+      <div class="overflow-x-auto bg-gray-800 rounded-lg shadow">
+         <table class="min-w-full divide-y divide-gray-800">
+            <caption class="sr-only">Lista de productos para traslado</caption>
+            <thead class="bg-gray-800">
+               <tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     &nbsp;</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Código</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Descripción</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Unidad</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Marca</th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">
+                     Departamento</th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
+                     Depósito origen: <b>{{ store_origin.description if store_origin else '' }}</b></th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Min
+                  </th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Exist. Max.
+                  </th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Stock
+                     destino: <b>{{ store_destination.description if store_destination else '' }}</b></th>
+                  <th scope="col"
+                     class="px-4 py-3 text-right text-xs font-medium text-gray-50 uppercase tracking-wider">Por
+                     trasladar</th>
+               </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+               <!-- aqui va ir los detalles de los productos -->
+
+            </tbody>
+         </table>
+      </div>
+   </div>
+   <!-- Modal de previsualización antes de enviar -->
+   <div id="preview-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+
+
+      <div class="absolute inset-0 bg-black opacity-40"></div>
+      <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-3xl p-4 max-h-[85vh] flex flex-col relative">
+         <button id="preview-close" type="button" aria-label="Cerrar"
+            class="absolute top-2 right-2 rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+               <path fill-rule="evenodd"
+                  d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 0 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 0 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414Z"
+                  clip-rule="evenodd" />
+            </svg>
+         </button>
+         <h3 class="text-lg font-medium mb-3">Previsualización de Orden de Recoleccción</h3>
+         <div class="overflow-x-auto overflow-y-auto flex-1 max-h-[60vh]">
+            <table class="min-w-full divide-y divide-gray-200 mb-4">
+               <thead class="bg-gray-50">
+                  <tr>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Por trasladar</th>
+                  </tr>
+               </thead>
+               <tbody id="preview-table-body" class="bg-white divide-y divide-gray-200">
+               </tbody>
+            </table>
+         </div>
+         <div class="flex justify-end gap-2">
+            <button id="preview-add-more" type="button" class="px-3 py-1 bg-gray-200 rounded">Agregar más</button>
+            <button id="preview-submit" type="button" class="px-3 py-1 bg-green-600 text-white rounded">Crear orden de
+               Recolección</button>
+         </div>
+      </div>
+
+   </div>
+</div>
+<!-- Modal edición de existencia mínima y máxima -->
+<div id="edit-param-modal" class="fixed inset-0 z-60 hidden items-center justify-center">
+   <div class="absolute inset-0 bg-black opacity-40"></div>
+   <div class="bg-white rounded-lg shadow-lg z-70 w-11/12 max-w-md p-4 flex flex-col relative">
+      <button id="edit-param-close" type="button" aria-label="Cerrar"
+         class="absolute top-2 right-2 rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <path fill-rule="evenodd"
+               d="M6.225 4.811a1 1 0 0 1 1.414 0L12 9.172l4.361-4.361a1 1 0 1 1 1.414 1.414L13.414 10.586l4.361 4.361a1 1 0 0 1-1.414 1.414L12 12l-4.361 4.361a1 1 0 0 1-1.414-1.414l4.361-4.361-4.361-4.361a1 1 0 0 1 0-1.414Z"
+               clip-rule="evenodd" />
+         </svg>
+      </button>
+      <h3 class="text-base font-medium mb-3">Editar parámetros</h3>
+      <div class="text-sm text-gray-700 mb-2">
+         <div><span class="font-mono font-semibold">Código:</span> <span id="edit-prod-code"></span></div>
+         <div class="truncate"><span class="font-semibold">Producto:</span> <span id="edit-prod-desc"></span></div>
+         <div class="mt-1 text-xs text-gray-600" id="edit-store-info"></div>
+      </div>
+      <div class="mb-3">
+         <span
+            class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Stock:
+            <span id="edit-stock-value"></span></span>
+      </div>
+      <form id="edit-param-form" class="space-y-3">
+         <div>
+            <label for="edit-min-input" class="block text-xs font-medium text-gray-700">Existencia mínima</label>
+            <input id="edit-min-input" type="number" step="any" min="0"
+               class="mt-1 w-full border rounded px-2 py-1 text-sm">
+         </div>
+         <div>
+            <label for="edit-max-input" class="block text-xs font-medium text-gray-700">Existencia máxima</label>
+            <input id="edit-max-input" type="number" step="any" min="0"
+               class="mt-1 w-full border rounded px-2 py-1 text-sm">
+         </div>
+         <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-3 py-1 bg-gray-200 rounded"
+               onclick="document.getElementById('edit-param-close').click()">Cancelar</button>
+            <button type="submit" class="px-3 py-1 bg-teal-600 text-white rounded">Guardar</button>
+         </div>
+      </form>
+   </div>
+</div>
+</div>
+
+
+
+<!-- Scripts para manejar selección y envío -->
+<script>
+
+   // devuelve los productos 
+   async function handlerProducts() {
+      let url = "/inventory/api/products/auto_order_collection";
+      
+      const response = await fetch(url, {
+         method: 'POST',
+         headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+         },
+         body: JSON.stringify({
+            store_origin: document.getElementById('store_origin').value,
+            store_destination: document.getElementById('store_destination').value,
+         })
+      });
+
+      if (!response.ok) {
+         const errorData = await response.json().catch(() => ({}));
+         const errorMsg = (errorData && errorData.error) ? errorData.error : 'Error al obtener productos';
+         alert(errorMsg);
+         return [];
+      }
+      const data = await response.json();
+      return data.products || [];
+   }
+
+   //renderiza los productos en la tabla
+   function renderProducts(products) {
+      console.log(`cantidad de productos recibidos: ${products.length}, productos:`, products[0]);
+
+      const tbody = document.querySelector('tbody');
+      tbody.innerHTML = ''; // Limpiar contenido previo
+
+      products.forEach(product => {
+         const tr = document.createElement('tr');
+         tr.setAttribute('data-department', product.department_description || '');
+         tr.setAttribute('data-brand', product.mark_description || '');
+
+         tr.innerHTML = `
+            <td class="px-4 py-2">
+               <input type="checkbox" class="product-checkbox" value="${product.code}">
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-900">${product.code}</td>
+            <td class="px-4 py-2 text-sm text-gray-900">${product.description}</td>
+            <td class="px-4 py-2 text-sm text-gray-900">${product.unit_description}</td>
+            <td class="px-4 py-2 text-sm text-gray-900">${product.mark_description}</td>
+            <td class="px-4 py-2 text-sm text-gray-900">${product.department_description}</td>
+            <td class="px-4 py-2 text-sm text-gray-900 text-right">${product.stock_store_origin}</td>
+            <td class="px-4 py-2 text-sm text-gray-900 text-right min-stock-cell">${product.minimal_stock}</td>
+            <td class="px-4 py-2 text-sm text-gray-900 text-right max-stock-cell">${product.maximum_stock}</td>
+            <td class="px-4 py-2 text-sm text-gray-900 text-right">${product.stock_store_destination}</td>
+            <td class="px-4 py-2 text-sm text-gray-900 text-right">
+               <input id="to_transfer_${product.code}" type="number" step="any" min="0" class="to-transfer-input w-16 text-right border rounded px-1" 
+                  name="to_transfer_${product.code}" value="${Math.min(product.stock_store_origin, Math.max(0, product.maximum_stock - product.stock_store_destination))}" max="${product.stock_store_origin}">
+            </td>
+         `;
+
+         tbody.appendChild(tr);
+      });
+   }
+
+
+   // Carpturar el evento click del boton aplicar 
+   document.getElementById('apply-store-selection').addEventListener('click', async function () {
+      const products = await handlerProducts();
+      renderProducts(products);
+   });
+   document.addEventListener('DOMContentLoaded', function () {
+      // --- Modal edición de parámetros por producto desde la tabla ---
+      const editModal = document.getElementById('edit-param-modal');
+      const editClose = document.getElementById('edit-param-close');
+      const editForm = document.getElementById('edit-param-form');
+      const editProdCode = document.getElementById('edit-prod-code');
+      const editProdDesc = document.getElementById('edit-prod-desc');
+      const editStoreInfo = document.getElementById('edit-store-info');
+      const editStockValue = document.getElementById('edit-stock-value');
+      const editMinInput = document.getElementById('edit-min-input');
+      const editMaxInput = document.getElementById('edit-max-input');
+
+      function openEditModalFromCell(cell) {
+         if (!cell) return;
+         const code = cell.getAttribute('data-code');
+         const desc = cell.getAttribute('data-description');
+         const min = cell.getAttribute('data-min');
+         const max = cell.getAttribute('data-max');
+         const stockDest = cell.getAttribute('data-stock-dest');
+         const stockOrigin = cell.getAttribute('data-stock-origin');
+         const storeDest = cell.getAttribute('data-store-dest');
+         const storeOrigin = cell.getAttribute('data-store-origin');
+         // Usar depósito destino como "seleccionado" para mostrar stock
+         editProdCode.textContent = code || '';
+         editProdDesc.textContent = desc || '';
+         editStoreInfo.textContent = `Depósito destino: ${storeDest || ''}`;
+         editStockValue.textContent = `${stockDest ?? ''}`;
+         editMinInput.value = (min ?? '').toString();
+         editMaxInput.value = (max ?? '').toString();
+         editModal.classList.remove('hidden');
+         editModal.classList.add('flex');
+         setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch (e) { } }, 50);
+      }
+
+      document.querySelectorAll('.editable-product').forEach(cell => {
+         cell.addEventListener('click', () => openEditModalFromCell(cell));
+      });
+
+      function closeEditModal() {
+         editModal.classList.add('hidden');
+         editModal.classList.remove('flex');
+      }
+      editClose && editClose.addEventListener('click', closeEditModal);
+      editModal && editModal.addEventListener('click', (e) => {
+         if (e.target === editModal) { closeEditModal(); }
+      });
+
+      editForm && editForm.addEventListener('submit', async function (e) {
+         e.preventDefault();
+         const productCode = editProdCode.textContent.trim();
+         const minimalStock = editMinInput.value;
+         const maximumStock = editMaxInput.value;
+         if (!productCode) { alert('Código de producto no válido.'); return; }
+         // Enviar al backend usando la ruta existente para guardar parámetros
+         try {
+            const resp = await fetch("{{ url_for('inventory.save_config_param_product') }}", {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+               body: new URLSearchParams({
+                  product_code: productCode,
+                  minimal_stock: minimalStock,
+                  maximum_stock: maximumStock,
+                  location: '',
+                  store_code: "{{ store_destination.code if store_destination else '' }}"
+               })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || (data && data.ok === false)) {
+               const msg = (data && data.error) ? data.error : 'Error al guardar parámetros';
+               throw new Error(msg);
+            }
+            // Actualizar la fila en la tabla (min/max)
+            const row = Array.from(document.querySelectorAll('tbody tr')).find(r => {
+               const codeCell = r.querySelector('td:nth-child(2)');
+               return codeCell && codeCell.textContent.trim() === productCode;
+            });
+            if (row) {
+               const minCell = row.querySelector('.min-stock-cell');
+               const maxCell = row.querySelector('.max-stock-cell');
+               if (minCell) minCell.textContent = minimalStock;
+               if (maxCell) maxCell.textContent = maximumStock;
+               // actualizar data-* del nombre
+               const nameCell = row.querySelector('.editable-product');
+               if (nameCell) {
+                  nameCell.setAttribute('data-min', minimalStock);
+                  nameCell.setAttribute('data-max', maximumStock);
+               }
+               // Recalcular sugerido "Por trasladar" para la fila tras cambios de min/max
+               try { recomputeToTransferForRow(row); } catch (e) { }
+            }
+            closeEditModal();
+         } catch (err) {
+            alert('No se pudo guardar: ' + (err && err.message ? err.message : err));
+         }
+      });
+      const selectAllBtn = document.getElementById('select-all');
+      const clearBtn = document.getElementById('clear-selection');
+      const form = document.getElementById('collection-form');
+      const sendBtn = document.getElementById('send-selection');
+      const openPreviewBtn = document.getElementById('open-preview');
+      const recalcBtn = document.getElementById('recalculate-to-transfer');
+      let currentPreviewItems = [];
+      let currentPreviewMeta = {};
+      const editStoreCode = "{{ session.get('store', '') }}";
+      // Dropdown elements
+       const deptToggle = document.getElementById('dept-toggle');
+      const deptPanel = document.getElementById('dept-panel');
+      const deptSummary = document.getElementById('dept-selected-summary');
+      const brandToggle = document.getElementById('brand-toggle');
+      const brandPanel = document.getElementById('brand-panel');
+      const brandSummary = document.getElementById('brand-selected-summary');
+      const searchInput = document.getElementById('product-search');
+
+      function getCheckboxes() {
+         return Array.from(document.querySelectorAll('.product-checkbox'));
+      }
+
+      function updateSelectedCount() {
+         const totalChecked = getCheckboxes().filter(cb => cb.checked).length;
+         const elem = document.getElementById('selected-count');
+         if (elem) { elem.textContent = totalChecked ? (totalChecked + ' seleccionados') : 'Sin selección'; }
+      }
+
+      selectAllBtn && selectAllBtn.addEventListener('click', function () {
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         rows.forEach(row => {
+            const cb = row.querySelector('.product-checkbox');
+            if (!cb) return;
+            if (row.style.display !== 'none') {
+               cb.checked = true; // NO desmarcar ocultos
+            }
+         });
+         updateSelectedCount();
+      });
+
+      clearBtn && clearBtn.addEventListener('click', function () {
+         getCheckboxes().forEach(cb => cb.checked = false);
+         updateSelectedCount();
+      });
+
+      // Validación simple antes de enviar: debe haber al menos un producto seleccionado
+      form && form.addEventListener('submit', function (e) {
+         const anyChecked = getCheckboxes().some(cb => cb.checked);
+         if (!anyChecked) {
+            e.preventDefault();
+            alert('Selecciona al menos un producto antes de enviar.');
+            return false;
+         }
+
+         // Opcional: compactar los inputs to_transfer solo para productos seleccionados
+         // Para esto no necesitamos hacer nada extra ahora; en el servidor se leerá por código
+         return true;
+      });
+
+      // Manejo de Enter en inputs "to-transfer-input": evitar submit y mover foco al siguiente input
+      function getToTransferInputs() {
+         return Array.from(document.querySelectorAll('.to-transfer-input'));
+      }
+
+      function setInvalid(input, message) {
+         input.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+         const err = input.parentElement.querySelector('.input-error');
+         if (err) {
+            err.textContent = message;
+            err.classList.remove('hidden');
+         }
+      }
+
+      function clearInvalid(input) {
+         input.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+         const err = input.parentElement.querySelector('.input-error');
+         if (err) {
+            err.textContent = '';
+            err.classList.add('hidden');
+         }
+      }
+
+      // Helpers para validar solo productos seleccionados
+      function getProductCodeFromInput(input) {
+         const name = input && input.name ? input.name : '';
+         const m = name.match(/^to_transfer_(.+)$/);
+         return m ? m[1] : null;
+      }
+
+      function parseNum(val) {
+         if (val === null || val === undefined) return 0;
+         if (typeof val === 'number') return isNaN(val) ? 0 : val;
+         const s = String(val).trim().replace(/\./g, '.').replace(/,/g, '.');
+         const n = parseFloat(s);
+         return isNaN(n) ? 0 : n;
+      }
+
+      function recomputeToTransferForRow(row) {
+         if (!row) return;
+         const originCell = row.querySelector('td:nth-child(7)');
+         const minCell = row.querySelector('.min-stock-cell');
+         const maxCell = row.querySelector('.max-stock-cell');
+         const destCell = row.querySelector('td:nth-child(10)');
+         const input = row.querySelector('.to-transfer-input');
+         const origin = parseNum(originCell ? originCell.textContent : 0);
+         const dest = parseNum(destCell ? destCell.textContent : 0);
+         const maxStock = parseNum(maxCell ? maxCell.textContent : 0);
+         // Fórmula base: min(stock_origen, max(maximo - stock_destino, 0))
+         // Si el stock de origen es negativo o cero, sugerimos 0 pero permitimos que el usuario ingrese manualmente.
+         const safeOrigin = Math.max(origin, 0);
+         const suggested = Math.min(safeOrigin, Math.max(maxStock - dest, 0));
+         if (input) {
+            input.value = suggested.toFixed(2);
+            clearInvalid(input);
+         }
+      }
+
+      function isInputSelected(input) {
+         const code = getProductCodeFromInput(input);
+         if (!code) return false;
+         const cb = Array.from(document.querySelectorAll('.product-checkbox')).find(c => c.value === code);
+         return !!(cb && cb.checked);
+      }
+
+      function validateInput(input) {
+         // Si el producto NO está seleccionado, no validar ni marcar error
+         if (!isInputSelected(input)) {
+            clearInvalid(input);
+            return true;
+         }
+
+         const raw = input.value;
+         const val = Number(raw);
+         const maxAttr = input.getAttribute('max');
+         const originMax = (maxAttr !== null && maxAttr !== '') ? Number(maxAttr) : NaN;
+
+         // Requerimos número > 0 y <= stock origen
+         if (!raw || isNaN(val) || val <= 0) {
+            setInvalid(input, 'El valor debe ser un número mayor que 0');
+            return false;
+         }
+         // Si el stock de origen es positivo, validamos el límite superior.
+         // Si es 0 o negativo, no bloqueamos por stock de origen para permitir reposición.
+         if (Number.isFinite(originMax) && originMax > 0) {
+            if (val > originMax) {
+               setInvalid(input, `El valor debe ser menor o igual al stock de origen (${originMax})`);
+               return false;
+            }
+         }
+
+         clearInvalid(input);
+         return true;
+      }
+
+      function focusNextInput(current, offset = 1) {
+         const inputs = getToTransferInputs();
+         const idx = inputs.indexOf(current);
+         if (idx === -1) return;
+         const next = inputs[idx + offset];
+         if (next) {
+            next.focus();
+            try { next.select(); } catch (e) { }
+         }
+      }
+
+      // Atachamos listeners a todos los inputs actuales
+      function attachEnterHandlers() {
+         getToTransferInputs().forEach(input => {
+            // validar en cada cambio
+            input.addEventListener('input', function () { validateInput(this); });
+            input.addEventListener('blur', function () { validateInput(this); });
+
+            input.addEventListener('keydown', function (e) {
+               // Enter o NumpadEnter
+               if (e.key === 'Enter') {
+                  e.preventDefault();
+                  // validar antes de pasar al siguiente
+                  if (validateInput(this)) {
+                     focusNextInput(this, 1);
+                  } else {
+                     // si inválido, mantener foco aquí
+                     this.focus();
+                  }
+                  return false;
+               }
+               // Flechas para navegar rápidamente
+               if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  focusNextInput(this, 1);
+                  return false;
+               }
+               if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  focusNextInput(this, -1);
+                  return false;
+               }
+            });
+         });
+      }
+
+      // Ejecutar al cargar
+      attachEnterHandlers();
+
+      // Al marcar/desmarcar un producto, limpiar errores si se desmarca
+      getCheckboxes().forEach(cb => {
+         cb.addEventListener('change', function () {
+            const code = this.value;
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
+            if (inp && !this.checked) {
+               clearInvalid(inp);
+            }
+            updateSelectedCount();
+         });
+      });
+
+      // Validación de formulario al enviar: revisar solo los productos seleccionados
+      form && form.addEventListener('submit', function (e) {
+         const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         let firstInvalid = null;
+         for (const cb of checked) {
+            const code = cb.value;
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
+            if (inp) {
+               const ok = validateInput(inp);
+               if (!ok && !firstInvalid) firstInvalid = inp;
+            }
+         }
+         if (firstInvalid) {
+            e.preventDefault();
+            firstInvalid.focus();
+            alert('Corrige los valores marcados en rojo antes de enviar.');
+            return false;
+         }
+         return true;
+      });
+
+      // Si la tabla se actualiza dinámicamente en el futuro, podrías re-llamar attachEnterHandlers()
+
+      function normalizeText(s) { return (s || '').toString().toLowerCase(); }
+      function getCheckedValues(containerSelector) {
+         return Array.from(document.querySelectorAll(containerSelector)).filter(c => c.checked).map(c => normalizeText(c.value));
+      }
+      function updateDropdownSummary() {
+         const dVals = getCheckedValues('.dept-check');
+         deptSummary.textContent = dVals.length ? (dVals.length === 1 ? dVals[0] : dVals.length + ' seleccionados') : 'Todos';
+         const bVals = getCheckedValues('.brand-check');
+         brandSummary.textContent = bVals.length ? (bVals.length === 1 ? bVals[0] : bVals.length + ' seleccionadas') : 'Todas';
+      }
+      function filterRows() {
+         const q = normalizeText(searchInput && searchInput.value);
+         const depts = getCheckedValues('.dept-check');
+         const brands = getCheckedValues('.brand-check');
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         rows.forEach(row => {
+            const codeCell = row.querySelector('td:nth-child(2)');
+            const descCell = row.querySelector('td:nth-child(3)');
+            const rowDept = normalizeText(row.getAttribute('data-department'));
+            const rowBrand = normalizeText(row.getAttribute('data-brand'));
+            const matchesDept = (depts.length === 0) || depts.includes(rowDept);
+            const matchesBrand = (brands.length === 0) || brands.includes(rowBrand);
+            const matchesQuery = !q || (normalizeText(codeCell && codeCell.textContent).includes(q)) || (normalizeText(descCell && descCell.textContent).includes(q));
+            row.style.display = (matchesDept && matchesBrand && matchesQuery) ? '' : 'none';
+         });
+      }
+      searchInput && searchInput.addEventListener('input', filterRows);
+      // Toggle handlers
+      function togglePanel(panel, btn) {
+         const isOpen = !panel.classList.contains('hidden');
+         document.querySelectorAll('#dept-panel,#brand-panel').forEach(p => p.classList.add('hidden'));
+         if (!isOpen) { panel.classList.remove('hidden'); btn.setAttribute('aria-expanded', 'true'); } else { panel.classList.add('hidden'); btn.setAttribute('aria-expanded', 'false'); }
+      }
+      deptToggle && deptToggle.addEventListener('click', () => togglePanel(deptPanel, deptToggle));
+      brandToggle && brandToggle.addEventListener('click', () => togglePanel(brandPanel, brandToggle));
+      document.addEventListener('click', (e) => {
+         if (!e.target.closest('#dept-dropdown') && !e.target.closest('#brand-dropdown')) {
+            deptPanel.classList.add('hidden'); brandPanel.classList.add('hidden');
+         }
+      });
+      // Clear buttons
+      document.getElementById('dept-clear')?.addEventListener('click', () => { document.querySelectorAll('.dept-check').forEach(c => c.checked = false); document.getElementById('dept-all') && (document.getElementById('dept-all').checked = false); updateDropdownSummary(); filterRows(); });
+      document.getElementById('brand-clear')?.addEventListener('click', () => { document.querySelectorAll('.brand-check').forEach(c => c.checked = false); document.getElementById('brand-all') && (document.getElementById('brand-all').checked = false); updateDropdownSummary(); filterRows(); });
+
+      // 'Todos' checkboxes: marcar/desmarcar todos
+      const deptAllCheckbox = document.getElementById('dept-all');
+      const brandAllCheckbox = document.getElementById('brand-all');
+      deptAllCheckbox?.addEventListener('change', function () {
+         const checked = !!this.checked;
+         document.querySelectorAll('.dept-check').forEach(c => c.checked = checked);
+         updateDropdownSummary(); filterRows();
+      });
+      brandAllCheckbox?.addEventListener('change', function () {
+         const checked = !!this.checked;
+         document.querySelectorAll('.brand-check').forEach(c => c.checked = checked);
+         updateDropdownSummary(); filterRows();
+      });
+
+      // Change event on checkboxes: sync 'Todos' state and update summaries
+      document.addEventListener('change', (e) => {
+         if (e.target.classList.contains('dept-check')) {
+            const anyUnchecked = Array.from(document.querySelectorAll('.dept-check')).some(c => !c.checked);
+            if (deptAllCheckbox) deptAllCheckbox.checked = !anyUnchecked;
+            updateDropdownSummary();
+            filterRows();
+         }
+         if (e.target.classList.contains('brand-check')) {
+            const anyUncheckedB = Array.from(document.querySelectorAll('.brand-check')).some(c => !c.checked);
+            if (brandAllCheckbox) brandAllCheckbox.checked = !anyUncheckedB;
+            updateDropdownSummary();
+            filterRows();
+         }
+      });
+      updateDropdownSummary();
+      filterRows();
+
+
+      // Recalcular sugeridos para todas las filas visibles
+      recalcBtn && recalcBtn.addEventListener('click', function () {
+         const rows = Array.from(document.querySelectorAll('tbody tr')).filter(r => r.style.display !== 'none');
+         rows.forEach(recomputeToTransferForRow);
+      });
+
+      // Si
+      // ---- PREVIEW MODAL ----
+      const previewModal = document.getElementById('preview-modal');
+      const previewBody = document.getElementById('preview-table-body');
+      const previewAddMore = document.getElementById('preview-add-more');
+      const previewSubmit = document.getElementById('preview-submit');
+      const previewPdfBtn = document.getElementById('preview-pdf');
+      const previewClose = document.getElementById('preview-close');
+
+      function openPreview() {
+         console.debug('[open-preview] click handler invoked');
+         const rows = Array.from(document.querySelectorAll('tbody tr'));
+         const selected = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         if (selected.length === 0) {
+            alert('Selecciona al menos un producto para previsualizar.');
+            return;
+         }
+
+         // Construir lista de items seleccionados
+         const items = [];
+         previewBody.innerHTML = '';
+         for (const cb of selected) {
+            const code = cb.value;
+            const row = cb.closest('tr');
+            const descCell = row.querySelector('td:nth-child(3)');
+            const unitCell = row.querySelector('td:nth-child(4)');
+            const desc = descCell && descCell.textContent ? descCell.textContent.trim() : '';
+            const unit = unitCell && unitCell.textContent ? unitCell.textContent.trim() : '';
+            const qtyInput = document.getElementsByName('to_transfer_' + code)[0];
+            let raw = qtyInput ? qtyInput.value : '0';
+            if (typeof raw === 'string') raw = raw.replace(',', '.');
+            let parsed = parseFloat(raw);
+            if (isNaN(parsed) || parsed < 0) parsed = 0;
+            // Incluir siempre el producto, aunque cantidad sea 0, para permitir editar desde la previsualización
+            items.push({ product_code: code, description: desc, unit: unit, quantity: parsed });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                        <td class="px-3 py-2 text-sm">${code}</td>
+                        <td class="px-3 py-2 text-sm">${desc || ''}</td>
+                        <td class="px-3 py-2 text-sm">${unit || ''}</td>
+                        <td class="px-3 py-2 text-sm text-right">${parsed.toFixed(2)}</td>
+                     `;
+            previewBody.appendChild(tr);
+         }
+         if (items.length === 0) {
+            alert('No hay productos seleccionados con cantidades.');
+            return;
+         }
+
+         // Metadatos básicos para PDF
+         const meta = {
+            store_origin_code: "{{ store_origin.code if store_origin else '' }}",
+            store_origin_desc: "{{ store_origin.description if store_origin else '' }}",
+            store_destination_code: "{{ store_destination.code if store_destination else '' }}",
+            store_destination_desc: "{{ store_destination.description if store_destination else '' }}",
+            department: "{{ selected_department or '' }}"
+         };
+
+         // Guardar en variables para usar en botón PDF
+         currentPreviewItems = items;
+         currentPreviewMeta = meta;
+
+         // Mostrar modal
+         previewModal.classList.remove('hidden');
+         previewModal.classList.add('flex');
+      }
+
+      function closePreview() {
+         previewModal.classList.add('hidden');
+         previewModal.classList.remove('flex');
+      }
+
+      if (!openPreviewBtn) {
+         console.warn('[open-preview] Botón no encontrado en DOM');
+      } else {
+         openPreviewBtn.addEventListener('click', openPreview);
+      }
+      // Exponer función global como fallback para entorno empaquetado (PyInstaller / WebView)
+      window.__openPreview = openPreview;
+      previewAddMore && previewAddMore.addEventListener('click', closePreview);
+      previewClose && previewClose.addEventListener('click', closePreview);
+      previewSubmit && previewSubmit.addEventListener('click', function () {
+         // Validar que haya selección y cantidades válidas para los seleccionados
+         const checked = Array.from(document.querySelectorAll('.product-checkbox:checked'));
+         if (checked.length === 0) {
+            alert('Selecciona al menos un producto para crear la orden.');
+            return;
+         }
+         let firstInvalid = null;
+         for (const cb of checked) {
+            const code = cb.value;
+            const inp = document.getElementsByName('to_transfer_' + code)[0];
+            if (inp && !validateInput(inp)) {
+               if (!firstInvalid) firstInvalid = inp;
+            }
+         }
+         if (firstInvalid) {
+            firstInvalid.focus();
+            alert('Corrige los valores marcados en rojo antes de crear la orden.');
+            return;
+         }
+
+         // 1) Crear la orden y abrir el PDF en una nueva pestaña usando target="_blank"
+         const prevTarget = form.getAttribute('target');
+         form.setAttribute('target', '_blank');
+         if (form.requestSubmit) {
+            form.requestSubmit();
+         } else {
+            form.submit();
+         }
+         // Restaurar target original (por limpieza)
+         if (prevTarget !== null) form.setAttribute('target', prevTarget); else form.removeAttribute('target');
+
+         // 2) Redirigir la pestaña actual a la selección de depósito de destino
+         window.location.href = "{{ url_for('inventory.auto_collection_order') }}";
+      });
+      previewPdfBtn && previewPdfBtn.addEventListener('click', function () {
+         if (!currentPreviewItems || currentPreviewItems.length === 0) {
+            alert('No hay elementos válidos para imprimir.');
+            return;
+         }
+         // Construir un formulario POST a /collection/preview.pdf para abrir en nueva pestaña
+         const formPdf = document.createElement('form');
+         formPdf.method = 'POST';
+         formPdf.action = "{{ url_for('inventory.collection_preview_pdf') }}";
+         formPdf.target = '_blank';
+         const input = document.createElement('input');
+         input.type = 'hidden';
+         input.name = 'payload';
+         input.value = JSON.stringify({ items: currentPreviewItems, meta: currentPreviewMeta });
+         formPdf.appendChild(input);
+         document.body.appendChild(formPdf);
+         formPdf.submit();
+         // Limpieza opcional
+         setTimeout(() => { try { document.body.removeChild(formPdf); } catch (e) { } }, 1000);
+      });
+      updateSelectedCount();
+   });
+
+</script>
+
+
+{% endblock %}

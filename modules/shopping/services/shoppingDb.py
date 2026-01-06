@@ -31,41 +31,6 @@ def get_db_connection():
             pass
 
 
-def get_shopping_operations(p_initial_date, p_final_date, p_provider=None, p_user=None):
-    """Devuelve operaciones de compra llamando la función DB `get_shopping_operation`.
-
-    Parámetros:
-    - p_initial_date, p_final_date: fechas (tipo date o string YYYY-MM-DD)
-    - p_provider: código de proveedor o None
-    - p_user: código de usuario o None
-
-    Retorna una lista de diccionarios (o registros tal como los devuelve el cursor).
-    """
-    conn = get_connection()
-    try:
-        # Intentar cursor que devuelva dicts (psycopg2.RealDictCursor) si está disponible
-        try:
-            import psycopg2.extras as _extras
-
-            cur = conn.cursor(cursor_factory=_extras.RealDictCursor)
-        except Exception:
-            cur = conn.cursor()
-
-        sql = "SELECT * FROM get_shopping_operation(%s, %s, %s, %s);"
-        cur.execute(
-            sql, (p_initial_date, p_final_date, p_provider or None, p_user or None)
-        )
-        rows = cur.fetchall()
-
-        # Si el cursor no devolvió dicts, convertir usando description
-        if rows and isinstance(rows[0], tuple):
-            cols = [c[0] for c in cur.description] if cur.description else []
-            rows = [dict(zip(cols, r)) for r in rows]
-
-        return rows
-    finally:
-        close_connection(conn)
-
 
 # Obtener una lista de proveedores
 def get_providers() -> list[Provider]:
@@ -755,6 +720,32 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
                 ORDER BY p.code
             """
              cur.execute(sql_products_provider, (p_code, product_code))
+        elif not provider_code:
+
+            sql_products_provider = """
+                SELECT
+                    p.description as product_description,
+                    p.code as product_code,
+                    p.mark as product_mark,
+                    p.department as product_department,
+                    d.description as department_description,
+                    pv.unitary_cost as product_provider_unitary_cost,
+                    to_char(pv.emission_date, 'DD-MM-YYYY') as product_provider_emission_date,
+                    pv.amount as product_provider_amount,
+                    pv.coin_code as product_provider_coin,
+                    pv.document_no as product_provider_document_no
+                FROM products as p
+                LEFT JOIN (
+                    SELECT 
+                        *,
+                        ROW_NUMBER() OVER (PARTITION BY product_code ORDER BY emission_date DESC) as rn
+                    FROM products_provider
+                ) as pv ON (p.code = pv.product_code AND pv.rn = 1)
+                LEFT JOIN department as d ON (d.code = p.department)
+                WHERE p.status = '01'
+                AND p.code = %s
+                ORDER BY p.code
+            """
 
         else:
             # 1b. Caso sin product_code: Listar todo el historial del proveedor (FROM products_provider)
@@ -919,170 +910,7 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
         close_connection(conn)
 
 # devuelve historico de un producto por su código
-def get_products_history_by_product_code(product_code: str, provider_code: str ) -> Optional[dict]:
-    """
-    Obtiene la lista de productos comprados a un proveedor con su información detallada.
-    Optimizado para realizar consultas en lote y evitar N+1 queries.
-    """
-    conn = get_connection()
-    try:
-        cur = conn.cursor()
-        p_code = str(provider_code).strip()
 
-        # 1. Obtener productos base (solo la última compra por producto)
-        sql_products_provider = """
-            SELECT
-                p.description as product_description,
-                p.code as product_code,
-                p.mark as product_mark,
-                p.department as product_department,
-                d.description as department_description,
-                pv.product_code,
-                pv.unitary_cost as product_provider_unitary_cost,
-                to_char(pv.emission_date, 'DD-MM-YYYY') as product_provider_emission_date,
-                pv.amount as product_provider_amount,
-                pv.coin_code as product_provider_coin,
-                pv.document_no as product_provider_document_no
-            FROM (
-                SELECT 
-                    *,
-                    ROW_NUMBER() OVER (PARTITION BY product_code ORDER BY emission_date DESC) as rn
-                FROM products_provider
-                WHERE provider_code = %s
-            ) as pv
-            LEFT JOIN products as p ON (p.code = pv.product_code)
-            LEFT JOIN department as d ON (d.code = p.department)
-            WHERE pv.rn = 1
-            AND p.status = '01'
-            and p.code = %s
-            ORDER BY p.code
-        """
-
-        cur.execute(sql_products_provider, (p_code, product_code))
-        rows = cur.fetchall()
-        
-        if not rows:
-            return []
-
-        colnames = [desc[0] for desc in cur.description]
-        products_provider_list = [dict(zip(colnames, row)) for row in rows]
-        
-        # Obtener lista de códigos para consultas en lote
-        product_codes = [p['product_code'] for p in products_provider_list if p.get('product_code')]
-        
-        if not product_codes:
-            return products_provider_list
-
-        product_codes_tuple = tuple(product_codes)
-
-        # 2. Consultas en lote (Bulk queries)
-        
-        # Stocks
-        sql_stocks = """
-            SELECT * FROM products_stock WHERE product_code IN %s
-        """
-        cur.execute(sql_stocks, (product_codes_tuple,))
-        stock_rows = cur.fetchall()
-        stock_cols = [desc[0] for desc in cur.description]
-        
-        stocks_by_code = {}
-        for row in stock_rows:
-            d = dict(zip(stock_cols, row))
-            p_code_val = d.get('product_code')
-            if p_code_val:
-                if p_code_val not in stocks_by_code:
-                    stocks_by_code[p_code_val] = []
-                stocks_by_code[p_code_val].append(d)
-
-        # Units
-        sql_units = """
-            SELECT 
-            pu.*,
-            u.description as unit_description
-            FROM products_units pu
-            LEFT JOIN units u ON pu.unit = u.code
-            WHERE pu.product_code IN %s
-        """
-        
-        cur.execute(sql_units, (product_codes_tuple,))
-        unit_rows = cur.fetchall()
-        unit_cols = [desc[0] for desc in cur.description]
-        
-        units_by_code = {}
-        for row in unit_rows:
-            d = dict(zip(unit_cols, row))
-            p_code_val = d.get('product_code')
-            if p_code_val:
-                if p_code_val not in units_by_code:
-                    units_by_code[p_code_val] = []
-                units_by_code[p_code_val].append(d)
-
-        # Parameters
-        sql_params = """
-            SELECT 
-            *
-            FROM products_failures
-            WHERE product_code IN %s
-        """
-        cur.execute(sql_params, (product_codes_tuple,))
-        param_rows = cur.fetchall()
-        param_cols = [desc[0] for desc in cur.description]
-        
-        params_by_code = {}
-        for row in param_rows:
-            d = dict(zip(param_cols, row))
-            p_code_val = d.get('product_code')
-            if p_code_val:
-                if p_code_val not in params_by_code:
-                    params_by_code[p_code_val] = []
-                params_by_code[p_code_val].append(d)
-
-          # devuelve las compras relacionadas al producto con otros proveedores
-        sql_product_in_order = """
-            select 
-            pp.product_code,
-            so.document_no,
-            so.emission_date,
-            so.provider_code,
-            so.provider_name,
-            pp.amount,
-            pp.unitary_cost
-            from shopping_operation as so
-            left join products_provider as pp on (pp.document_no = so.document_no )
-            where so.operation_type = 'ORDER'
-            and pp.product_code IN %s
-            order by so.document_no desc
-            """
-        cur.execute(sql_product_in_order, (product_codes_tuple,))
-        order_rows = cur.fetchall()
-        order_cols = [desc[0] for desc in cur.description]
-
-        product_in_order = {}
-        for row in order_rows: 
-            d = dict(zip(order_cols, row))
-            p_code_val = d.get('product_code')
-            if p_code_val:
-                if p_code_val not in product_in_order:
-                    product_in_order[p_code_val] = []
-                product_in_order[p_code_val].append(d)
-
-        # 3. Asignar detalles a cada producto
-        for product in products_provider_list:
-            code = product.get('product_code')
-            product['stocks'] = stocks_by_code.get(code, [])
-            product['units'] = units_by_code.get(code, [])
-            product['parameters'] = params_by_code.get(code, [])
-            product['product_in_order'] = product_in_order.get(code, [])
-
-
-   
-    except Exception as e:
-        print(f"Error fetching product history for product {product_code}: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
-    finally:
-        close_connection(conn)
 
 
 # devuelve una lista de productos
@@ -1150,7 +978,6 @@ def get_stores() -> list[dict]:
 __all__ = [
     "get_db_connection",
     "execute_query",
-    "get_shopping_operations",
     "get_products_for_search",
     "get_product_by_code",
     "save_shopping_operation",
@@ -1164,7 +991,6 @@ __all__ = [
     "get_coins",
     "create_product",
     "get_products_history_by_provider",
-    "get_products_history_by_product_code",
     "get_stores",
     "get_product_in_order_by_code",
     "get_products_by_codes_list",

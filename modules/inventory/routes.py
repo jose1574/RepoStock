@@ -12,10 +12,22 @@ from flask import (
     url_for,
     make_response,
 )
+
 try:
     import pdfkit
 except Exception:
     pdfkit = None
+
+
+from modules.inventory.schemas.set_inventory_operation import SetInventoryOperationData
+from modules.inventory.services.inventoryDb import (
+    get_departments,
+    save_inventory_operation_header,
+    get_product_s_for_order_collection,
+    get_departments,
+    get_marks,
+    get_stores,
+)
 
 # Configuración local de wkhtmltopdf para evitar import circular con app.py
 WKHTMLTOPDF_BIN = os.environ.get("WKHTMLTOPDF_BIN")
@@ -28,6 +40,7 @@ if not WKHTMLTOPDF_BIN:
             WKHTMLTOPDF_BIN = p
             break
 
+
 def get_pdfkit_config():
     if pdfkit is None:
         return None
@@ -37,108 +50,121 @@ def get_pdfkit_config():
         return pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_BIN)
     except Exception:
         return None
-from db import get_collection_products, get_correlative_product_unit, get_document_no_inventory_operation, get_inventory_operations_by_correlative, get_inventory_operations_details_by_correlative, get_product_stock, get_products_by_codes, get_store_by_code, get_stores, save_product_failure, save_transfer_order_in_wait, save_transfer_order_items, search_product, search_product_failure, search_products_with_stock_and_price, update_description_inventory_operations, update_inventory_operation_detail_amount, update_minmax_product_failure, get_product_with_all_units
-from db import update_locations_products_failures as db_update_locations_products_failures
+
+
+from db import (
+    get_collection_products,
+    get_correlative_product_unit,
+    get_document_no_inventory_operation,
+    get_inventory_operations_by_correlative,
+    get_inventory_operations_details_by_correlative,
+    get_product_stock,
+    get_products_by_codes,
+    get_store_by_code,
+    save_product_failure,
+    save_transfer_order_in_wait,
+    save_transfer_order_items,
+    search_product,
+    search_product_failure,
+    search_products_with_stock_and_price,
+    update_description_inventory_operations,
+    update_inventory_operation_detail_amount,
+    update_minmax_product_failure,
+    get_product_with_all_units,
+)
+from db import (
+    update_locations_products_failures as db_update_locations_products_failures,
+)
 from db import get_product_by_code_or_other_code
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 # Directorio de templates específico del módulo
 inventory_bp.template_folder = os.path.join(os.path.dirname(__file__), "templates")
 
-@inventory_bp.route('/select_store_destination_collection_order', methods=['GET'])
-def select_store_destination_collection_order():
+# @inventory_bp.route('/select_store_destination_collection_order', methods=['GET'])
+# def select_store_destination_collection_order():
+#     stores = get_stores()
+#     # Intentar preseleccionar desde sesión si existe
+#     origin_code = session.get("store_manual_collection_order_origin")
+#     dest_code = session.get("store_code_destination")
+#     store_origin = get_store_by_code(origin_code) if origin_code else None
+#     store_destination = get_store_by_code(dest_code) if dest_code else None
+#     return render_template(
+#         "auto_collection_order.html",
+#         stores=stores or [],
+#         store_origin=store_origin,
+#         store_destination=store_destination,
+#         products=[],
+#         departments=[],
+#         brands=[],
+#         selected_department=None,
+#         store_selection_error=None,
+#     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+@inventory_bp.route("/auto_collection_order", methods=["POST", "GET"])
+def auto_collection_order():
+    departments = get_departments()
+    brands = get_marks()
     stores = get_stores()
-    return render_template("form_destination_store.html", stores=stores)
-
-
-@inventory_bp.route("/create_collection_order", methods=["POST", "GET"])
-def create_collection_order():
-    products = []
-    selected_department = None
-
-    # Resolver depósito origen y destino: prioridad POST form -> GET args -> sesión -> env
-    store_origin_code = None
-    store_destination_code = None
-    # From POST form
-    if request.method == "POST":
-        store_origin_code = (request.form.get("store_origin") or request.form.get("store_origin_code") or "").strip() or None
-        store_destination_code = (request.form.get("store_destination") or request.form.get("store_code_destination") or "").strip() or None
-    # If not in POST, try GET args
-    if not store_origin_code:
-        store_origin_code = (request.args.get("store_origin") or "").strip() or None
-    if not store_destination_code:
-        store_destination_code = (request.args.get("store_destination") or request.args.get("store_code_destination") or "").strip() or None
-
-    # Fallback a sesión / env
-    if not store_origin_code:
-        store_origin_code = session.get("store_manual_collection_order_origin") or os.environ.get("DEFAULT_STORE_ORIGIN_CODE") or None
-    if not store_destination_code:
-        store_destination_code = session.get("store_code_destination") or None
-
-    # Objetos store para plantilla
-    search_store_origin = get_store_by_code(store_origin_code) if store_origin_code else None
-    store_destination = get_store_by_code(store_destination_code) if store_destination_code else None
-
-    # Validación servidor: origen y destino no pueden ser iguales
-    store_selection_error = None
-    if store_origin_code and store_destination_code and str(store_origin_code) == str(store_destination_code):
-        store_selection_error = "El depósito origen y destino no pueden ser el mismo. Por favor elige depósitos distintos."
-
-    # Si viene en POST persistir en sesión (solo si no hay error)
-    if request.method == "POST":
-        if store_selection_error:
-            # No persistir ni cargar productos cuando la selección es inválida
-            selected_department = request.form.get("department", None)
-            products = []
-        else:
-            if store_origin_code:
-                session["store_manual_collection_order_origin"] = store_origin_code
-            if store_destination_code:
-                session["store_code_destination"] = store_destination_code
-            selected_department = request.form.get("department", None)
-            products = get_collection_products(
-                store_origin_code,
-                store_destination_code,
-                selected_department,
-            )
-    else:
-        # Si es GET y se proporcionó al menos el origen, cargar productos también
-        if store_selection_error:
-            products = []
-        else:
-            if store_origin_code:
-                selected_department = request.args.get("department", None)
-                products = get_collection_products(
-                    store_origin_code,
-                    store_destination_code,
-                    selected_department,
-                )
-
-    # Construir listas únicas para filtros: departamentos y marcas presentes en los productos
-    departments = []
-    seen = set()
-    for p in products:
-        d = p.get("department_description")
-        if d and d not in seen:
-            seen.add(d)
-            departments.append(d)
-
-    brands = []
-    seen_b = set()
-    for p in products:
-        b = p.get("mark") or p.get("brand")
-        if b and b not in seen_b:
-            seen_b.add(b)
-            brands.append(b)
     return render_template(
-        "create_collection_order.html",
-        products=products,
+        "auto_collection_order.html",
         departments=departments,
-        store_origin=search_store_origin,
-        store_destination=store_destination,
-        selected_department=selected_department,
         brands=brands,
+        stores=stores,
     )
+
+
+# api para devolver productos de los depositos
+@inventory_bp.route("/api/products/auto_order_collection", methods=["POST"])
+def api_products():
+    """Devuelve productos para mostrar en la tabla de orden de recolección automática."""
+    try:
+        data = request.get_json()
+        #recupera del cuerpo de la solicitud
+        store_origin = data.get("store_origin")
+        store_destination = data.get("store_destination")
+        products = get_product_s_for_order_collection(store_origin, store_destination, None)
+        if not store_origin or not store_destination:
+            return jsonify(
+                {
+                    "ok": False,
+                    "error": "Faltan store_origin o store_destination",
+                }
+            ), 400
+        if not products:
+            products = []
+        
+        return jsonify({"ok": True, "products": products})
+    except Exception as e:
+        print("Error en api_products:", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -146,8 +172,10 @@ def create_collection_order():
 def save_collection_order():
     if request.method == "POST":
         # Si el formulario envía un store_code_destination, actualizar la sesión
-        if request.form.get('store_code_destination'):
-            session['store_code_destination'] = request.form.get('store_code_destination')
+        if request.form.get("store_code_destination"):
+            session["store_code_destination"] = request.form.get(
+                "store_code_destination"
+            )
         # Leer productos seleccionados y cantidades (permitir decimales, aceptar coma o punto)
         selected = request.form.getlist("selected_products")
         product_codes = [code for code in selected if code]
@@ -183,7 +211,11 @@ def save_collection_order():
             # intentar usar unidad enviada por el formulario (unit_for_{code})
             unit_raw = request.form.get(f"unit_for_{code}")
             try:
-                unit_val = int(unit_raw) if unit_raw is not None and str(unit_raw).strip() != '' else get_correlative_product_unit(code)
+                unit_val = (
+                    int(unit_raw)
+                    if unit_raw is not None and str(unit_raw).strip() != ""
+                    else get_correlative_product_unit(code)
+                )
             except Exception:
                 unit_val = get_correlative_product_unit(code)
             item = {
@@ -194,7 +226,9 @@ def save_collection_order():
                 "from_store": stock_store_origin,
                 "to_store": store_stock_destination,
                 # valores por defecto para campos opcionales que espera la función
-                "unit": int(unit_val) if unit_val else get_correlative_product_unit(code),
+                "unit": (
+                    int(unit_val) if unit_val else get_correlative_product_unit(code)
+                ),
                 "conversion_factor": 1.0,
                 "unit_type": 1,
                 "unit_price": 0.0,
@@ -222,7 +256,9 @@ def save_collection_order():
         }
         try:
             # Crear la ORDER_COLLECTION con descripción inicial de no validada
-            order_id = save_transfer_order_in_wait(transfer_data, "La operacion aun no ha sido validada")
+            order_id = save_transfer_order_in_wait(
+                transfer_data, "La operacion aun no ha sido validada"
+            )
 
             if not order_id:
                 print("No se pudo crear la orden de transferencia")
@@ -251,7 +287,6 @@ def save_collection_order():
         )
 
 
-
 @inventory_bp.route("/destination-store-selection")
 def destination_store_selection_param_product():
     stores = get_stores()
@@ -259,34 +294,54 @@ def destination_store_selection_param_product():
         "destination_store_selection_param_product.html", stores=stores
     )
 
+
 @inventory_bp.route("/api/products/search", methods=["GET"])
 def api_products_search():
     """Busca productos y devuelve JSON con código, descripción, stock total y precio (offer_price)."""
     q = (request.args.get("q") or "").strip()
     # soportar paginación
     try:
-        limit = int(request.args.get('limit', 50))
+        limit = int(request.args.get("limit", 50))
     except Exception:
         limit = 50
     try:
-        offset = int(request.args.get('offset', 0))
+        offset = int(request.args.get("offset", 0))
     except Exception:
         offset = 0
 
     try:
         # Determinar depósito origen: priorizar parámetro 'store', luego sesión, luego env var
-        store_param = (request.args.get('store') or session.get('store_manual_collection_order_origin') or os.environ.get('DEFAULT_STORE_ORIGIN_CODE') or '').strip()
+        store_param = (
+            request.args.get("store")
+            or session.get("store_manual_collection_order_origin")
+            or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+            or ""
+        ).strip()
         # Intentar llamar a la función DB con paginación si la implementa
         try:
-            rows_and_total = search_products_with_stock_and_price(q, limit=limit, offset=offset, store_code=store_param)
-            print(f"[api_products_search] q={q!r} limit={limit} offset={offset} -> call DB returned type={type(rows_and_total)}")
+            rows_and_total = search_products_with_stock_and_price(
+                q, limit=limit, offset=offset, store_code=store_param
+            )
+            print(
+                f"[api_products_search] q={q!r} limit={limit} offset={offset} -> call DB returned type={type(rows_and_total)}"
+            )
             # Si la función devuelve dict {'items':..., 'total':...}
-            if isinstance(rows_and_total, dict) and 'items' in rows_and_total:
-                print(f"[api_products_search] items={len(rows_and_total.get('items', []))} total={rows_and_total.get('total')}")
-                return jsonify({"ok": True, "items": rows_and_total.get('items', []), "total": rows_and_total.get('total', None)})
+            if isinstance(rows_and_total, dict) and "items" in rows_and_total:
+                print(
+                    f"[api_products_search] items={len(rows_and_total.get('items', []))} total={rows_and_total.get('total')}"
+                )
+                return jsonify(
+                    {
+                        "ok": True,
+                        "items": rows_and_total.get("items", []),
+                        "total": rows_and_total.get("total", None),
+                    }
+                )
             # Si devuelve una tupla (items, total)
             if isinstance(rows_and_total, (list, tuple)) and len(rows_and_total) == 2:
-                print(f"[api_products_search] items tuple len={len(rows_and_total[0])} total={rows_and_total[1]}")
+                print(
+                    f"[api_products_search] items tuple len={len(rows_and_total[0])} total={rows_and_total[1]}"
+                )
                 items, total = rows_and_total
                 return jsonify({"ok": True, "items": items or [], "total": total})
             # Si devuelve sólo lista
@@ -294,17 +349,21 @@ def api_products_search():
                 items = rows_and_total
                 total = len(items)
                 # aplicar slicing por si la función no aplicó limit/offset
-                sliced = items[offset: offset+limit]
-                print(f"[api_products_search] DB returned list len={len(items)} -> slicing {offset}:{offset+limit} -> {len(sliced)}")
+                sliced = items[offset : offset + limit]
+                print(
+                    f"[api_products_search] DB returned list len={len(items)} -> slicing {offset}:{offset+limit} -> {len(sliced)}"
+                )
                 return jsonify({"ok": True, "items": sliced, "total": total})
 
         except TypeError:
             # función no soporta params; llamar sin params y paginar aquí
             # (fallback) incluir store si la función lo soporta
             rows = search_products_with_stock_and_price(q, store_code=store_param) or []
-            print(f"[api_products_search] fallback call returned {len(rows)} rows; offset={offset} limit={limit}")
+            print(
+                f"[api_products_search] fallback call returned {len(rows)} rows; offset={offset} limit={limit}"
+            )
             total = len(rows)
-            items = rows[offset: offset+limit]
+            items = rows[offset : offset + limit]
             return jsonify({"ok": True, "items": items, "total": total})
 
         # fallback si no entra en los casos anteriores
@@ -338,15 +397,18 @@ def api_get_minmax_product_failure():
             r = rows[0]
             minimal_stock = r.get("minimal_stock")
             maximum_stock = r.get("maximum_stock")
-        return jsonify({
-            "ok": True,
-            "product_code": product_code,
-            "store_code": store_code,
-            "minimal_stock": minimal_stock,
-            "maximum_stock": maximum_stock
-        })
+        return jsonify(
+            {
+                "ok": True,
+                "product_code": product_code,
+                "store_code": store_code,
+                "minimal_stock": minimal_stock,
+                "maximum_stock": maximum_stock,
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
 
 @inventory_bp.route("/check_order_collection", methods=["GET"])
 def check_order_collection():
@@ -357,17 +419,27 @@ def check_order_collection():
     validated = True
     if correlative:
         try:
-            rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            rows = get_inventory_operations_by_correlative(
+                correlative, "TRANSFER", True
+            )
             if rows:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative)
                 # Determinar validación por descripción
                 desc = (header.get("description") or "").strip().lower()
                 # Se considera validada si ya fue marcada con el formato nuevo o el anterior
-                validated = (desc == "la operacion fue validada" or desc.startswith("documento chequeado"))
+                validated = desc == "la operacion fue validada" or desc.startswith(
+                    "documento chequeado"
+                )
         except Exception as e:
             print("Error cargando ORDER_COLLECTION:", e)
-    return render_template("check_order_collection.html", correlative=correlative, header=header, items=details, validated=validated)
+    return render_template(
+        "check_order_collection.html",
+        correlative=correlative,
+        header=header,
+        items=details,
+        validated=validated,
+    )
 
 
 @inventory_bp.route("/api/collection_order/product_info", methods=["GET"])
@@ -383,13 +455,15 @@ def api_collection_order_product_info():
         if not rows:
             return jsonify({"ok": False, "error": "Producto no encontrado"}), 404
         p = rows[0]
-        return jsonify({
-            "ok": True,
-            "code": p.get("code"),
-            "description": p.get("description"),
-            "unit_description": p.get("unit_description"),
-            "unit_correlative": p.get("unit_correlative"),
-        })
+        return jsonify(
+            {
+                "ok": True,
+                "code": p.get("code"),
+                "description": p.get("description"),
+                "unit_description": p.get("unit_description"),
+                "unit_correlative": p.get("unit_correlative"),
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -445,13 +519,28 @@ def api_products_stocks_by_product():
         return jsonify({"ok": False, "error": "Falta code"}), 400
     try:
         # Preferir override en sesión (wizard) si existe
-        origin_code = (session.get('store_manual_collection_order_origin') or os.environ.get("DEFAULT_STORE_ORIGIN_CODE") or "").strip()
+        origin_code = (
+            session.get("store_manual_collection_order_origin")
+            or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+            or ""
+        ).strip()
         stores = get_stores() or []
         result = []
         for s in stores:
             # intentar detectar el código y la descripción según las claves disponibles
-            scode = (s.get("code") or s.get("store_code") or s.get("store") or s.get("codigo") or "").strip()
-            sdesc = s.get("description") or s.get("name") or s.get("description_store") or scode
+            scode = (
+                s.get("code")
+                or s.get("store_code")
+                or s.get("store")
+                or s.get("codigo")
+                or ""
+            ).strip()
+            sdesc = (
+                s.get("description")
+                or s.get("name")
+                or s.get("description_store")
+                or scode
+            )
             try:
                 stock = get_product_stock(code, scode) or 0
             except Exception:
@@ -460,12 +549,22 @@ def api_products_stocks_by_product():
                 stock_val = float(stock)
             except Exception:
                 stock_val = 0.0
-            result.append({"store_code": scode, "store_description": sdesc, "stock": stock_val, "is_origin": (str(scode) == str(origin_code))})
+            result.append(
+                {
+                    "store_code": scode,
+                    "store_description": sdesc,
+                    "stock": stock_val,
+                    "is_origin": (str(scode) == str(origin_code)),
+                }
+            )
 
         # Ordenar: primero el depósito origen (si existe), luego el resto alphabeticamente por store_description
         def sort_key(item):
             # item with is_origin True should come first -> sort key False (0)
-            return (not item.get("is_origin", False), (item.get("store_description") or "").lower())
+            return (
+                not item.get("is_origin", False),
+                (item.get("store_description") or "").lower(),
+            )
 
         result.sort(key=sort_key)
         return jsonify({"ok": True, "code": code, "stocks": result})
@@ -485,11 +584,23 @@ def api_collection_order_update_count():
     try:
         # Bloquear si la orden ya fue validada
         try:
-            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            hdr_rows = get_inventory_operations_by_correlative(
+                correlative, "TRANSFER", True
+            )
             if hdr_rows:
                 d = (hdr_rows[0].get("description") or "").strip().lower()
-                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
-                    return jsonify({"ok": False, "error": "Orden ya validada. No se puede modificar."}), 400
+                if d == "la operacion fue validada" or d.startswith(
+                    "documento chequeado"
+                ):
+                    return (
+                        jsonify(
+                            {
+                                "ok": False,
+                                "error": "Orden ya validada. No se puede modificar.",
+                            }
+                        ),
+                        400,
+                    )
         except Exception:
             pass
         counted_val = float(str(counted).replace(",", "."))
@@ -498,10 +609,27 @@ def api_collection_order_update_count():
     except ValueError:
         return jsonify({"ok": False, "error": "Cantidad inválida"}), 400
     try:
-        rows = update_inventory_operation_detail_amount(correlative, product_code, counted_val)
+        rows = update_inventory_operation_detail_amount(
+            correlative, product_code, counted_val
+        )
         if rows == 0:
-            return jsonify({"ok": False, "error": "Producto no encontrado en la orden o código no coincide."}), 404
-        return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "Producto no encontrado en la orden o código no coincide.",
+                    }
+                ),
+                404,
+            )
+        return jsonify(
+            {
+                "ok": True,
+                "product_code": product_code,
+                "counted": counted_val,
+                "rows": rows,
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -515,17 +643,32 @@ def api_collection_order_confirm_transfer():
 
     # Obtener header y detalles de la orden de recolección
     try:
-        header_rows = get_inventory_operations_by_correlative(source_correlative, "TRANSFER", True)
+        header_rows = get_inventory_operations_by_correlative(
+            source_correlative, "TRANSFER", True
+        )
         if not header_rows:
-            return jsonify({"ok": False, "error": "Orden de recolección no encontrada"}), 404
+            return (
+                jsonify({"ok": False, "error": "Orden de recolección no encontrada"}),
+                404,
+            )
         header = header_rows[0]
         details = get_inventory_operations_details_by_correlative(source_correlative)
         # Si ya fue validada, bloquear doble confirmación
         desc_hdr = (header.get("description") or "").strip().lower()
-        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
-            return jsonify({"ok": False, "error": "La orden ya fue validada previamente."}), 400
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith(
+            "documento chequeado"
+        ):
+            return (
+                jsonify(
+                    {"ok": False, "error": "La orden ya fue validada previamente."}
+                ),
+                400,
+            )
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Error consultando orden origen: {e}"}), 500
+        return (
+            jsonify({"ok": False, "error": f"Error consultando orden origen: {e}"}),
+            500,
+        )
 
     # Validación de seguridad: no permitir generar TRANSFER si existen productos pendientes
     # En el cliente, sólo se habilita el botón cuando todas las filas tienen conteo.
@@ -536,17 +679,21 @@ def api_collection_order_confirm_transfer():
         counted_codes = set(
             [c.strip() for c in counted_codes_raw.split(",") if c and c.strip()]
         )
-        server_codes = set([d.get("code_product") for d in details if d.get("code_product")])
+        server_codes = set(
+            [d.get("code_product") for d in details if d.get("code_product")]
+        )
         if not details or len(server_codes) == 0:
             return jsonify({"ok": False, "error": "La orden no tiene detalles"}), 400
         if not counted_codes or counted_codes != server_codes:
             return (
-                jsonify({
-                    "ok": False,
-                    "error": "No se puede generar TRASLADO: existen productos pendientes de conteo.",
-                    "expected": sorted(list(server_codes)),
-                    "received": sorted(list(counted_codes)),
-                }),
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "No se puede generar TRASLADO: existen productos pendientes de conteo.",
+                        "expected": sorted(list(server_codes)),
+                        "received": sorted(list(counted_codes)),
+                    }
+                ),
                 400,
             )
     except Exception as e:
@@ -555,16 +702,24 @@ def api_collection_order_confirm_transfer():
     try:
         existing_document_no = get_document_no_inventory_operation(source_correlative)
         nueva_descripcion = (
-            f"Documento chequeado, Traslado en espera automatico {existing_document_no}" if existing_document_no else "Documento chequeado, Traslado en espera automatico"
+            f"Documento chequeado, Traslado en espera automatico {existing_document_no}"
+            if existing_document_no
+            else "Documento chequeado, Traslado en espera automatico"
         )
         update_description_inventory_operations(source_correlative, nueva_descripcion)
-        return jsonify({
-            "ok": True,
-            "transfer_correlative": source_correlative,
-            "document_no": existing_document_no,
-        })
+        return jsonify(
+            {
+                "ok": True,
+                "transfer_correlative": source_correlative,
+                "document_no": existing_document_no,
+            }
+        )
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Error actualizando descripción: {e}"}), 500
+        return (
+            jsonify({"ok": False, "error": f"Error actualizando descripción: {e}"}),
+            500,
+        )
+
 
 @inventory_bp.route("/api/collection_order/product_stock", methods=["GET"])
 def api_collection_order_product_stock():
@@ -574,18 +729,34 @@ def api_collection_order_product_stock():
     if not correlative or not code:
         return jsonify({"ok": False, "error": "Faltan correlative o code"}), 400
     try:
-        header_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+        header_rows = get_inventory_operations_by_correlative(
+            correlative, "TRANSFER", True
+        )
         if not header_rows:
-            return jsonify({"ok": False, "error": "ORDER_COLLECTION no encontrada"}), 404
+            return (
+                jsonify({"ok": False, "error": "ORDER_COLLECTION no encontrada"}),
+                404,
+            )
         header = header_rows[0]
         origin_store = header.get("store")
         if not origin_store:
-            return jsonify({"ok": False, "error": "No se pudo determinar el depósito origen"}), 400
+            return (
+                jsonify(
+                    {"ok": False, "error": "No se pudo determinar el depósito origen"}
+                ),
+                400,
+            )
         stock = get_product_stock(code, origin_store)
-        return jsonify({"ok": True, "code": code, "store": origin_store, "stock": float(stock or 0.0)})
+        return jsonify(
+            {
+                "ok": True,
+                "code": code,
+                "store": origin_store,
+                "stock": float(stock or 0.0),
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
-
 
 
 @inventory_bp.route("/api/collection_order/delete_item", methods=["POST"])
@@ -600,14 +771,27 @@ def api_collection_order_delete_item():
     try:
         # Bloquear si ya fue validada
         try:
-            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+            hdr_rows = get_inventory_operations_by_correlative(
+                correlative, "TRANSFER", True
+            )
             if hdr_rows:
                 d = (hdr_rows[0].get("description") or "").strip().lower()
-                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
-                    return jsonify({"ok": False, "error": "Orden ya validada. No se puede eliminar."}), 400
+                if d == "la operacion fue validada" or d.startswith(
+                    "documento chequeado"
+                ):
+                    return (
+                        jsonify(
+                            {
+                                "ok": False,
+                                "error": "Orden ya validada. No se puede eliminar.",
+                            }
+                        ),
+                        400,
+                    )
         except Exception:
             pass
         from db import delete_inventory_operation_detail
+
         delete_inventory_operation_detail(correlative, product_code)
         return jsonify({"ok": True, "deleted": product_code})
     except Exception as e:
@@ -623,7 +807,7 @@ def api_collection_order_add_item():
     correlative = request.form.get("correlative", type=int)
     product_code_input = (request.form.get("product_code") or "").strip()
     quantity_raw = (request.form.get("quantity") or "").replace(",", ".")
-    #Validación granular para dar feedback más claro
+    # Validación granular para dar feedback más claro
     if correlative is None:
         return jsonify({"ok": False, "error": "Falta correlative"}), 400
     if not product_code_input:
@@ -639,14 +823,23 @@ def api_collection_order_add_item():
 
     # Obtener header para validar que existe y extraer stores
     try:
-        header_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+        header_rows = get_inventory_operations_by_correlative(
+            correlative, "TRANSFER", True
+        )
         if not header_rows:
             return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = header_rows[0]
         # Bloquear si ya fue validada
         desc_hdr = (header.get("description") or "").strip().lower()
-        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith("documento chequeado"):
-            return jsonify({"ok": False, "error": "Orden ya validada. No se puede agregar."}), 400
+        if desc_hdr == "la operacion fue validada" or desc_hdr.startswith(
+            "documento chequeado"
+        ):
+            return (
+                jsonify(
+                    {"ok": False, "error": "Orden ya validada. No se puede agregar."}
+                ),
+                400,
+            )
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error verificando orden: {e}"}), 500
 
@@ -665,15 +858,27 @@ def api_collection_order_add_item():
     # Validación de negocio: no permitir agregar cantidad mayor a stock disponible en origen
     try:
         origin_store = header.get("store")
-        available_stock = get_product_stock(main_code, origin_store) if origin_store else 0.0
+        available_stock = (
+            get_product_stock(main_code, origin_store) if origin_store else 0.0
+        )
         if available_stock is not None and quantity > float(available_stock) + 1e-9:
-            return jsonify({
-                "ok": False,
-                "error": f"Cantidad solicitada ({quantity}) excede el stock disponible en origen ({available_stock})."
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": f"Cantidad solicitada ({quantity}) excede el stock disponible en origen ({available_stock}).",
+                    }
+                ),
+                400,
+            )
     except Exception as e:
         # Si falla la consulta de stock, devolver error claro
-        return jsonify({"ok": False, "error": f"No se pudo validar stock disponible: {e}"}), 500
+        return (
+            jsonify(
+                {"ok": False, "error": f"No se pudo validar stock disponible: {e}"}
+            ),
+            500,
+        )
 
     # Preparar item usando los campos esperados por save_transfer_order_items
     item = {
@@ -692,15 +897,19 @@ def api_collection_order_add_item():
     }
     try:
         save_transfer_order_items(correlative, [item])
-        return jsonify({"ok": True, "added": {
-            "code_product": main_code,
-            "description_product": description,
-            "unit_description": prod.get("unit_description"),
-            "amount": quantity,
-        }})
+        return jsonify(
+            {
+                "ok": True,
+                "added": {
+                    "code_product": main_code,
+                    "description_product": description,
+                    "unit_description": prod.get("unit_description"),
+                    "amount": quantity,
+                },
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error agregando item: {e}"}), 500
-
 
 
 @inventory_bp.route("/api/product_failure/minmax", methods=["POST"])
@@ -763,7 +972,9 @@ def api_reception_resolve_code():
     if not correlative or not query:
         return jsonify({"ok": False, "error": "Parámetros incompletos"}), 400
     try:
-        headers = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+        headers = get_inventory_operations_by_correlative(
+            correlative, "TRANSFER", False
+        )
         if not headers:
             return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = headers[0]
@@ -782,7 +993,12 @@ def api_reception_resolve_code():
             except Exception:
                 rows = []
         if not rows:
-            return jsonify({"ok": False, "error": "Producto no encontrado por código alterno"}), 404
+            return (
+                jsonify(
+                    {"ok": False, "error": "Producto no encontrado por código alterno"}
+                ),
+                404,
+            )
         prod = rows[0]
         return jsonify({"ok": True, "product_code": prod.get("code"), "product": prod})
     except Exception as e:
@@ -796,11 +1012,15 @@ def api_reception_confirm():
     if not source_correlative:
         return jsonify({"ok": False, "error": "Falta correlative"}), 400
     try:
-        header_rows = get_inventory_operations_by_correlative(source_correlative, "TRANSFER", False)
+        header_rows = get_inventory_operations_by_correlative(
+            source_correlative, "TRANSFER", False
+        )
         if not header_rows:
             return jsonify({"ok": False, "error": "TRANSFER no encontrada"}), 404
         header = header_rows[0]
-        details = get_inventory_operations_details_by_correlative(source_correlative, header.get("destination_store"))
+        details = get_inventory_operations_details_by_correlative(
+            source_correlative, header.get("destination_store")
+        )
         # Se permite revalidar múltiples veces: quitar bloqueo por descripción previa
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error consultando TRANSFER: {e}"}), 500
@@ -808,26 +1028,60 @@ def api_reception_confirm():
     # Validación de que todos los productos fueron contados
     try:
         counted_codes_raw = (request.form.get("counted_codes") or "").strip()
-        counted_codes = set([c.strip() for c in counted_codes_raw.split(",") if c and c.strip()])
-        server_codes = set([d.get("code_product") for d in details if d.get("code_product")])
+        counted_codes = set(
+            [c.strip() for c in counted_codes_raw.split(",") if c and c.strip()]
+        )
+        server_codes = set(
+            [d.get("code_product") for d in details if d.get("code_product")]
+        )
         if not details or len(server_codes) == 0:
             return jsonify({"ok": False, "error": "La TRANSFER no tiene detalles"}), 400
         if not counted_codes or counted_codes != server_codes:
-            return jsonify({"ok": False, "error": "No se puede validar: faltan productos por contar.", "expected": sorted(list(server_codes)), "received": sorted(list(counted_codes))}), 400
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "No se puede validar: faltan productos por contar.",
+                        "expected": sorted(list(server_codes)),
+                        "received": sorted(list(counted_codes)),
+                    }
+                ),
+                400,
+            )
         # Recibir mapa de conteos para evaluación de diferencias (no se modifica DB)
         counts_json = request.form.get("counts")
         if not counts_json:
-            return jsonify({"ok": False, "error": "Faltan conteos para validar diferencias (counts)."}), 400
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "Faltan conteos para validar diferencias (counts).",
+                    }
+                ),
+                400,
+            )
         try:
             counts_map = json.loads(counts_json)
             if not isinstance(counts_map, dict):
-                return jsonify({"ok": False, "error": "Formato inválido de counts."}), 400
+                return (
+                    jsonify({"ok": False, "error": "Formato inválido de counts."}),
+                    400,
+                )
         except Exception:
             return jsonify({"ok": False, "error": "Counts no es un JSON válido."}), 400
         # Verificar que todos los códigos tengan conteo
         missing = [c for c in server_codes if c not in counts_map]
         if missing:
-            return jsonify({"ok": False, "error": "Faltan conteos para algunos productos.", "missing": sorted(missing)}), 400
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "Faltan conteos para algunos productos.",
+                        "missing": sorted(missing),
+                    }
+                ),
+                400,
+            )
     except Exception as e:
         return jsonify({"ok": False, "error": f"Validación de conteo falló: {e}"}), 400
 
@@ -846,18 +1100,31 @@ def api_reception_confirm():
                 break
 
         document_no = get_document_no_inventory_operation(source_correlative)
-        base_msg = f"Documento chequeado en recepción {document_no}" if document_no else "Documento chequeado en recepción"
+        base_msg = (
+            f"Documento chequeado en recepción {document_no}"
+            if document_no
+            else "Documento chequeado en recepción"
+        )
         desc_msg = base_msg + (" — Se encontraron diferencias" if differences else "")
         update_description_inventory_operations(source_correlative, desc_msg)
-        return jsonify({
-            "ok": True,
-            "transfer_correlative": source_correlative,
-            "document_no": document_no,
-            "differences": differences,
-            "message": ("Recepción validada con diferencias" if differences else "Recepción validada")
-        })
+        return jsonify(
+            {
+                "ok": True,
+                "transfer_correlative": source_correlative,
+                "document_no": document_no,
+                "differences": differences,
+                "message": (
+                    "Recepción validada con diferencias"
+                    if differences
+                    else "Recepción validada"
+                ),
+            }
+        )
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Error actualizando recepción: {e}"}), 500
+        return (
+            jsonify({"ok": False, "error": f"Error actualizando recepción: {e}"}),
+            500,
+        )
 
 
 @inventory_bp.route("/check_transfer_reception", methods=["GET"])
@@ -871,13 +1138,17 @@ def check_transfer_reception():
     pending_wait = False  # indica que existe como wait=true (no procesada aún)
     if correlative:
         try:
-            rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+            rows = get_inventory_operations_by_correlative(
+                correlative, "TRANSFER", False
+            )
             if rows and len(rows) > 0:
                 header = rows[0]
                 details = get_inventory_operations_details_by_correlative(correlative)
             else:
                 # Fallback: buscar en espera (wait=true) para informar al usuario que aún no está procesada
-                pending_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", True)
+                pending_rows = get_inventory_operations_by_correlative(
+                    correlative, "TRANSFER", True
+                )
                 if pending_rows:
                     pending_wait = True
                     # Podemos mostrar parte del encabezado para referencia al usuario, pero sin detalles para recepción
@@ -885,7 +1156,14 @@ def check_transfer_reception():
                     # No cargamos detalles destino porque aún no está procesada
         except Exception as e:
             print("Error cargando TRANSFER procesada:", e)
-    return render_template("check_transfer_reception.html", correlative=correlative, header=header, items=details, validated=validated, pending_wait=pending_wait)
+    return render_template(
+        "check_transfer_reception.html",
+        correlative=correlative,
+        header=header,
+        items=details,
+        validated=validated,
+        pending_wait=pending_wait,
+    )
 
 
 @inventory_bp.route("/api/reception/update_count", methods=["POST"])
@@ -899,11 +1177,23 @@ def api_reception_update_count():
     try:
         # Bloquear si ya fue validada/chequeada
         try:
-            hdr_rows = get_inventory_operations_by_correlative(correlative, "TRANSFER", False)
+            hdr_rows = get_inventory_operations_by_correlative(
+                correlative, "TRANSFER", False
+            )
             if hdr_rows:
                 d = (hdr_rows[0].get("description") or "").strip().lower()
-                if d == "la operacion fue validada" or d.startswith("documento chequeado"):
-                    return jsonify({"ok": False, "error": "Recepción ya validada. No se puede modificar."}), 400
+                if d == "la operacion fue validada" or d.startswith(
+                    "documento chequeado"
+                ):
+                    return (
+                        jsonify(
+                            {
+                                "ok": False,
+                                "error": "Recepción ya validada. No se puede modificar.",
+                            }
+                        ),
+                        400,
+                    )
         except Exception:
             pass
         counted_val = float(str(counted).replace(",", "."))
@@ -912,10 +1202,24 @@ def api_reception_update_count():
     except ValueError:
         return jsonify({"ok": False, "error": "Cantidad inválida"}), 400
     try:
-        rows = update_inventory_operation_detail_amount(correlative, product_code, counted_val)
+        rows = update_inventory_operation_detail_amount(
+            correlative, product_code, counted_val
+        )
         if rows == 0:
-            return jsonify({"ok": False, "error": "Producto no encontrado en la TRANSFER."}), 404
-        return jsonify({"ok": True, "product_code": product_code, "counted": counted_val, "rows": rows})
+            return (
+                jsonify(
+                    {"ok": False, "error": "Producto no encontrado en la TRANSFER."}
+                ),
+                404,
+            )
+        return jsonify(
+            {
+                "ok": True,
+                "product_code": product_code,
+                "counted": counted_val,
+                "rows": rows,
+            }
+        )
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
@@ -952,7 +1256,9 @@ def collection_preview_pdf():
         )
         header = header_rows[0] if header_rows else {}
         # Para el PDF queremos la ubicación del depósito de origen
-        details = get_inventory_operations_details_by_correlative(correlative, header.get("store") if header else None)
+        details = get_inventory_operations_details_by_correlative(
+            correlative, header.get("store") if header else None
+        )
     except Exception as e:
         return f"Error consultando datos de la orden: {e}", 500
 
@@ -1006,11 +1312,11 @@ def collection_preview_pdf():
     return resp
 
 
-
 @inventory_bp.route("/config_param_product_store")
 def config_param_product_store():
     stores = get_stores()
     return render_template("config_param_product_store.html", stores=stores)
+
 
 @inventory_bp.route("/config_param_product", methods=["POST"])
 def config_param_product():
@@ -1061,6 +1367,7 @@ def config_param_product():
         product_not_found=product_not_found,
         product_stock=product_stock,
     )
+
 
 @inventory_bp.route("/save_config_param_product", methods=["POST"])
 def save_config_param_product():
@@ -1121,18 +1428,25 @@ def save_config_param_product():
 @inventory_bp.route("/form_destination_store_for_location", methods=["POST", "GET"])
 def form_destination_store_for_location():
     stores = get_stores()
-    return render_template("form_destination_store_for_location.html", stores=stores )
+    return render_template("form_destination_store_for_location.html", stores=stores)
 
 
-
-@inventory_bp.route("/save_session_select_store_destination_for_location", methods=["POST", "GET"])
+@inventory_bp.route(
+    "/save_session_select_store_destination_for_location", methods=["POST", "GET"]
+)
 def save_session_select_store_destination_for_location():
     store_code = session.get("store_location")
     store = get_store_by_code(store_code)
     store_location = request.form.get("store_code_location")
 
-    session['store_location'] = store_location
-    return redirect(url_for("inventory.update_locations_products_failures_products", store_code=store_location))
+    session["store_location"] = store_location
+    return redirect(
+        url_for(
+            "inventory.update_locations_products_failures_products",
+            store_code=store_location,
+        )
+    )
+
 
 @inventory_bp.route("/update_location_products", methods=["POST"])
 def update_location_products():
@@ -1149,9 +1463,12 @@ def update_location_products():
             products = session.get("products", [])
 
         print(
-            "update_location_products -> location:", location,
-            "store:", store_code,
-            "products_count:", len(products) if isinstance(products, list) else 0,
+            "update_location_products -> location:",
+            location,
+            "store:",
+            store_code,
+            "products_count:",
+            len(products) if isinstance(products, list) else 0,
         )
         if location and products and store_code:
             # Actualiza location en products_failures por cada producto y depósito actual
@@ -1169,7 +1486,12 @@ def update_location_products():
                         )
             # Siempre limpiar la lista de productos de la sesión tras guardar
             session.pop("products", None)
-    return redirect(url_for("inventory.update_locations_products_failures_products", store_code=store_code))
+    return redirect(
+        url_for(
+            "inventory.update_locations_products_failures_products",
+            store_code=store_code,
+        )
+    )
 
 
 @inventory_bp.route("/update_locations_products_failures", methods=["GET", "POST"])
@@ -1180,7 +1502,9 @@ def update_locations_products_failures():
     if request.method == "POST":
         update_locations_products_failures = request.form.get("location")
         if update_locations_products_failures is not None:
-            update_locations_products_failures = update_locations_products_failures.strip()
+            update_locations_products_failures = (
+                update_locations_products_failures.strip()
+            )
             if update_locations_products_failures:
                 session["location"] = update_locations_products_failures
                 location = update_locations_products_failures
@@ -1194,7 +1518,9 @@ def update_locations_products_failures():
         print("index: recibido code_product -> '{}'".format(code_product))
         if code_product:
             try:
-                new_products = search_product_failure(code_product, session.get("store_location"))
+                new_products = search_product_failure(
+                    code_product, session.get("store_location")
+                )
                 print("index: new_products ->", new_products)
                 last_search_empty = len(new_products) == 0
                 # Evitar duplicados por 'code'
@@ -1222,7 +1548,12 @@ def clear():
     store_code = session.get("store_location")
     session.pop("products", None)
     session.pop("location", None)
-    return redirect(url_for("inventory.update_locations_products_failures_products", store_code=store_code))
+    return redirect(
+        url_for(
+            "inventory.update_locations_products_failures_products",
+            store_code=store_code,
+        )
+    )
 
 
 # Eliminar ítem de la sesión por código
@@ -1233,7 +1564,9 @@ def delete_item_product_session(code):
 
 
 @inventory_bp.route("/update_location_products_failures", methods=["GET", "POST"])
-@inventory_bp.route("/<store_code>/update_location_products_failures", methods=["GET", "POST"])
+@inventory_bp.route(
+    "/<store_code>/update_location_products_failures", methods=["GET", "POST"]
+)
 def update_locations_products_failures_products(store_code=None):
     # Resolver depósito de destino desde: ruta > querystring > sesión
     if not store_code:
@@ -1248,7 +1581,11 @@ def update_locations_products_failures_products(store_code=None):
         form_store = request.form.get("store_code_location")
         if form_store:
             session["store_location"] = form_store
-        return redirect(url_for("inventory.update_locations_products_failures", store_code=store_code))
+        return redirect(
+            url_for(
+                "inventory.update_locations_products_failures", store_code=store_code
+            )
+        )
 
     # GET: mostrar siempre el depósito y la ubicación actual (si existe)
     return render_template(
@@ -1257,13 +1594,15 @@ def update_locations_products_failures_products(store_code=None):
         location=session.get("location", ""),
     )
 
+
 @inventory_bp.route("/delete_product/<code>", methods=["POST"])
 def delete_product(code):
     delete_item_product_session(code)
     return redirect(url_for("inventory.update_locations_products_failures"))
 
-#crea orden de recollecion manual
-@inventory_bp.route('/products-modal')
+
+# crea orden de recollecion manual
+@inventory_bp.route("/products-modal")
 def products_modal():
     """Devuelve el partial HTML del modal de búsqueda de productos."""
     store_code = os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
@@ -1271,8 +1610,7 @@ def products_modal():
     return render_template("partials/products_search_inventory_modal.html", store=store)
 
 
-
-@inventory_bp.route('/api/manual_collection_order/set_stores', methods=['POST'])
+@inventory_bp.route("/api/manual_collection_order/set_stores", methods=["POST"])
 def api_manual_collection_order_set_stores():
     """API AJAX para establecer depósito origen y destino para la creación manual.
 
@@ -1283,17 +1621,22 @@ def api_manual_collection_order_set_stores():
     Retorna JSON {ok: True}.
     """
     try:
-        origin = request.form.get('origin') or (request.get_json(silent=True) or {}).get('origin')
-        destination = request.form.get('destination') or (request.get_json(silent=True) or {}).get('destination')
+        origin = request.form.get("origin") or (
+            request.get_json(silent=True) or {}
+        ).get("origin")
+        destination = request.form.get("destination") or (
+            request.get_json(silent=True) or {}
+        ).get("destination")
         if origin:
-            session['store_manual_collection_order_origin'] = origin
+            session["store_manual_collection_order_origin"] = origin
         if destination:
-            session['store_manual_collection_order'] = destination
-        return jsonify({'ok': True, 'origin': origin, 'destination': destination})
+            session["store_manual_collection_order"] = destination
+        return jsonify({"ok": True, "origin": origin, "destination": destination})
     except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({"ok": False, "error": str(e)}), 500
 
-@inventory_bp.route("/select_store/manual_collection_order", methods=['GET', 'POST'])
+
+@inventory_bp.route("/select_store/manual_collection_order", methods=["GET", "POST"])
 def select_store_manual_collection_order():
     """Wizard: seleccionar depósito origen y destino antes de crear una orden manual.
 
@@ -1301,27 +1644,36 @@ def select_store_manual_collection_order():
     POST: guardar selección en sesión y redirigir a `manual_collection_order`.
     """
     stores = get_stores()
-    if request.method == 'POST':
-        origin = (request.form.get('origin') or '').strip()
-        destination = (request.form.get('destination') or '').strip()
+    if request.method == "POST":
+        origin = (request.form.get("origin") or "").strip()
+        destination = (request.form.get("destination") or "").strip()
         # Validación: exigir ambos valores y que no sean iguales
         if not origin or not destination:
-            error = 'Debe seleccionar depósito origen y destino para continuar.'
-            return render_template("wizard_select_stores_manual.html", stores=stores, error=error, sel_origin=origin, sel_destination=destination)
+            error = "Debe seleccionar depósito origen y destino para continuar."
+            return render_template(
+                "wizard_select_stores_manual.html",
+                stores=stores,
+                error=error,
+                sel_origin=origin,
+                sel_destination=destination,
+            )
         if origin == destination:
-            error = 'El depósito de origen y destino no pueden ser el mismo.'
-            return render_template("wizard_select_stores_manual.html", stores=stores, error=error, sel_origin=origin, sel_destination=destination)
+            error = "El depósito de origen y destino no pueden ser el mismo."
+            return render_template(
+                "wizard_select_stores_manual.html",
+                stores=stores,
+                error=error,
+                sel_origin=origin,
+                sel_destination=destination,
+            )
         # Guardar en sesión y continuar
-        session['store_manual_collection_order_origin'] = origin
-        session['store_manual_collection_order'] = destination
-        return redirect(url_for('inventory.manual_collection_order'))
+        session["store_manual_collection_order_origin"] = origin
+        session["store_manual_collection_order"] = destination
+        return redirect(url_for("inventory.manual_collection_order"))
     return render_template("wizard_select_stores_manual.html", stores=stores)
 
 
-
-
-
-@inventory_bp.route("/manual_collection_order", methods=['GET', 'POST'])
+@inventory_bp.route("/manual_collection_order", methods=["GET", "POST"])
 def manual_collection_order():
     """Pantalla para crear orden de recolección manual.
 
@@ -1330,47 +1682,61 @@ def manual_collection_order():
     - `store_destination` se obtiene desde `session['store_manual_collection_order']` si existe.
     """
     # origen por defecto: permitir override por sesión, si existe usarlo
-    store_origin_code = session.get('store_manual_collection_order_origin') or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
+    store_origin_code = session.get(
+        "store_manual_collection_order_origin"
+    ) or os.environ.get("DEFAULT_STORE_ORIGIN_CODE")
     store_origin = get_store_by_code(store_origin_code) if store_origin_code else None
 
     # lista de stores para el wizard (selección de origen/destino)
     stores = get_stores()
 
     # destino desde sesión por defecto
-    store_destination = get_store_by_code(session.get('store_manual_collection_order')) if session.get('store_manual_collection_order') else None
+    store_destination = (
+        get_store_by_code(session.get("store_manual_collection_order"))
+        if session.get("store_manual_collection_order")
+        else None
+    )
 
     # permitir actualizar destino por POST
-    if request.method == 'POST':
+    if request.method == "POST":
         store_destination_code = request.form.get("store_code_destination")
         if store_destination_code:
-            session['store_manual_collection_order'] = store_destination_code
+            session["store_manual_collection_order"] = store_destination_code
             store_destination = get_store_by_code(store_destination_code)
 
     return render_template(
         "manual_collection_order.html",
         store_origin=store_origin,
         store_destination=store_destination,
-        destination_store_code=session.get('store_manual_collection_order'),
+        destination_store_code=session.get("store_manual_collection_order"),
         origin_store_code=store_origin_code,
         stores=stores,
     )
 
 
-@inventory_bp.route('/manual_collection_order/create', methods=['POST'])
+@inventory_bp.route("/manual_collection_order/create", methods=["POST"])
 def manual_collection_order_create():
     """Crear ORDER_COLLECTION desde la UI manual y redirigir al PDF de la orden creada."""
-    selected = request.form.getlist('selected_products')
+    selected = request.form.getlist("selected_products")
     product_codes = [c for c in selected if c]
-    products_info = ({p['code']: p for p in get_products_by_codes(product_codes)} if product_codes else {})
+    products_info = (
+        {p["code"]: p for p in get_products_by_codes(product_codes)}
+        if product_codes
+        else {}
+    )
 
-    stock_store_origin = request.form.get('stock_store_origin') or os.environ.get('DEFAULT_STORE_ORIGIN_CODE', '01')
-    store_stock_destination = session.get('store_manual_collection_order') or session.get('store_code_destination')
+    stock_store_origin = request.form.get("stock_store_origin") or os.environ.get(
+        "DEFAULT_STORE_ORIGIN_CODE", "01"
+    )
+    store_stock_destination = session.get(
+        "store_manual_collection_order"
+    ) or session.get("store_code_destination")
 
     items = []
     for code in product_codes:
-        raw = request.form.get(f'to_transfer_{code}', '0')
+        raw = request.form.get(f"to_transfer_{code}", "0")
         if isinstance(raw, str):
-            raw = raw.replace(',', '.')
+            raw = raw.replace(",", ".")
         try:
             qty = float(raw)
         except Exception:
@@ -1378,77 +1744,100 @@ def manual_collection_order_create():
         if qty <= 0:
             continue
 
-        unit_raw = request.form.get(f'unit_for_{code}')
+        unit_raw = request.form.get(f"unit_for_{code}")
         try:
-            unit_corr = int(unit_raw) if unit_raw and str(unit_raw).strip() != '' else get_correlative_product_unit(code)
+            unit_corr = (
+                int(unit_raw)
+                if unit_raw and str(unit_raw).strip() != ""
+                else get_correlative_product_unit(code)
+            )
         except Exception:
             unit_corr = get_correlative_product_unit(code)
 
         prod = products_info.get(code, {})
         item = {
-            'product_code': code,
-            'description': prod.get('description') if prod else None,
-            'quantity': qty,
-            'from_store': stock_store_origin,
-            'to_store': store_stock_destination,
-            'unit': int(unit_corr) if unit_corr else 1,
-            'conversion_factor': 1.0,
-            'unit_type': 1,
-            'unit_price': 0.0,
-            'total_price': 0.0,
-            'total_cost': 0.0,
-            'coin_code': '02',
+            "product_code": code,
+            "description": prod.get("description") if prod else None,
+            "quantity": qty,
+            "from_store": stock_store_origin,
+            "to_store": store_stock_destination,
+            "unit": int(unit_corr) if unit_corr else 1,
+            "conversion_factor": 1.0,
+            "unit_type": 1,
+            "unit_price": 0.0,
+            "total_price": 0.0,
+            "total_cost": 0.0,
+            "coin_code": "02",
         }
         items.append(item)
 
     if not items:
-        print('No hay items válidos para procesar (manual)')
-        return redirect(url_for('inventory.manual_collection_order'))
+        print("No hay items válidos para procesar (manual)")
+        return redirect(url_for("inventory.manual_collection_order"))
 
     transfer_data = {
-        'emission_date': datetime.date.today(),
-        'wait': True,
-        'user_code': session.get('user_id', '01'),
-        'station': '00',
-        'store': stock_store_origin,
-        'locations': '00',
-        'destination_store': store_stock_destination,
-        'operation_comments': 'Orden creada desde interfaz manual',
-        'total': sum([it['quantity'] for it in items]),
+        "emission_date": datetime.date.today(),
+        "wait": True,
+        "user_code": session.get("user_id", "01"),
+        "station": "00",
+        "store": stock_store_origin,
+        "locations": "00",
+        "destination_store": store_stock_destination,
+        "operation_comments": "Orden creada desde interfaz manual",
+        "total": sum([it["quantity"] for it in items]),
     }
 
     try:
-        order_id = save_transfer_order_in_wait(transfer_data, 'La operacion aun no ha sido validada')
+        order_id = save_transfer_order_in_wait(
+            transfer_data, "La operacion aun no ha sido validada"
+        )
         if not order_id:
-            print('No se pudo crear la orden de transferencia (manual)')
-            return redirect(url_for('inventory.manual_collection_order'))
+            print("No se pudo crear la orden de transferencia (manual)")
+            return redirect(url_for("inventory.manual_collection_order"))
         save_transfer_order_items(order_id, items)
     except Exception as e:
-        print('Error creando orden manual:', e)
-        return redirect(url_for('inventory.manual_collection_order'))
+        print("Error creando orden manual:", e)
+        return redirect(url_for("inventory.manual_collection_order"))
 
-    return redirect(url_for('inventory.collection_preview_pdf', correlative=order_id, wait='true', operation_type='TRANSFER'))
+    return redirect(
+        url_for(
+            "inventory.collection_preview_pdf",
+            correlative=order_id,
+            wait="true",
+            operation_type="TRANSFER",
+        )
+    )
 
 
-@inventory_bp.route('/manual_collection_order/create_ajax', methods=['POST'])
+@inventory_bp.route("/manual_collection_order/create_ajax", methods=["POST"])
 def manual_collection_order_create_ajax():
     """Crear ORDER_COLLECTION vía AJAX y devolver JSON con URL del PDF y ruta de redirección."""
     try:
-        selected = request.form.getlist('selected_products')
+        selected = request.form.getlist("selected_products")
         product_codes = [c for c in selected if c]
-        products_info = ({p['code']: p for p in get_products_by_codes(product_codes)} if product_codes else {})
+        products_info = (
+            {p["code"]: p for p in get_products_by_codes(product_codes)}
+            if product_codes
+            else {}
+        )
 
-        stock_store_origin = request.form.get('stock_store_origin') or os.environ.get('DEFAULT_STORE_ORIGIN_CODE', '01')
+        stock_store_origin = request.form.get("stock_store_origin") or os.environ.get(
+            "DEFAULT_STORE_ORIGIN_CODE", "01"
+        )
         # actualizar destino en sesión si viene
-        if request.form.get('store_code_destination'):
-            session['store_code_destination'] = request.form.get('store_code_destination')
-        store_stock_destination = session.get('store_manual_collection_order') or session.get('store_code_destination')
+        if request.form.get("store_code_destination"):
+            session["store_code_destination"] = request.form.get(
+                "store_code_destination"
+            )
+        store_stock_destination = session.get(
+            "store_manual_collection_order"
+        ) or session.get("store_code_destination")
 
         items = []
         for code in product_codes:
-            raw = request.form.get(f'to_transfer_{code}', '0')
+            raw = request.form.get(f"to_transfer_{code}", "0")
             if isinstance(raw, str):
-                raw = raw.replace(',', '.')
+                raw = raw.replace(",", ".")
             try:
                 qty = float(raw)
             except Exception:
@@ -1456,52 +1845,71 @@ def manual_collection_order_create_ajax():
             if qty <= 0:
                 continue
 
-            unit_raw = request.form.get(f'unit_for_{code}')
+            unit_raw = request.form.get(f"unit_for_{code}")
             try:
-                unit_corr = int(unit_raw) if unit_raw and str(unit_raw).strip() != '' else get_correlative_product_unit(code)
+                unit_corr = (
+                    int(unit_raw)
+                    if unit_raw and str(unit_raw).strip() != ""
+                    else get_correlative_product_unit(code)
+                )
             except Exception:
                 unit_corr = get_correlative_product_unit(code)
 
             prod = products_info.get(code, {})
             item = {
-                'product_code': code,
-                'description': prod.get('description') if prod else None,
-                'quantity': qty,
-                'from_store': stock_store_origin,
-                'to_store': store_stock_destination,
-                'unit': int(unit_corr) if unit_corr else 1,
-                'conversion_factor': 1.0,
-                'unit_type': 1,
-                'unit_price': 0.0,
-                'total_price': 0.0,
-                'total_cost': 0.0,
-                'coin_code': '02',
+                "product_code": code,
+                "description": prod.get("description") if prod else None,
+                "quantity": qty,
+                "from_store": stock_store_origin,
+                "to_store": store_stock_destination,
+                "unit": int(unit_corr) if unit_corr else 1,
+                "conversion_factor": 1.0,
+                "unit_type": 1,
+                "unit_price": 0.0,
+                "total_price": 0.0,
+                "total_cost": 0.0,
+                "coin_code": "02",
             }
             items.append(item)
 
         if not items:
-            return jsonify({'ok': False, 'error': 'No hay items válidos para procesar'}), 400
+            return (
+                jsonify({"ok": False, "error": "No hay items válidos para procesar"}),
+                400,
+            )
 
         transfer_data = {
-            'emission_date': datetime.date.today(),
-            'wait': True,
-            'user_code': session.get('user_id', '01'),
-            'station': '00',
-            'store': stock_store_origin,
-            'locations': '00',
-            'destination_store': store_stock_destination,
-            'operation_comments': 'Orden creada desde interfaz manual',
-            'total': sum([it['quantity'] for it in items]),
+            "emission_date": datetime.date.today(),
+            "wait": True,
+            "user_code": session.get("user_id", "01"),
+            "station": "00",
+            "store": stock_store_origin,
+            "locations": "00",
+            "destination_store": store_stock_destination,
+            "operation_comments": "Orden creada desde interfaz manual",
+            "total": sum([it["quantity"] for it in items]),
         }
 
-        order_id = save_transfer_order_in_wait(transfer_data, 'La operacion aun no ha sido validada')
+        order_id = save_transfer_order_in_wait(
+            transfer_data, "La operacion aun no ha sido validada"
+        )
         if not order_id:
-            return jsonify({'ok': False, 'error': 'No se pudo crear la orden de transferencia'}), 500
+            return (
+                jsonify(
+                    {"ok": False, "error": "No se pudo crear la orden de transferencia"}
+                ),
+                500,
+            )
         save_transfer_order_items(order_id, items)
 
-        pdf_url = url_for('inventory.collection_preview_pdf', correlative=order_id, wait='true', operation_type='TRANSFER')
-        redirect_to = url_for('inventory.select_store_manual_collection_order')
-        return jsonify({'ok': True, 'pdf_url': pdf_url, 'redirect': redirect_to})
+        pdf_url = url_for(
+            "inventory.collection_preview_pdf",
+            correlative=order_id,
+            wait="true",
+            operation_type="TRANSFER",
+        )
+        redirect_to = url_for("inventory.select_store_manual_collection_order")
+        return jsonify({"ok": True, "pdf_url": pdf_url, "redirect": redirect_to})
     except Exception as e:
-        print('Error creando orden manual (ajax):', e)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        print("Error creando orden manual (ajax):", e)
+        return jsonify({"ok": False, "error": str(e)}), 500

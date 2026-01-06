@@ -165,6 +165,7 @@ imports:
  &#8226;   <a href="#modules.inventory">modules.inventory</a>
  &#8226;   <a href="#modules.manager">modules.manager</a>
  &#8226;   <a href="#modules.sales">modules.sales</a>
+ &#8226;   <a href="#modules.shopping">modules.shopping</a>
  &#8226;   <a href="#modules.systems">modules.systems</a>
  &#8226;   <a href="#ntpath">ntpath</a>
  &#8226;   <a href="#operator">operator</a>
@@ -508,6 +509,7 @@ imported by:
  &#8226;   <a href="#click.types">click.types</a>
  &#8226;   <a href="#click.utils">click.utils</a>
  &#8226;   <a href="#codeop">codeop</a>
+ &#8226;   <a href="#database.connection">database.connection</a>
  &#8226;   <a href="#flask">flask</a>
  &#8226;   <a href="#flask.app">flask.app</a>
  &#8226;   <a href="#flask.blueprints">flask.blueprints</a>
@@ -541,6 +543,7 @@ imported by:
  &#8226;   <a href="#itsdangerous.timed">itsdangerous.timed</a>
  &#8226;   <a href="#itsdangerous.url_safe">itsdangerous.url_safe</a>
  &#8226;   <a href="#markupsafe">markupsafe</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#packaging._elffile">packaging._elffile</a>
  &#8226;   <a href="#packaging._manylinux">packaging._manylinux</a>
  &#8226;   <a href="#packaging._musllinux">packaging._musllinux</a>
@@ -4961,6 +4964,7 @@ imported by:
  &#8226;   <a href="#importlib.resources._common">importlib.resources._common</a>
  &#8226;   <a href="#importlib.resources.readers">importlib.resources.readers</a>
  &#8226;   <a href="#jinja2.compiler">jinja2.compiler</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#packaging._manylinux">packaging._manylinux</a>
  &#8226;   <a href="#packaging._tokenizer">packaging._tokenizer</a>
  &#8226;   <a href="#setuptools._distutils.command.build_ext">setuptools._distutils.command.build_ext</a>
@@ -5353,6 +5357,44 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="database"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/database/__init__.py" type="text/plain"><tt>database</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#database.connection">database.connection</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#database.connection">database.connection</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="database.connection"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/database/connection.py" type="text/plain"><tt>database.connection</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#database">database</a>
+ &#8226;   <a href="#db">db</a>
+ &#8226;   <a href="#db_sqlite">db_sqlite</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#database">database</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="dataclasses"></a>
   <a target="code" href="///C:/Users/Jose%20Gomez/AppData/Local/Programs/Python/Python313/Lib/dataclasses.py" type="text/plain"><tt>dataclasses</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -5377,6 +5419,12 @@ imported by:
  &#8226;   <a href="#_pyrepl.reader">_pyrepl.reader</a>
  &#8226;   <a href="#_pyrepl.readline">_pyrepl.readline</a>
  &#8226;   <a href="#flask.json.provider">flask.json.provider</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.provider">modules.shopping.services.schemas.provider</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation_details">modules.shopping.services.schemas.set_shopping_operation_details</a>
  &#8226;   <a href="#packaging._tokenizer">packaging._tokenizer</a>
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#pstats">pstats</a>
@@ -5422,6 +5470,8 @@ imported by:
  &#8226;   <a href="#itsdangerous.timed">itsdangerous.timed</a>
  &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
  &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
  &#8226;   <a href="#setuptools._vendor.tomli._re">setuptools._vendor.tomli._re</a>
  &#8226;   <a href="#setuptools.warnings">setuptools.warnings</a>
  &#8226;   <a href="#sqlite3.dbapi2">sqlite3.dbapi2</a>
@@ -5459,6 +5509,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#app.py">app.py</a>
+ &#8226;   <a href="#database.connection">database.connection</a>
  &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
  &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
@@ -5478,7 +5529,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#modules.systems.routes">modules.systems.routes</a>
+    <a href="#database.connection">database.connection</a>
+ &#8226;   <a href="#modules.systems.routes">modules.systems.routes</a>
 
   </div>
 
@@ -5499,6 +5551,7 @@ imported by:
     <a href="#db">db</a>
  &#8226;   <a href="#flask.json.provider">flask.json.provider</a>
  &#8226;   <a href="#fractions">fractions</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
  &#8226;   <a href="#psycopg2">psycopg2</a>
  &#8226;   <a href="#setuptools.config._validate_pyproject.fastjsonschema_validations">setuptools.config._validate_pyproject.fastjsonschema_validations</a>
  &#8226;   <a href="#statistics">statistics</a>
@@ -8856,6 +8909,7 @@ imported by:
  &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
  &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#modules.sales.routes">modules.sales.routes</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
  &#8226;   <a href="#modules.systems.routes">modules.systems.routes</a>
 
   </div>
@@ -10884,6 +10938,7 @@ imported by:
  &#8226;   <a href="#jinja2.compiler">jinja2.compiler</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#lzma">lzma</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
  &#8226;   <a href="#multiprocessing.connection">multiprocessing.connection</a>
  &#8226;   <a href="#multiprocessing.popen_forkserver">multiprocessing.popen_forkserver</a>
  &#8226;   <a href="#multiprocessing.popen_spawn_posix">multiprocessing.popen_spawn_posix</a>
@@ -12401,6 +12456,7 @@ imports:
     <a href="#modules.inventory">modules.inventory</a>
  &#8226;   <a href="#modules.manager">modules.manager</a>
  &#8226;   <a href="#modules.sales">modules.sales</a>
+ &#8226;   <a href="#modules.shopping">modules.shopping</a>
  &#8226;   <a href="#modules.systems">modules.systems</a>
 
   </div>
@@ -12410,6 +12466,7 @@ imported by:
  &#8226;   <a href="#modules.inventory">modules.inventory</a>
  &#8226;   <a href="#modules.manager">modules.manager</a>
  &#8226;   <a href="#modules.sales">modules.sales</a>
+ &#8226;   <a href="#modules.shopping">modules.shopping</a>
  &#8226;   <a href="#modules.systems">modules.systems</a>
 
   </div>
@@ -12530,6 +12587,233 @@ imports:
   <div class="import">
 imported by:
     <a href="#modules.sales">modules.sales</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/__init__.py" type="text/plain"><tt>modules.shopping</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#app.py">app.py</a>
+ &#8226;   <a href="#modules">modules</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services">modules.shopping.services</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.routes"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/routes.py" type="text/plain"><tt>modules.shopping.routes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#datetime">datetime</a>
+ &#8226;   <a href="#decimal">decimal</a>
+ &#8226;   <a href="#flask">flask</a>
+ &#8226;   <a href="#io">io</a>
+ &#8226;   <a href="#modules.shopping">modules.shopping</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation_details">modules.shopping.services.schemas.set_shopping_operation_details</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+ &#8226;   <a href="#traceback">traceback</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping">modules.shopping</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services"></a>
+  <a target="code" href="-" type="text/plain"><tt>modules.shopping.services</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#modules.shopping">modules.shopping</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas"></a>
+  <a target="code" href="-" type="text/plain"><tt>modules.shopping.services.schemas</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#modules.shopping.services">modules.shopping.services</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.provider">modules.shopping.services.schemas.provider</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation_details">modules.shopping.services.schemas.set_shopping_operation_details</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.product"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/product.py" type="text/plain"><tt>modules.shopping.services.schemas.product</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.product_codes"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/product_codes.py" type="text/plain"><tt>modules.shopping.services.schemas.product_codes</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.product_units"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/product_units.py" type="text/plain"><tt>modules.shopping.services.schemas.product_units</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.provider"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/provider.py" type="text/plain"><tt>modules.shopping.services.schemas.provider</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.set_shopping_operation"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/set_shopping_operation.py" type="text/plain"><tt>modules.shopping.services.schemas.set_shopping_operation</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.schemas.set_shopping_operation_details"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/schemas/set_shopping_operation_details.py" type="text/plain"><tt>modules.shopping.services.schemas.set_shopping_operation_details</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.shopping.services.schemas">modules.shopping.services.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.shopping.services.shoppingDb"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/shopping/services/shoppingDb.py" type="text/plain"><tt>modules.shopping.services.shoppingDb</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#database">database</a>
+ &#8226;   <a href="#modules.shopping.services">modules.shopping.services</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.provider">modules.shopping.services.schemas.provider</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation_details">modules.shopping.services.schemas.set_shopping_operation_details</a>
+ &#8226;   <a href="#psycopg2.extras">psycopg2.extras</a>
+ &#8226;   <a href="#traceback">traceback</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.shopping.routes">modules.shopping.routes</a>
 
   </div>
 
@@ -13675,6 +13959,7 @@ imported by:
  &#8226;   <a href="#ctypes.macholib.dyld">ctypes.macholib.dyld</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#curses">curses</a>
+ &#8226;   <a href="#database.connection">database.connection</a>
  &#8226;   <a href="#db">db</a>
  &#8226;   <a href="#dotenv.main">dotenv.main</a>
  &#8226;   <a href="#email.utils">email.utils</a>
@@ -14865,6 +15150,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#db">db</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#psycopg2._json">psycopg2._json</a>
  &#8226;   <a href="#psycopg2._range">psycopg2._range</a>
 
@@ -21118,6 +21404,8 @@ imported by:
  &#8226;   <a href="#flask.cli">flask.cli</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#multiprocessing.managers">multiprocessing.managers</a>
  &#8226;   <a href="#multiprocessing.pool">multiprocessing.pool</a>
  &#8226;   <a href="#multiprocessing.process">multiprocessing.process</a>
@@ -21332,6 +21620,7 @@ imported by:
  &#8226;   <a href="#click.testing">click.testing</a>
  &#8226;   <a href="#click.types">click.types</a>
  &#8226;   <a href="#click.utils">click.utils</a>
+ &#8226;   <a href="#database.connection">database.connection</a>
  &#8226;   <a href="#dotenv">dotenv</a>
  &#8226;   <a href="#dotenv.main">dotenv.main</a>
  &#8226;   <a href="#dotenv.parser">dotenv.parser</a>
@@ -21391,6 +21680,13 @@ imported by:
  &#8226;   <a href="#jinja2.utils">jinja2.utils</a>
  &#8226;   <a href="#jinja2.visitor">jinja2.visitor</a>
  &#8226;   <a href="#markupsafe">markupsafe</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.provider">modules.shopping.services.schemas.provider</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
+ &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation_details">modules.shopping.services.schemas.set_shopping_operation_details</a>
+ &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#packaging._elffile">packaging._elffile</a>
  &#8226;   <a href="#packaging._manylinux">packaging._manylinux</a>
  &#8226;   <a href="#packaging._musllinux">packaging._musllinux</a>
