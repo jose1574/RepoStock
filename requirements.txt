@@ -1,6 +1,4 @@
-# Dependencias opcionales. Python ya incluye sqlite3, pero si prefieres usar
-# una implementación empaquetada, descomenta la línea siguiente e instala.
-# pysqlite3-binary>=0.4.0
+--only-binary :all:
 
 # Core de la aplicación web
 Flask==3.0.0
@@ -12,7 +10,7 @@ Flask-WTF==1.1.1
 WTForms==3.0.1
 email-validator==2.0.0
 
-# ORM (si se usa en el proyecto)
+# ORM
 SQLAlchemy==2.0.0
 
 # Carga de variables de entorno desde .env
@@ -21,12 +19,11 @@ python-dotenv==1.0.0
 # Generación de PDFs (requiere instalar wkhtmltopdf en el sistema)
 pdfkit==1.0.0
 
-# PostgreSQL driver (binario recomendado en Windows)
-psycopg2-binary==2.9.9
+# PostgreSQL driver (SOLO UNA VEZ)
+psycopg2-binary==2.9.11
 
 # Servidor WSGI de producción
 waitress==2.1.2
 
-# Soporte para servicios de Windows (pywin32)
-pywin32==306
-
+# Soporte para servicios de Windows
+pywin32
