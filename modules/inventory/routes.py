@@ -31,6 +31,7 @@ from modules.inventory.services.inventoryDb import (
     get_marks,
     get_stores,
     get_products_by_codes,
+    update_product_failure_params
 )
 
 # Configuración local de wkhtmltopdf para evitar import circular con app.py
@@ -84,36 +85,6 @@ inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 # Directorio de templates específico del módulo
 inventory_bp.template_folder = os.path.join(os.path.dirname(__file__), "templates")
 
-# @inventory_bp.route('/select_store_destination_collection_order', methods=['GET'])
-# def select_store_destination_collection_order():
-#     stores = get_stores()
-#     # Intentar preseleccionar desde sesión si existe
-#     origin_code = session.get("store_manual_collection_order_origin")
-#     dest_code = session.get("store_code_destination")
-#     store_origin = get_store_by_code(origin_code) if origin_code else None
-#     store_destination = get_store_by_code(dest_code) if dest_code else None
-#     return render_template(
-#         "auto_collection_order.html",
-#         stores=stores or [],
-#         store_origin=store_origin,
-#         store_destination=store_destination,
-#         products=[],
-#         departments=[],
-#         brands=[],
-#         selected_department=None,
-#         store_selection_error=None,
-#     )
-
-
-
-
-
-
-
-
-
-
-
 
 
 @inventory_bp.route("/auto_collection_order", methods=["POST", "GET"])
@@ -153,12 +124,6 @@ def api_products():
     except Exception as e:
         print("Error en api_products:", e)
         return jsonify({"ok": False, "error": str(e)}), 500
-
-
-
-
-
-
 
 
 @inventory_bp.route("/save_collection_order", methods=["POST"])
@@ -257,6 +222,39 @@ def save_collection_order():
        except Exception as e:
            print("Error save_collection_order:", e)
            return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# Api para actualizar la existencia mim y max de un producto en products_failures
+@inventory_bp.route("/api/update_params_products_failures", methods=["POST"])
+def api_update_params_products_failures():
+    try:
+        data = request.get_json()
+        product_code = data.get("product_code")
+        store_code = data.get("store_code")
+        minimal_stock = data.get("minimal_stock")
+        maximum_stock = data.get("maximum_stock")
+        
+        if not product_code or not store_code:
+            return jsonify({"ok": False, "error": "Faltan product_code o store_code"}), 400
+        
+        print("Actualizando params en products_failures:", product_code, store_code, minimal_stock, maximum_stock)
+        
+        return jsonify({"ok": True, "message": "Parámetros llegan exitosamente."})
+    except Exception as e:
+        print("Error en api_update_params_products_failures:", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @inventory_bp.route("/destination-store-selection")

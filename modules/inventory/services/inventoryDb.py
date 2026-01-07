@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from database import get_connection, close_connection
 from modules.inventory.schemas.set_inventory_operation import SetInventoryOperationData
 from modules.inventory.schemas.set_inventory_operation_details import SetInventoryOperationDetailsData
+from modules.inventory.schemas.products_failures import ProductsFailuresData
 
 
 @contextmanager
@@ -21,9 +22,57 @@ def get_db_connection():
             pass
 
 
+# crea o actualiza la existencia mínima y máxima de un producto en products_failures
+def update_product_failure_params(product_code: str, store_code: str, minimal_stock: int, maximum_stock: int, location: str = None) -> Any:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            INSERT INTO products_failures(
+                product_code, store_code, minimal_stock, maximum_stock, location
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (product_code, store_code)
+            DO UPDATE SET
+                minimal_stock = EXCLUDED.minimal_stock,
+                maximum_stock = EXCLUDED.maximum_stock,
+                location = EXCLUDED.location;
+        """
+        
+        params = (
+            product_code,
+            store_code,
+            minimal_stock,
+            maximum_stock,
+            location
+        )
+        
+        cur.execute(sql, params)
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        print(f"Error updating product failure params: {e}")
+        raise e
+    finally:
+        close_connection(conn)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # para guardar el header de una operación de inventario
-
-
 def save_inventory_operation_header(data: SetInventoryOperationData) -> Any:
     with get_db_connection() as conn:
         print("Guardando encabezado de operación de inventario con los siguientes datos:", data)
@@ -371,6 +420,8 @@ def get_products_by_codes(codes):
         return []
     finally:
         close_connection(conn)
+
+
 
 
 

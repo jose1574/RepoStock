@@ -264,6 +264,9 @@
          </svg>
       </button>
       <h3 class="text-base font-medium mb-3">Editar parámetros</h3>
+      <h4 id="store-param">
+         Deposito: <span id="edit-store-info-param"></span>
+      </h4>
       <div class="text-sm text-gray-700 mb-2">
          <div><span class="font-mono font-semibold">Código:</span> <span id="edit-prod-code"></span></div>
          <div class="truncate"><span class="font-semibold">Producto:</span> <span id="edit-prod-desc"></span></div>
@@ -333,11 +336,15 @@
       const tbody = document.querySelector('tbody');
       tbody.innerHTML = ''; // Limpiar contenido previo
 
+      // Obtenemos el nombre del depósito destino para guardarlo como dato en la fila
+      const destSelect = document.getElementById('store_destination');
+      const destText = destSelect.selectedIndex >= 0 ? destSelect.options[destSelect.selectedIndex].text : '';
+
       products.forEach(product => {
          const tr = document.createElement('tr');
          tr.setAttribute('data-department', product.department_description || '');
          tr.setAttribute('data-brand', product.mark_description || '');
-         // Atributos de datos para recuperación al guardar
+         // Atributos de datos para recuperación al guardar y para el Modal
          tr.setAttribute('data-code', product.code || '');
          tr.setAttribute('data-description', product.description || '');
          tr.setAttribute('data-unit', product.unit_code || '1');
@@ -345,12 +352,22 @@
          tr.setAttribute('data-model', product.model || ''); // Si existiera
          tr.setAttribute('data-reference', product.reference || ''); // Si existiera
          
+         // NUEVOS ATRIBUTOS para el modal de edición (pasamos los valores a la fila)
+         tr.setAttribute('data-min', product.minimal_stock);
+         tr.setAttribute('data-max', product.maximum_stock);
+         tr.setAttribute('data-stock-dest', product.stock_store_destination);
+         tr.setAttribute('data-store-dest', destText); // Nombre del depósito destino
+         
          tr.innerHTML = `
             <td class="px-4 py-2">
                <input type="checkbox" class="product-checkbox" value="${product.code}">
             </td>
             <td class="px-4 py-2 text-sm text-gray-900">${product.code}</td>
-            <td class="px-4 py-2 text-sm text-gray-900">${product.description}</td>
+            <td class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium editable-product" 
+                title="Click para editar existencia mínima y máxima"
+                onclick="openEditModalFromCell(this.parentElement)">
+                ${product.description}
+            </td>
             <td class="px-4 py-2 text-sm text-gray-900">${product.unit_description}</td>
             <td class="px-4 py-2 text-sm text-gray-900">${product.mark_description}</td>
             <td class="px-4 py-2 text-sm text-gray-900">${product.department_description}</td>
@@ -423,64 +440,121 @@
       });
    }
 
+   // --- Funciones del Modal de actualizacion de parametros de productos (Globales para que el onClick funcione) ---
+   function openEditModalFromCell(cell) {
+      if (!cell) return;
+      const editModal = document.getElementById('edit-param-modal');
+      const editProdCode = document.getElementById('edit-prod-code');
+      const editProdDesc = document.getElementById('edit-prod-desc');
+      const editStoreInfo = document.getElementById('edit-store-info');
+      const editStoreInfoParam = document.getElementById('edit-store-info-param'); // Elemento h4 del modal para el deposito
+      const editStockValue = document.getElementById('edit-stock-value');
+      const editMinInput = document.getElementById('edit-min-input');
+      const editMaxInput = document.getElementById('edit-max-input');
+
+      const code = cell.getAttribute('data-code');
+      const desc = cell.getAttribute('data-description');
+      const min = cell.getAttribute('data-min');
+      const max = cell.getAttribute('data-max');
+      const stockDest = cell.getAttribute('data-stock-dest');
+      const storeDest = cell.getAttribute('data-store-dest');
+
+      editProdCode.textContent = code || '';
+      editProdDesc.textContent = desc || '';
+      
+      // Mostrar info del deposito claramente en el titulo
+      if (editStoreInfoParam) {
+          editStoreInfoParam.textContent = storeDest || 'No definido';
+          // Opcional: darle un color para que resalte
+          editStoreInfoParam.className = "font-bold text-teal-700"; 
+      }
+
+
+      editStockValue.textContent = `${stockDest ?? ''}`;
+      editMinInput.value = (min ?? '').toString();
+      editMaxInput.value = (max ?? '').toString();
+      
+      editModal.classList.remove('hidden');
+      editModal.classList.add('flex');
+      
+      setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch (e) { } }, 50);
+   }
+
+   function closeEditModal() {
+      const editModal = document.getElementById('edit-param-modal');
+      editModal.classList.add('hidden');
+      editModal.classList.remove('flex');
+   }
+
    document.addEventListener('DOMContentLoaded', function () {
       // Inicialmente ocultar action-bar si content está oculto
       const ab = document.getElementById('action-bar');
       if(ab && document.getElementById('content').classList.contains('hidden')) {
          ab.style.display = 'none';
       }
-      // --- Modal edición de parámetros por producto desde la tabla ---
+      
+      // --- Eventos del Modal ---
       const editModal = document.getElementById('edit-param-modal');
       const editClose = document.getElementById('edit-param-close');
       const editForm = document.getElementById('edit-param-form');
       const editProdCode = document.getElementById('edit-prod-code');
-      const editProdDesc = document.getElementById('edit-prod-desc');
-      const editStoreInfo = document.getElementById('edit-store-info');
-      const editStockValue = document.getElementById('edit-stock-value');
+      // Inputs del modal (ya definidos en openEditModalFromCell pero necesarios aquí tambien si se usan, 
+      // mejor obtenerlos al vuelo o reusar IDs)
       const editMinInput = document.getElementById('edit-min-input');
       const editMaxInput = document.getElementById('edit-max-input');
 
-      function openEditModalFromCell(cell) {
-         if (!cell) return;
-         const code = cell.getAttribute('data-code');
-         const desc = cell.getAttribute('data-description');
-         const min = cell.getAttribute('data-min');
-         const max = cell.getAttribute('data-max');
-         const stockDest = cell.getAttribute('data-stock-dest');
-         const stockOrigin = cell.getAttribute('data-stock-origin');
-         const storeDest = cell.getAttribute('data-store-dest');
-         const storeOrigin = cell.getAttribute('data-store-origin');
-         // Usar depósito destino como "seleccionado" para mostrar stock
-         editProdCode.textContent = code || '';
-         editProdDesc.textContent = desc || '';
-         editStoreInfo.textContent = `Depósito destino: ${storeDest || ''}`;
-         editStockValue.textContent = `${stockDest ?? ''}`;
-         editMinInput.value = (min ?? '').toString();
-         editMaxInput.value = (max ?? '').toString();
-         editModal.classList.remove('hidden');
-         editModal.classList.add('flex');
-         setTimeout(() => { try { editMinInput.focus(); editMinInput.select(); } catch (e) { } }, 50);
-      }
-
+      // (Las funciones open/close ya son globales, solo asignamos eventos)
+      // document.querySelectorAll('.editable-product')... ya no es critico por el onClick inline, pero si hay estaticos:
       document.querySelectorAll('.editable-product').forEach(cell => {
          cell.addEventListener('click', () => openEditModalFromCell(cell));
       });
 
-      function closeEditModal() {
-         editModal.classList.add('hidden');
-         editModal.classList.remove('flex');
-      }
       editClose && editClose.addEventListener('click', closeEditModal);
       editModal && editModal.addEventListener('click', (e) => {
-         if (e.target === editModal) { closeEditModal(); }
+         // Cierra si el click fue en el contenedor padre (flex container)
+         // o en el overlay (div de fondo oscuro)
+         // De esta forma si se da click al contenido (bg-white), no se cierra.
+         if (e.target === editModal || e.target.classList.contains('bg-black')) { 
+            closeEditModal(); 
+         }
+      });
+
+      // Cerrar modal con tecla Escape
+      document.addEventListener('keydown', function(e) {
+         if (e.key === 'Escape' && editModal && !editModal.classList.contains('hidden')) {
+            closeEditModal();
+         }
       });
 
       editForm && editForm.addEventListener('submit', async function (e) {
          e.preventDefault();
          const productCode = editProdCode.textContent.trim();
+         // IMPORTANTE: Obtenemos el depósito destino actualmente seleccionado para enviar al backend
+         const storeDestElem = document.getElementById('store_destination');
+         const storeDestCode = storeDestElem ? storeDestElem.value : '';
+
          const minimalStock = editMinInput.value;
          const maximumStock = editMaxInput.value;
          if (!productCode) { alert('Código de producto no válido.'); return; }
+         if (!storeDestCode) { alert('No se ha seleccionado depósito destino.'); return; }
+         
+         // Validaciones
+         const minVal = parseFloat(minimalStock);
+         const maxVal = parseFloat(maximumStock);
+
+         if (isNaN(minVal) || minVal < 0) {
+            alert('La existencia mínima no puede ser negativa.');
+            return;
+         }
+         if (isNaN(maxVal) || maxVal < 0) {
+            alert('La existencia máxima no puede ser negativa.');
+            return;
+         }
+         if (minVal > maxVal) {
+            alert('La existencia mínima no puede ser mayor que la existencia máxima.');
+            return;
+         }
+
          // Enviar al backend usando la ruta existente para guardar parámetros
          try {
             const resp = await fetch("{{ url_for('inventory.save_config_param_product') }}", {
@@ -491,7 +565,7 @@
                   minimal_stock: minimalStock,
                   maximum_stock: maximumStock,
                   location: '',
-                  store_code: "{{ store_destination.code if store_destination else '' }}"
+                  store_code: storeDestCode // Enviamos el de destino seleccionado
                })
             });
             const data = await resp.json().catch(() => ({}));
@@ -501,26 +575,27 @@
             }
             // Actualizar la fila en la tabla (min/max)
             const row = Array.from(document.querySelectorAll('tbody tr')).find(r => {
-               const codeCell = r.querySelector('td:nth-child(2)');
-               return codeCell && codeCell.textContent.trim() === productCode;
+                // Buscamos por atributo data-code para mayor seguridad
+               return r.getAttribute('data-code') === productCode;
             });
             if (row) {
                const minCell = row.querySelector('.min-stock-cell');
                const maxCell = row.querySelector('.max-stock-cell');
                if (minCell) minCell.textContent = minimalStock;
                if (maxCell) maxCell.textContent = maximumStock;
-               // actualizar data-* del nombre
-               const nameCell = row.querySelector('.editable-product');
-               if (nameCell) {
-                  nameCell.setAttribute('data-min', minimalStock);
-                  nameCell.setAttribute('data-max', maximumStock);
-               }
+               
+               // Actualizar también los atributos data-* de la fila para que 
+               // la próxima vez que se abra el modal tenga los datos nuevos sin recargar
+               row.setAttribute('data-min', minimalStock);
+               row.setAttribute('data-max', maximumStock);
+
                // Recalcular sugerido "Por trasladar" para la fila tras cambios de min/max
                try { recomputeToTransferForRow(row); } catch (e) { }
             }
             closeEditModal();
          } catch (err) {
-            alert('No se pudo guardar: ' + (err && err.message ? err.message : err));
+            console.error(err);
+            alert(err.message);
          }
       });
       const selectAllBtn = document.getElementById('select-all');

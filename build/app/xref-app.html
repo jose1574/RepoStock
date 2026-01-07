@@ -543,6 +543,7 @@ imported by:
  &#8226;   <a href="#itsdangerous.timed">itsdangerous.timed</a>
  &#8226;   <a href="#itsdangerous.url_safe">itsdangerous.url_safe</a>
  &#8226;   <a href="#markupsafe">markupsafe</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
  &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#packaging._elffile">packaging._elffile</a>
  &#8226;   <a href="#packaging._manylinux">packaging._manylinux</a>
@@ -4964,6 +4965,7 @@ imported by:
  &#8226;   <a href="#importlib.resources._common">importlib.resources._common</a>
  &#8226;   <a href="#importlib.resources.readers">importlib.resources.readers</a>
  &#8226;   <a href="#jinja2.compiler">jinja2.compiler</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
  &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
  &#8226;   <a href="#packaging._manylinux">packaging._manylinux</a>
  &#8226;   <a href="#packaging._tokenizer">packaging._tokenizer</a>
@@ -5367,6 +5369,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#database.connection">database.connection</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
  &#8226;   <a href="#modules.shopping.services.shoppingDb">modules.shopping.services.shoppingDb</a>
 
   </div>
@@ -5419,6 +5422,8 @@ imported by:
  &#8226;   <a href="#_pyrepl.reader">_pyrepl.reader</a>
  &#8226;   <a href="#_pyrepl.readline">_pyrepl.readline</a>
  &#8226;   <a href="#flask.json.provider">flask.json.provider</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation_details">modules.inventory.schemas.set_inventory_operation_details</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>
@@ -5469,6 +5474,7 @@ imported by:
  &#8226;   <a href="#itsdangerous.exc">itsdangerous.exc</a>
  &#8226;   <a href="#itsdangerous.timed">itsdangerous.timed</a>
  &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
  &#8226;   <a href="#modules.manager.routes">modules.manager.routes</a>
  &#8226;   <a href="#modules.shopping.routes">modules.shopping.routes</a>
  &#8226;   <a href="#modules.shopping.services.schemas.set_shopping_operation">modules.shopping.services.schemas.set_shopping_operation</a>
@@ -12487,6 +12493,8 @@ imported by:
     <a href="#app.py">app.py</a>
  &#8226;   <a href="#modules">modules</a>
  &#8226;   <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.inventory.schemas">modules.inventory.schemas</a>
+ &#8226;   <a href="#modules.inventory.services">modules.inventory.services</a>
 
   </div>
 
@@ -12502,6 +12510,9 @@ imports:
  &#8226;   <a href="#flask">flask</a>
  &#8226;   <a href="#json">json</a>
  &#8226;   <a href="#modules.inventory">modules.inventory</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation_details">modules.inventory.schemas.set_inventory_operation_details</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#pdfkit">pdfkit</a>
 
@@ -12509,6 +12520,100 @@ imports:
   <div class="import">
 imported by:
     <a href="#modules.inventory">modules.inventory</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.schemas"></a>
+  <a target="code" href="-" type="text/plain"><tt>modules.inventory.schemas</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#modules.inventory">modules.inventory</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation_details">modules.inventory.schemas.set_inventory_operation_details</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.schemas.set_inventory_operation"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/inventory/schemas/set_inventory_operation.py" type="text/plain"><tt>modules.inventory.schemas.set_inventory_operation</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#modules.inventory.schemas">modules.inventory.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.schemas.set_inventory_operation_details"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/inventory/schemas/set_inventory_operation_details.py" type="text/plain"><tt>modules.inventory.schemas.set_inventory_operation_details</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#modules.inventory.schemas">modules.inventory.schemas</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory.routes">modules.inventory.routes</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.services"></a>
+  <a target="code" href="-" type="text/plain"><tt>modules.inventory.services</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#modules.inventory">modules.inventory</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="modules.inventory.services.inventoryDb"></a>
+  <a target="code" href="///C:/Users/Jose%20Gomez/Documents/Develoment%20programing/RepoStock/modules/inventory/services/inventoryDb.py" type="text/plain"><tt>modules.inventory.services.inventoryDb</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#contextlib">contextlib</a>
+ &#8226;   <a href="#database">database</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation_details">modules.inventory.schemas.set_inventory_operation_details</a>
+ &#8226;   <a href="#modules.inventory.services">modules.inventory.services</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#modules.inventory.routes">modules.inventory.routes</a>
 
   </div>
 
@@ -21680,6 +21785,9 @@ imported by:
  &#8226;   <a href="#jinja2.utils">jinja2.utils</a>
  &#8226;   <a href="#jinja2.visitor">jinja2.visitor</a>
  &#8226;   <a href="#markupsafe">markupsafe</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation">modules.inventory.schemas.set_inventory_operation</a>
+ &#8226;   <a href="#modules.inventory.schemas.set_inventory_operation_details">modules.inventory.schemas.set_inventory_operation_details</a>
+ &#8226;   <a href="#modules.inventory.services.inventoryDb">modules.inventory.services.inventoryDb</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product">modules.shopping.services.schemas.product</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product_codes">modules.shopping.services.schemas.product_codes</a>
  &#8226;   <a href="#modules.shopping.services.schemas.product_units">modules.shopping.services.schemas.product_units</a>

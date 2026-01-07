@@ -33,6 +33,10 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\reports\\report_collection_order.html',
    'DATA'),
+  ('modules\\inventory\\templates\\auto_collection_order.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\templates\\auto_collection_order.html',
+   'DATA'),
   ('modules\\inventory\\templates\\check_order_collection.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\templates\\check_order_collection.html',
@@ -48,10 +52,6 @@
   ('modules\\inventory\\templates\\config_param_product_store.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\templates\\config_param_product_store.html',
-   'DATA'),
-  ('modules\\inventory\\templates\\create_collection_order.html',
-   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
-   'programing\\RepoStock\\modules\\inventory\\templates\\create_collection_order.html',
    'DATA'),
   ('modules\\inventory\\templates\\form_destination_store.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
@@ -2067,13 +2067,13 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\stringprep.py',
    'PYMODULE'),
-  ('tracemalloc',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tracemalloc.py',
-   'PYMODULE'),
   ('_py_abc',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_py_abc.py',
+   'PYMODULE'),
+  ('tracemalloc',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tracemalloc.py',
    'PYMODULE'),
   ('waitress',
    'C:\\Users\\Jose '
@@ -2280,6 +2280,20 @@
   ('modules.inventory.routes',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\routes.py',
+   'PYMODULE'),
+  ('modules.inventory.services.inventoryDb',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\services\\inventoryDb.py',
+   'PYMODULE'),
+  ('modules.inventory.services', '-', 'PYMODULE'),
+  ('modules.inventory.schemas.set_inventory_operation',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\schemas\\set_inventory_operation.py',
+   'PYMODULE'),
+  ('modules.inventory.schemas', '-', 'PYMODULE'),
+  ('modules.inventory.schemas.set_inventory_operation_details',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\schemas\\set_inventory_operation_details.py',
    'PYMODULE'),
   ('modules', '-', 'PYMODULE'),
   ('db',
@@ -2866,13 +2880,13 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\DLLs\\sqlite3.dll',
    'BINARY'),
-  ('psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
-   'BINARY'),
   ('psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libssl-3-x64-dd4221de8bb64df4e207d54ae2f1061b.dll',
+   'BINARY'),
+  ('psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psycopg2_binary.libs\\libcrypto-3-x64-5c171716accecee9b0c1ee574c2a4da0.dll',
    'BINARY')],
  [],
  [],
@@ -2886,6 +2900,10 @@
   ('modules\\inventory\\reports\\report_collection_order.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\reports\\report_collection_order.html',
+   'DATA'),
+  ('modules\\inventory\\templates\\auto_collection_order.html',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\templates\\auto_collection_order.html',
    'DATA'),
   ('modules\\inventory\\templates\\check_order_collection.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
@@ -2902,10 +2920,6 @@
   ('modules\\inventory\\templates\\config_param_product_store.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\templates\\config_param_product_store.html',
-   'DATA'),
-  ('modules\\inventory\\templates\\create_collection_order.html',
-   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
-   'programing\\RepoStock\\modules\\inventory\\templates\\create_collection_order.html',
    'DATA'),
   ('modules\\inventory\\templates\\form_destination_store.html',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
@@ -3055,21 +3069,21 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\REQUESTED',
    'DATA'),
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\RECORD',
-   'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\LICENSE',
    'DATA'),
-  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+  ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\METADATA',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\top_level.txt',
    'C:\\Users\\Jose '
@@ -3080,89 +3094,17 @@
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\jaraco\\text\\Lorem '
    'ipsum.txt',
    'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
+  ('MarkupSafe-3.0.2.dist-info\\RECORD',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\REQUESTED',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
-   'DATA'),
-  ('click-8.2.1.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
-   'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
-   'DATA'),
-  ('click-8.2.1.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\METADATA',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
-   'DATA'),
-  ('werkzeug-3.1.3.dist-info\\INSTALLER',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
-   'DATA'),
-  ('click-8.2.1.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
    'DATA'),
   ('click-8.2.1.dist-info\\licenses\\LICENSE.txt',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\licenses\\LICENSE.txt',
    'DATA'),
-  ('flask-3.1.1.dist-info\\entry_points.txt',
+  ('flask-3.1.1.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
-   'DATA'),
-  ('click-8.2.1.dist-info\\WHEEL',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\WHEEL',
-   'DATA'),
-  ('MarkupSafe-3.0.2.dist-info\\RECORD',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\RECORD',
-   'DATA'),
-  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\INSTALLER',
    'DATA'),
   ('werkzeug-3.1.3.dist-info\\METADATA',
    'C:\\Users\\Jose '
@@ -3172,31 +3114,143 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\WHEEL',
    'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
+  ('MarkupSafe-3.0.2.dist-info\\WHEEL',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\WHEEL',
    'DATA'),
-  ('itsdangerous-2.2.0.dist-info\\METADATA',
+  ('MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\INSTALLER',
    'DATA'),
-  ('flask-3.1.1.dist-info\\INSTALLER',
+  ('MarkupSafe-3.0.2.dist-info\\METADATA',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\INSTALLER',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\METADATA',
    'DATA'),
-  ('flask-3.1.1.dist-info\\WHEEL',
+  ('flask-3.1.1.dist-info\\entry_points.txt',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\WHEEL',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\entry_points.txt',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\REQUESTED',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\REQUESTED',
+   'DATA'),
+  ('click-8.2.1.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\RECORD',
    'DATA'),
   ('flask-3.1.1.dist-info\\RECORD',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\RECORD',
    'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\licenses\\LICENSE.txt',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\WHEEL',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\METADATA',
+   'DATA'),
+  ('MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\MarkupSafe-3.0.2.dist-info\\top_level.txt',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\INSTALLER',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\RECORD',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\METADATA',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\LICENSE.txt',
+   'DATA'),
+  ('werkzeug-3.1.3.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\werkzeug-3.1.3.dist-info\\INSTALLER',
+   'DATA'),
+  ('click-8.2.1.dist-info\\METADATA',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\METADATA',
+   'DATA'),
+  ('itsdangerous-2.2.0.dist-info\\RECORD',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\itsdangerous-2.2.0.dist-info\\RECORD',
+   'DATA'),
+  ('flask-3.1.1.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\flask-3.1.1.dist-info\\WHEEL',
+   'DATA'),
+  ('click-8.2.1.dist-info\\WHEEL',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\WHEEL',
+   'DATA'),
+  ('click-8.2.1.dist-info\\INSTALLER',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\click-8.2.1.dist-info\\INSTALLER',
+   'DATA'),
   ('base_library.zip',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\build\\app\\base_library.zip',
    'DATA')],
- [('encodings.zlib_codec',
+ [('operator',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\operator.py',
+   'PYMODULE'),
+  ('posixpath',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\posixpath.py',
+   'PYMODULE'),
+  ('locale',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\locale.py',
+   'PYMODULE'),
+  ('traceback',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\traceback.py',
+   'PYMODULE'),
+  ('_collections_abc',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_collections_abc.py',
+   'PYMODULE'),
+  ('heapq',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\heapq.py',
+   'PYMODULE'),
+  ('collections',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\collections\\__init__.py',
+   'PYMODULE'),
+  ('weakref',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\weakref.py',
+   'PYMODULE'),
+  ('reprlib',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\reprlib.py',
+   'PYMODULE'),
+  ('stat',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\stat.py',
+   'PYMODULE'),
+  ('encodings.zlib_codec',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\zlib_codec.py',
    'PYMODULE'),
@@ -3684,49 +3738,41 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\__init__.py',
    'PYMODULE'),
-  ('locale',
+  ('sre_parse',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\locale.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_parse.py',
    'PYMODULE'),
-  ('copyreg',
+  ('linecache',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copyreg.py',
-   'PYMODULE'),
-  ('ntpath',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ntpath.py',
-   'PYMODULE'),
-  ('enum',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\enum.py',
-   'PYMODULE'),
-  ('io',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\io.py',
-   'PYMODULE'),
-  ('_collections_abc',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_collections_abc.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\linecache.py',
    'PYMODULE'),
   ('types',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\types.py',
    'PYMODULE'),
-  ('reprlib',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\reprlib.py',
-   'PYMODULE'),
-  ('functools',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\functools.py',
-   'PYMODULE'),
   ('codecs',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\codecs.py',
    'PYMODULE'),
-  ('stat',
+  ('copyreg',
    'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\stat.py',
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copyreg.py',
+   'PYMODULE'),
+  ('abc',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\abc.py',
+   'PYMODULE'),
+  ('io',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\io.py',
+   'PYMODULE'),
+  ('ntpath',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ntpath.py',
+   'PYMODULE'),
+  ('functools',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\functools.py',
    'PYMODULE'),
   ('re._parser',
    'C:\\Users\\Jose '
@@ -3748,58 +3794,6 @@
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\re\\__init__.py',
    'PYMODULE'),
-  ('keyword',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\keyword.py',
-   'PYMODULE'),
-  ('linecache',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\linecache.py',
-   'PYMODULE'),
-  ('sre_compile',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_compile.py',
-   'PYMODULE'),
-  ('posixpath',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\posixpath.py',
-   'PYMODULE'),
-  ('sre_parse',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_parse.py',
-   'PYMODULE'),
-  ('weakref',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\weakref.py',
-   'PYMODULE'),
-  ('traceback',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\traceback.py',
-   'PYMODULE'),
-  ('operator',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\operator.py',
-   'PYMODULE'),
-  ('warnings',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\warnings.py',
-   'PYMODULE'),
-  ('heapq',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\heapq.py',
-   'PYMODULE'),
-  ('_weakrefset',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_weakrefset.py',
-   'PYMODULE'),
-  ('abc',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\abc.py',
-   'PYMODULE'),
-  ('collections',
-   'C:\\Users\\Jose '
-   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\collections\\__init__.py',
-   'PYMODULE'),
   ('sre_constants',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_constants.py',
@@ -3807,6 +3801,26 @@
   ('genericpath',
    'C:\\Users\\Jose '
    'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\genericpath.py',
+   'PYMODULE'),
+  ('enum',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\enum.py',
+   'PYMODULE'),
+  ('_weakrefset',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\_weakrefset.py',
+   'PYMODULE'),
+  ('warnings',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\warnings.py',
+   'PYMODULE'),
+  ('keyword',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\keyword.py',
+   'PYMODULE'),
+  ('sre_compile',
+   'C:\\Users\\Jose '
+   'Gomez\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\sre_compile.py',
    'PYMODULE'),
   ('os',
    'C:\\Users\\Jose '

@@ -1070,6 +1070,20 @@
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\inventory\\routes.py',
    'PYMODULE'),
+  ('modules.inventory.schemas', '-', 'PYMODULE'),
+  ('modules.inventory.schemas.set_inventory_operation',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\schemas\\set_inventory_operation.py',
+   'PYMODULE'),
+  ('modules.inventory.schemas.set_inventory_operation_details',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\schemas\\set_inventory_operation_details.py',
+   'PYMODULE'),
+  ('modules.inventory.services', '-', 'PYMODULE'),
+  ('modules.inventory.services.inventoryDb',
+   'C:\\Users\\Jose Gomez\\Documents\\Develoment '
+   'programing\\RepoStock\\modules\\inventory\\services\\inventoryDb.py',
+   'PYMODULE'),
   ('modules.manager',
    'C:\\Users\\Jose Gomez\\Documents\\Develoment '
    'programing\\RepoStock\\modules\\manager\\__init__.py',
