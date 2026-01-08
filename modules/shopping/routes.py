@@ -27,6 +27,9 @@ from modules.shopping.services.shoppingDb import (
     get_coins,
     create_product,
     get_products_history_by_provider,
+    update_product,
+    update_product_unit_price,
+    update_product_failure,
 )
 
 shopping_bp = Blueprint('shopping', __name__, template_folder='templates', url_prefix='/shopping') 
@@ -103,12 +106,10 @@ def api_products_history_by_provider(provider_code):
 def api_products_history_by_product_code(product_code):
     try:
         provider_code = request.args.get('provider_code')
-        print(f"Buscando historial para producto: {product_code} del proveedor {provider_code}")
         item = get_products_history_by_provider(None, product_code)
         if not item:
             return jsonify({'ok': False, 'error': 'Product history not found'}), 404
         # Convertir Decimal a float
-        print(f"Historial obtenido: {item}")
         try:
             from decimal import Decimal
             for k, v in list(item.items()):
@@ -143,6 +144,187 @@ def api_providers_search():
         ]
     
     return jsonify({'ok': True, 'items': providers})
+
+
+
+
+
+
+
+
+
+
+
+
+
+# actualiza la informacion del producto
+@shopping_bp.route('/api/product/update', methods=['POST'])
+def api_update_product():
+    try:
+        data = request.get_json(silent=True)
+        print("--- DEBUG: Payload recibido para actualizar producto ---")
+        print(data)
+        print("---------------------------------------------------")
+
+        if not isinstance(data, dict):
+            return jsonify({'ok': False, 'error': 'No JSON data received'}), 400
+
+        # Campos principales del producto
+        product_code = data.get('product_code')
+        description = data.get('description')
+
+        if not product_code:
+            return jsonify({'ok': False, 'error': 'El campo product_code es obligatorio'}), 400
+
+        # Normalizar y validar unidades
+        units_input = data.get('units', [])
+        units = []
+        if isinstance(units_input, list):
+            for unit in units_input:
+                units.append({
+                    'unit_code': unit.get('unit_code'),
+                    'unitary_cost': float(unit.get('unitary_cost') or 0),
+                    'maximum_price': float(unit.get('maximum_price') or 0),
+                    'offer_price': float(unit.get('offer_price') or 0),
+                    'higher_price': float(unit.get('higher_price') or 0),
+                    'minimum_price': float(unit.get('minimum_price') or 0),
+                })
+
+        # Normalizar y validar parámetros por tienda
+        params_input = data.get('parameters', [])
+        parameters = []
+        if isinstance(params_input, list):
+            for param in params_input:
+                parameters.append({
+                    'product_code': param.get('product_code') or product_code,
+                    'store_code': param.get('store_code'),
+                    'minimal_stock': float(param.get('minimal_stock') or 0),
+                    'maximum_stock': float(param.get('maximum_stock') or 0),
+                })
+
+        # Validación: maximum_stock >= minimal_stock por cada depósito
+        invalid_params = []
+        for p in parameters:
+            try:
+                ms = float(p.get('minimal_stock', 0))
+                mx = float(p.get('maximum_stock', 0))
+                if mx < ms:
+                    invalid_params.append({
+                        'store_code': p.get('store_code'),
+                        'minimal_stock': ms,
+                        'maximum_stock': mx
+                    })
+            except Exception:
+                # Si no se puede convertir, márcalo como inválido
+                invalid_params.append({
+                    'store_code': p.get('store_code'),
+                    'minimal_stock': p.get('minimal_stock'),
+                    'maximum_stock': p.get('maximum_stock')
+                })
+
+        if invalid_params:
+            return jsonify({
+                'ok': False,
+                'error': 'maximum_stock debe ser mayor o igual que minimal_stock',
+                'invalid_parameters': invalid_params
+            }), 400
+
+        update_payload = {
+            'product_code': product_code,
+            'description': description,
+            'units': units,
+            'parameters': parameters,
+        }
+
+        # 1) Actualizar producto (ej. descripción)
+        updated_product_rows = update_product(product_code, description)
+
+        # 2) Actualizar precios de unidades
+        # Resolver correlative por unit_code si no viene del cliente
+        existing_units = get_product_units_by_code(product_code) or []
+        unit_code_to_corr = {}
+        try:
+            for u in existing_units:
+                # columnas esperadas: 'unit' y 'correlative' desde products_units
+                unit_code_to_corr[str(u.get('unit'))] = u.get('correlative')
+        except Exception:
+            pass
+
+        # Obtener impuestos del producto para normalizar precios a NETO
+        product_row = None
+        try:
+            product_row = get_product_by_code(product_code)
+        except Exception:
+            product_row = None
+        current_sale_tax = (product_row or {}).get('sale_tax', '01')
+        current_buy_tax = (product_row or {}).get('buy_tax', '01')
+        sale_tax_divisor = 1.16 if current_sale_tax == "01" else 1.0
+        buy_tax_divisor = 1.16 if current_buy_tax == "01" else 1.0
+
+        print("estas son las unidades a actualizar: ", units)
+        units_updated = 0
+        for u in units:
+            correlative = u.get('unit_code')
+            unitary_cost = u.get('unitary_cost', 0.0) / buy_tax_divisor
+            maximum_price = u.get('maximum_price', 0.0) / sale_tax_divisor
+            offer_price = u.get('offer_price', 0.0) / sale_tax_divisor
+            higher_price = u.get('higher_price', 0.0) / sale_tax_divisor
+            minimum_price = u.get('minimum_price', 0.0) / sale_tax_divisor
+            update_unit = update_product_unit_price(
+                correlative,
+                unitary_cost,
+                maximum_price,
+                offer_price,
+                higher_price,
+                minimum_price
+            )
+            if update_unit:
+                units_updated += 1
+            print(f"--- DEBUG: Unidad {correlative} actualizada ---")
+
+        # 3) Actualizar parámetros por tienda (mínimos/máximos)
+        params_updated = 0
+        params_skipped = []
+        for p in parameters:
+            print("estos son los parametros a actualizar: ", p)
+            store_code = p.get('store_code')
+            if not store_code:
+                params_skipped.append({'store_code': None, 'reason': 'store_code requerido'})
+                continue
+            update_product_failure(
+                product_code,
+                store_code,
+                float(p.get('minimal_stock', 0.0)),
+                float(p.get('maximum_stock', 0.0)),
+            )
+            params_updated += 1
+
+        result = {
+            'product_rows': updated_product_rows,
+            'units_updated': units_updated,
+            'units_skipped': '',
+            'parameters_updated': params_updated,
+            'parameters_skipped': params_skipped,
+        }
+
+        print("--- DEBUG: Resultado actualización de producto ---", result)
+
+        return jsonify({'ok': True, 'message': 'Product updated successfully.', 'result': result})
+
+    except Exception as e:
+        print(f"Error updating product: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+
+
+
+
+
+
+
 
 
 # API para obtener detalles completos de un proveedor por su código

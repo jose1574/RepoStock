@@ -216,6 +216,102 @@ def save_shopping_operation_detail(data: SetShoppingOperationDetailData) -> None
         close_connection(conn)
 
 
+from typing import Optional
+
+#atualiza parametros de tab products
+def update_product(product_code: str, description: Optional[str]) -> int:
+    """Actualiza campos del producto en la tabla products."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            UPDATE products
+            SET description = %s
+            WHERE code = %s;
+        """
+        params = (
+            description,
+            product_code,
+        )
+        cur.execute(sql, params)
+        conn.commit()
+        return cur.rowcount
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        close_connection(conn)
+
+# actualiza precios en tab products_units
+def update_product_unit_price(
+        correlative: int,
+        unitary_cost: float,
+        maximum_price: float,
+        offer_price: float,
+        higher_price: float,
+        minimum_price: float
+        ) -> Any:
+    """Actualiza los precios de una unidad de producto en la tabla products_units."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            UPDATE products_units
+            SET
+                unitary_cost = %s,
+                maximum_price = %s,
+                offer_price = %s,
+                higher_price = %s,
+                minimum_price = %s
+            WHERE correlative = %s;
+        """
+        params = (
+            unitary_cost,
+            maximum_price,
+            offer_price,
+            higher_price,
+            minimum_price,
+            correlative
+        )
+        cur.execute(sql, params)
+        conn.commit()
+        return cur.rowcount
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        close_connection(conn)
+
+
+# actualiza tab products_failures
+def update_product_failure(product_code: str, store_code: str,minimal_stock: float,maximum_stock: float) -> Any:
+    """Actualiza los parámetros de fallas de un producto en la tabla products_failures."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            UPDATE products_failures
+            SET
+                minimal_stock = %s,
+                maximum_stock = %s
+            WHERE product_code = %s AND store_code = %s;
+        """
+        params = (
+            minimal_stock,
+            maximum_stock,
+            product_code,
+            store_code
+        )
+        cur.execute(sql, params)
+        conn.commit()
+        return cur.rowcount
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        close_connection(conn)
+
+
 
 def get_products_for_modal(query, p_coin="02", limit=50, offset=0):
     """Busca productos para el módulo de compras."""
@@ -702,6 +798,8 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
                     p.department as product_department,
                     d.description as department_description,
                     pv.unitary_cost as product_provider_unitary_cost,
+                    p.buy_tax,
+                    p.sale_tax,
                     to_char(pv.emission_date, 'DD-MM-YYYY') as product_provider_emission_date,
                     pv.amount as product_provider_amount,
                     pv.coin_code as product_provider_coin,
@@ -730,6 +828,8 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
                     p.department as product_department,
                     d.description as department_description,
                     pv.unitary_cost as product_provider_unitary_cost,
+                    p.buy_tax,
+                    p.sale_tax,
                     to_char(pv.emission_date, 'DD-MM-YYYY') as product_provider_emission_date,
                     pv.amount as product_provider_amount,
                     pv.coin_code as product_provider_coin,
@@ -837,8 +937,11 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
         # Parameters
         sql_params = """
             SELECT 
-            *
-            FROM products_failures
+            pf.*,
+            store.code as store_code,
+            store.description as store_description
+            FROM products_failures AS pf
+            LEFT JOIN store ON (pf.store_code = store.code)
             WHERE product_code IN %s
         """
         cur.execute(sql_params, (product_codes_tuple,))

@@ -88,6 +88,32 @@
             box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
             outline: none;
         }
+
+        /* Estilo de error para inputs de precios en el modal */
+        .price-input.price-error {
+            border-color: #fca5a5;
+            transition: all 0.2s ease;
+        }
+        .price-input.price-error:hover,
+        .price-input.price-error:focus {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+            outline: none;
+        }
+
+        /* Estilo de error para inputs de stock (mínimo/máximo) en parámetros */
+        .stock-input.stock-error {
+            border-color: #fca5a5;
+            transition: all 0.2s ease;
+        }
+        .stock-input.stock-error:hover,
+        .stock-input.stock-error:focus {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+            outline: none;
+        }
     </style>
 
     <!-- Products Table (Hidden initially) -->
@@ -369,8 +395,37 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label for="product-description" class="block text-xs font-medium text-gray-500 mb-1">Nombre</label>
-                                <input type="text" id="product-description" name="product-description" value=""
+                                <input type="text" id="product-description" name="product-description" value="" placeholder="Escriba el nombre del producto"
                                     class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Unidad -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Unidad</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Unidad seleccionada</label>
+                                <div id="product-unit-buttons" class="flex flex-wrap gap-2"></div>
+                                <input type="hidden" id="product-unit-factor" value="1" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Costo -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Costo</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label for="unit-cost" class="block text-xs font-medium text-gray-500 mb-1">Costo Unitario</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="unit-cost" name="unit-cost" value=""
+                                        class="pl-7 w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 text-right">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -472,6 +527,12 @@
                 </div>
             </div>
         </div>
+        <!-- Acciones del modal (fuera de las pestañas) -->
+        <div id="product-detail-actions" class="flex justify-end gap-2 px-6 pb-4 border-t">
+            <button id="product-detail-save" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">
+                Guardar
+            </button>
+        </div>
     </div>
 </div>
 
@@ -569,6 +630,65 @@
                 inputEl.value = '0';
             }
         } catch (e) { }
+    }
+
+    // Validaciones de precios del modal: max >= oferta >= mayor >= minimo y no negativos
+    function setupPriceValidation() {
+        try {
+            const maxEl = document.getElementById('maximum-price');
+            const offerEl = document.getElementById('offer-price');
+            const higherEl = document.getElementById('higher-price');
+            const minEl = document.getElementById('minimum-price');
+            const inputs = [maxEl, offerEl, higherEl, minEl].filter(Boolean);
+
+            const parseNum = (v) => {
+                const n = Number(v);
+                return isFinite(n) ? n : NaN;
+            };
+
+            const runValidation = () => {
+                // Limpiar errores previos
+                inputs.forEach(el => el.classList.remove('price-error'));
+                // No negativos
+                inputs.forEach(el => { try { sanitizeNonNegative(el); } catch (e) { } });
+
+                const max = parseNum(maxEl && maxEl.value);
+                const offer = parseNum(offerEl && offerEl.value);
+                const higher = parseNum(higherEl && higherEl.value);
+                const min = parseNum(minEl && minEl.value);
+
+                // max >= oferta
+                if (isFinite(max) && isFinite(offer) && max < offer) {
+                    if (maxEl) maxEl.classList.add('price-error');
+                    if (offerEl) offerEl.classList.add('price-error');
+                }
+                // oferta >= mayor
+                if (isFinite(offer) && isFinite(higher) && offer < higher) {
+                    if (offerEl) offerEl.classList.add('price-error');
+                    if (higherEl) higherEl.classList.add('price-error');
+                }
+                // mayor >= minimo
+                if (isFinite(higher) && isFinite(min) && higher < min) {
+                    if (higherEl) higherEl.classList.add('price-error');
+                    if (minEl) minEl.classList.add('price-error');
+                }
+            };
+
+            // Adjuntar listeners una sola vez por input
+            inputs.forEach(inp => {
+                inp.classList.add('price-input');
+                if (!inp.dataset.validationAttached) {
+                    const handler = () => runValidation();
+                    inp.addEventListener('input', handler);
+                    inp.addEventListener('change', handler);
+                    inp.dataset.validationAttached = 'true';
+                }
+            });
+
+            runValidation();
+        } catch (e) {
+            console.error('setupPriceValidation error:', e);
+        }
     }
 
     // Product Search Button Handler
@@ -672,7 +792,12 @@
         if (!data || !data.ok || !data.item) {
             throw new Error(data && data.error ? data.error : 'Producto no encontrado');
         }
-        return data.item;
+        // Normalizar a un único objeto para el modal
+        const items = Array.isArray(data.item) ? data.item : [data.item];
+        if (!items.length) {
+            throw new Error('Producto no encontrado');
+        }
+        return items[0];
     }
     // Exponer opcionalmente para reutilizar desde otros scripts
     window.fetchProductHistoryByCode = fetchProductHistoryByCode;
@@ -680,36 +805,302 @@
     // Función reutilizable: renderizar el producto en el modal (pestaña General)
     function renderProductDetailInModal(item) {
         try {
+            // Aceptar tanto arreglo como objeto
+            const data = Array.isArray(item) ? (item[0] || {}) : (item || {});
+            // Guardar referencia global del producto para uso en guardado
+            try { window.currentProductForModal = data; } catch (e) {}
+
             const codeEl = document.getElementById('product-code');
             const descEl = document.getElementById('product-description');
             const maxEl = document.getElementById('maximum-price');
             const offerEl = document.getElementById('offer-price');
             const higherEl = document.getElementById('higher-price');
             const minEl = document.getElementById('minimum-price');
+            const costEl = document.getElementById('unit-cost');
 
-            const code = item.product_code || item.code || '';
-            const description = item.product_description || item.description || '';
+            const code = data.product_code;
+            const description = data.product_description || data.description || '';
             if (codeEl) codeEl.value = code;
-            if (descEl) descEl.value = description;
+            if (descEl) {
+                descEl.value = description;
+                // Asegurar que sea editable
+                descEl.removeAttribute('disabled');
+                descEl.removeAttribute('readonly');
+                descEl.classList.remove('bg-gray-50');
+                descEl.classList.add('bg-white');
+            }
 
             // Seleccionar unidad principal si existe
-            const units = Array.isArray(item.units) ? item.units : [];
+            const units = Array.isArray(data.units) ? data.units : [];
             const mainUnit = units.find(u => u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1)) || units[0] || {};
             const getNum = (v) => (v != null && v !== '' && isFinite(Number(v))) ? Number(v).toFixed(2) : '';
-            const maximum = mainUnit.maximum_price ?? item.maximum_price;
-            const offer = mainUnit.offer_price ?? item.offer_price;
-            const higher = mainUnit.higher_price ?? item.higher_price;
-            const minimum = mainUnit.minimum_price ?? item.minimum_price;
+            const maximum = mainUnit.maximum_price ?? data.maximum_price;
+            const offer = mainUnit.offer_price ?? data.offer_price;
+            const higher = mainUnit.higher_price ?? data.higher_price;
+            const minimum = mainUnit.minimum_price ?? data.minimum_price;
+            const unitCost = mainUnit.unitary_cost ?? data.unitary_cost;
 
-            if (maxEl) maxEl.value = getNum(maximum);
-            if (offerEl) offerEl.value = getNum(offer);
-            if (higherEl) higherEl.value = getNum(higher);
-            if (minEl) minEl.value = getNum(minimum);
+            // Mostrar valores brutos (con impuestos)
+            const saleTax = (data && data.sale_tax) || (mainUnit && mainUnit.sale_tax) || '';
+            const buyTax = (data && data.buy_tax) || (mainUnit && mainUnit.buy_tax) || '';
+            let saleAliquot = Number((data && data.sale_aliquot) ?? (mainUnit && mainUnit.sale_aliquot) ?? 16);
+            let buyAliquot = Number((data && data.buy_aliquot) ?? (mainUnit && mainUnit.buy_aliquot) ?? 16);
+            if (!isFinite(saleAliquot)) saleAliquot = 16;
+            if (!isFinite(buyAliquot)) buyAliquot = 16;
+            const saleDiv = (saleTax === '01') ? (1 + saleAliquot / 100) : 1.0;
+            const buyDiv = (buyTax === '01') ? (1 + buyAliquot / 100) : 1.0;
+
+            const toGross = (val, div) => {
+                const n = Number(val);
+                if (!isFinite(n)) return '';
+                return (n * div).toFixed(2);
+            };
+
+            if (maxEl) maxEl.value = toGross(maximum, saleDiv);
+            if (offerEl) offerEl.value = toGross(offer, saleDiv);
+            if (higherEl) higherEl.value = toGross(higher, saleDiv);
+            if (minEl) minEl.value = toGross(minimum, saleDiv);
+            if (costEl) costEl.value = toGross(unitCost, buyDiv);
+
+            // Activar validaciones de precios
+            setupPriceValidation();
+            // Inicializar selector de unidad
+            setupUnitSelect(data);
+
+            // Renderizar parámetros por depósito en la pestaña "Parametros"
+            try { renderDepositParameters(data); } catch (e) { console.error('renderDepositParameters error:', e); }
         } catch (e) {
             console.error('Error renderizando producto en modal:', e);
         }
     }
     window.renderProductDetailInModal = renderProductDetailInModal;
+
+    // Vincula inputs de parámetros para reflejar cambios en currentProductForModal
+    function attachParameterInputsHandlers(item) {
+        try {
+            const container = document.getElementById('product-detail-tab-parametros-content');
+            if (!container) return;
+            const ref = (typeof window !== 'undefined' && window.currentProductForModal) ? window.currentProductForModal : (item || {});
+            if (!ref.parameters || !Array.isArray(ref.parameters)) {
+                ref.parameters = Array.isArray(item && item.parameters) ? item.parameters : [];
+            }
+            const byStore = {};
+            ref.parameters.forEach(p => { if (p && p.store_code) byStore[String(p.store_code)] = p; });
+            const parseNum = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
+            const onChange = (ev) => {
+                const el = ev.target;
+                if (!el) return;
+                const store = el.getAttribute('data-store-code');
+                if (!store) return;
+                const param = byStore[String(store)];
+                if (!param) return;
+                if (el.classList.contains('param-min')) {
+                    param.minimal_stock = parseNum(el.value);
+                } else if (el.classList.contains('param-max')) {
+                    param.maximum_stock = parseNum(el.value);
+                }
+                try { validateStockForStore(store); } catch (e) {}
+            };
+            container.querySelectorAll('.param-min, .param-max').forEach(inp => {
+                inp.addEventListener('input', onChange);
+                inp.addEventListener('change', onChange);
+            });
+            try { window.currentProductForModal = ref; } catch (e) {}
+        } catch (e) {
+            console.error('attachParameterInputsHandlers failed:', e);
+        }
+    }
+
+    // Validación de stock: máximo >= mínimo por depósito
+    function validateStockForStore(storeCode) {
+        try {
+            const container = document.getElementById('product-detail-tab-parametros-content');
+            if (!container) return;
+            const minEl = container.querySelector(`.param-min[data-store-code="${storeCode}"]`);
+            const maxEl = container.querySelector(`.param-max[data-store-code="${storeCode}"]`);
+            if (!minEl || !maxEl) return;
+            // Sanitizar no negativos
+            try { sanitizeNonNegative(minEl); } catch (e) {}
+            try { sanitizeNonNegative(maxEl); } catch (e) {}
+            const min = Number(minEl.value);
+            const max = Number(maxEl.value);
+            // Limpiar errores previos
+            minEl.classList.remove('stock-error');
+            maxEl.classList.remove('stock-error');
+            // Solo validar si ambos son números válidos
+            if (isFinite(min) && isFinite(max) && max < min) {
+                minEl.classList.add('stock-error');
+                maxEl.classList.add('stock-error');
+                return false;
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    function setupStockValidation() {
+        try {
+            const container = document.getElementById('product-detail-tab-parametros-content');
+            if (!container) return;
+            const inputs = container.querySelectorAll('.param-min, .param-max');
+            const handler = (ev) => {
+                const el = ev.target;
+                const store = el && el.getAttribute('data-store-code');
+                if (store) validateStockForStore(store);
+            };
+            inputs.forEach(inp => {
+                if (!inp.dataset.stockValidationAttached) {
+                    inp.addEventListener('input', handler);
+                    inp.addEventListener('change', handler);
+                    inp.dataset.stockValidationAttached = 'true';
+                }
+            });
+            // Validar todo al iniciar
+            Array.from(new Set(Array.from(inputs).map(i => i.getAttribute('data-store-code')))).forEach(sc => validateStockForStore(sc));
+        } catch (e) { console.error('setupStockValidation error:', e); }
+    }
+
+    // Renderizar tarjetas de parámetros por depósito
+    function renderDepositParameters(item) {
+        const container = document.getElementById('product-detail-tab-parametros-content');
+        if (!container) return;
+        const params = Array.isArray(item && item.parameters) ? item.parameters : [];
+
+        const headerHtml = '<h4 class="text-sm font-semibold text-gray-900 mb-4 border-b pb-2">Parámetros por Depósito</h4>';
+        if (params.length === 0) {
+            container.innerHTML = headerHtml + '<div class="p-2 text-sm text-gray-500">Sin parámetros configurados para este producto.</div>';
+            return;
+        }
+
+        const safeNum = (v) => {
+            const n = Number(v);
+            return isFinite(n) ? n : 0;
+        };
+        const safeText = (v) => (v == null ? '' : String(v));
+
+        const cards = params.map(p => {
+            const store_cod = safeText(p.store_code);
+            const max = safeNum(p.maximum_stock);
+            const min = safeNum(p.minimal_stock);
+            const loc = safeText(p.location);
+            const corr = safeText(p.correlative);
+            const store = safeText(p.store_description);
+            return `
+                <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                    <h5 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        ${store_cod} - ${store}
+                    </h5>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Stock Mínimo</label>
+                            <input type="number" value="${min}" min="0" step="0.01" class="stock-input param-min w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" data-store-code="${store_cod}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Stock Máximo</label>
+                            <input type="number" value="${max}" min="0" step="0.01" class="stock-input param-max w-full bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-blue-500 focus:border-blue-500 block p-2 text-center" data-store-code="${store_cod}">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = headerHtml + `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${cards}</div>`;
+
+        // Adjuntar listeners para actualizar el objeto en memoria al editar min/max
+        try { attachParameterInputsHandlers(item); } catch (e) { console.error('attachParameterInputsHandlers error:', e); }
+        // Configurar validación de stock (máx >= mín)
+        try { setupStockValidation(); } catch (e) { console.error('setupStockValidation init error:', e); }
+    }
+
+    // Inicializar y manejar selector de unidad en el modal (con botones)
+    function setupUnitSelect(data) {
+        try {
+            const container = document.getElementById('product-unit-buttons');
+            const factorEl = document.getElementById('product-unit-factor');
+            if (!container) return;
+            const unitsRaw = Array.isArray(data.units) ? data.units : [];
+            const isMainUnit = (u) => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1));
+            const units = unitsRaw.slice().sort((a, b) => {
+                const am = isMainUnit(a);
+                const bm = isMainUnit(b);
+                return (am === bm) ? 0 : (am ? -1 : 1);
+            });
+
+            if (!units.length) {
+                container.innerHTML = '<span class="text-xs text-gray-500">(Unidad predeterminada)</span>';
+                if (factorEl) factorEl.value = '1';
+                return;
+            }
+
+            const buttonsHtml = units.map((u, idx) => {
+                const text = (u && (u.unit_description || u.description || u.unit_name || u.unit)) || `Unidad ${idx + 1}`;
+                const value = (u && (u.correlative != null)) ? String(u.correlative) : String(idx);
+                const factor = (u && u.conversion_factor != null) ? Number(u.conversion_factor) : 1;
+                const maximum = u && u.maximum_price != null ? Number(u.maximum_price) : null;
+                const offer = u && u.offer_price != null ? Number(u.offer_price) : null;
+                const higher = u && u.higher_price != null ? Number(u.higher_price) : null;
+                const minimum = u && u.minimum_price != null ? Number(u.minimum_price) : null;
+                const cost = u && u.unitary_cost != null ? Number(u.unitary_cost) : null;
+                const unitType = u && u.unit_type != null ? Number(u.unit_type) : null;
+                const main = (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1));
+                return `<button type="button" class="unit-btn px-3 py-1.5 rounded border text-xs ${main ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}" data-unit-code="${value}" data-unit-description="${text}" data-conversion-factor="${factor}" data-unit-type="${unitType ?? ''}" data-maximum="${maximum ?? ''}" data-offer="${offer ?? ''}" data-higher="${higher ?? ''}" data-minimum="${minimum ?? ''}" data-cost="${cost ?? ''}" data-main="${main ? 'true' : 'false'}">${text}</button>`;
+            }).join('');
+
+            container.innerHTML = buttonsHtml;
+
+            const buttons = container.querySelectorAll('.unit-btn');
+            const setNum = (el, v) => { if (!el) return; if (v == null || v === '') { el.value = ''; return; } const n = Number(v); el.value = isFinite(n) ? n.toFixed(2) : el.value; };
+
+            // Preparar divisores para mostrar valores brutos en el modal
+            const saleTax = (data && data.sale_tax) || '';
+            const buyTax = (data && data.buy_tax) || '';
+            let saleAliquot = Number((data && data.sale_aliquot) ?? 16);
+            let buyAliquot = Number((data && data.buy_aliquot) ?? 16);
+            if (!isFinite(saleAliquot)) saleAliquot = 16;
+            if (!isFinite(buyAliquot)) buyAliquot = 16;
+            const saleDiv = (saleTax === '01') ? (1 + saleAliquot / 100) : 1.0;
+            const buyDiv = (buyTax === '01') ? (1 + buyAliquot / 100) : 1.0;
+
+            const applyButton = (btn) => {
+                if (!btn) return;
+                buttons.forEach(b => b.classList.remove('bg-blue-600', 'text-white', 'border-blue-600'));
+                buttons.forEach(b => b.classList.add('bg-white', 'text-gray-800', 'border-gray-300'));
+                btn.classList.remove('bg-white', 'text-gray-800', 'border-gray-300');
+                btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+
+                const factor = Number(btn.getAttribute('data-conversion-factor'));
+                if (factorEl) factorEl.value = isFinite(factor) && factor > 0 ? String(factor) : '1';
+                const maxNet = btn.getAttribute('data-maximum');
+                const offNet = btn.getAttribute('data-offer');
+                const highNet = btn.getAttribute('data-higher');
+                const minNet = btn.getAttribute('data-minimum');
+                const costNet = btn.getAttribute('data-cost');
+                const toGross = (v, div) => { const n = Number(v); return isFinite(n) ? (n * div) : ''; };
+                setNum(document.getElementById('maximum-price'), toGross(maxNet, saleDiv));
+                setNum(document.getElementById('offer-price'), toGross(offNet, saleDiv));
+                setNum(document.getElementById('higher-price'), toGross(highNet, saleDiv));
+                setNum(document.getElementById('minimum-price'), toGross(minNet, saleDiv));
+                setNum(document.getElementById('unit-cost'), toGross(costNet, buyDiv));
+                try { setupPriceValidation(); } catch (e) {}
+            };
+
+            // Activar el primero que sea main, o el primero
+            let defaultBtn = Array.from(buttons).find(b => {
+                // Determinar main por estilo aplicado en construcción
+                return b.classList.contains('bg-blue-600');
+            }) || buttons[0];
+            applyButton(defaultBtn);
+
+            // Click handlers
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => applyButton(btn));
+            });
+        } catch (e) {
+            console.error('setupUnitSelect error:', e);
+        }
+    }
 
     function buildOrderDetailsHtml(orders) {
         try {
@@ -937,6 +1328,7 @@
                 data-brand="${brandVal}" 
                 data-code="${item.product_code}" 
                 data-desc="${item.product_description}"
+                data-buy-tax="${(item && (item.buy_tax || item.product_buy_tax)) || ''}"
                 data-over-max="${isOverMax}"
                 style="display: ${isOverMax ? 'none' : ''}">
                 <td class="px-4 py-3 text-center"><input type="checkbox" class="select-product" value="${item.product_code}" data-index="${i}" ${selectedIndices.has(item.product_code) ? 'checked' : ''}></td>
@@ -988,10 +1380,17 @@
                     try {
                         const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
                         const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
-                        const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
-                        return cost != null ? cost.toFixed(2) : '';
+                        const costBase = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                        if (costBase == null) return '';
+                        const buyTax = (item && (item.buy_tax || item.product_buy_tax)) || '';
+                        const displayCost = (buyTax === '01') ? (Number(costBase) * 1.16) : Number(costBase);
+                        return Number(displayCost).toFixed(2);
                     } catch (e) {
-                        return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                        const buyTax = (item && (item.buy_tax || item.product_buy_tax)) || '';
+                        const base = item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null;
+                        if (base == null) return '';
+                        const displayCost = (buyTax === '01') ? (Number(base) * 1.16) : Number(base);
+                        return Number(displayCost).toFixed(2);
                     }
                 })()}
                 </td>
@@ -1005,10 +1404,17 @@
                     try {
                         const units = (Array.isArray(item.units) && item.units.length) ? item.units : [];
                         const selUnit = units.find(u => (u && (u.main_unit === true || u.main_unit === 't' || u.main_unit === 1))) || units[0] || null;
-                        const cost = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
-                        return cost != null ? cost.toFixed(2) : '';
+                        const costBase = (selUnit && selUnit.unitary_cost != null) ? Number(selUnit.unitary_cost) : (item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null);
+                        if (costBase == null) return '';
+                        const buyTax = (item && (item.buy_tax || item.product_buy_tax)) || '';
+                        const displayCost = (buyTax === '01') ? (Number(costBase) * 1.16) : Number(costBase);
+                        return Number(displayCost).toFixed(2);
                     } catch (e) {
-                        return item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost).toFixed(2) : '';
+                        const buyTax = (item && (item.buy_tax || item.product_buy_tax)) || '';
+                        const base = item.product_provider_unitary_cost != null ? Number(item.product_provider_unitary_cost) : null;
+                        if (base == null) return '';
+                        const displayCost = (buyTax === '01') ? (Number(base) * 1.16) : Number(base);
+                        return Number(displayCost).toFixed(2);
                     }
                 })()}">
                 </td>
@@ -1156,14 +1562,18 @@
                 const costAttr = opt ? opt.getAttribute('data-cost') : null;
                 const costNum = costAttr != null && costAttr !== '' ? Number(costAttr) : null;
                 const lastCell = document.querySelector(`.last-cost-cell[data-index="${idx}"]`);
+                // Determinar si debe mostrarse con impuesto de compra
+                const row = sel.closest('tr');
+                const buyTax = row ? (row.getAttribute('data-buy-tax') || '') : '';
+                const displayCost = (costNum != null && isFinite(costNum)) ? ((buyTax === '01') ? (costNum * 1.16) : costNum) : null;
                 if (lastCell) {
-                    lastCell.textContent = (costNum != null && isFinite(costNum)) ? costNum.toFixed(2) : '';
+                    lastCell.textContent = (displayCost != null && isFinite(displayCost)) ? displayCost.toFixed(2) : '';
                 }
                 // Si el usuario desea que el costo de compra siga el costo de unidad seleccionada
                 try {
                     const costInput = document.querySelector(`.purchase-cost-input[data-index="${idx}"]`);
-                    if (costInput && (costNum != null && isFinite(costNum))) {
-                        costInput.value = costNum.toFixed(2);
+                    if (costInput && (displayCost != null && isFinite(displayCost))) {
+                        costInput.value = displayCost.toFixed(2);
                     }
                 } catch (e) { }
                 // Recalcular resumen
@@ -1891,6 +2301,156 @@
                 }
             }
         });
+
+        // Sanitizar costo unitario del modal
+        (function attachCostSanitizer() {
+            const costEl = document.getElementById('unit-cost');
+            if (!costEl) return;
+            const handler = () => { try { sanitizeNonNegative(costEl); } catch (e) {} };
+            costEl.addEventListener('change', handler);
+            costEl.addEventListener('blur', handler);
+        })();
+
+        // Guardar cambios del modal de producto: envía selección al backend
+        (function attachSaveHandler() {
+            const saveBtn = document.getElementById('product-detail-save');
+            if (!saveBtn) return;
+
+            const parseNum = (el) => {
+                if (!el) return null;
+                const v = Number(el.value);
+                return isFinite(v) ? v : null;
+            };
+
+            const getDataAttr = (opt, name) => {
+                if (!opt) return null;
+                return (opt.dataset && name in opt.dataset)
+                    ? opt.dataset[name]
+                    : opt.getAttribute(`data-${name.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`);
+            };
+
+            saveBtn.addEventListener('click', async function () {
+                try {
+                    const codeEl = document.getElementById('product-code');
+                    const descEl = document.getElementById('product-description');
+                    const maxEl = document.getElementById('maximum-price');
+                    const offerEl = document.getElementById('offer-price');
+                    const higherEl = document.getElementById('higher-price');
+                    const minEl = document.getElementById('minimum-price');
+                    const unitBtn = document.querySelector('#product-unit-buttons .unit-btn.bg-blue-600');
+
+                    // Construir arreglo de todas las unidades presentes en el modal
+                    const unitButtons = Array.from(document.querySelectorAll('#product-unit-buttons .unit-btn'));
+                    const unitsPayload = unitButtons.map(btn => {
+                        const isActive = (btn === unitBtn);
+                        const unit_code = getDataAttr(btn, 'unitCode') || null;
+                        const unit_description = getDataAttr(btn, 'unitDescription') || '';
+                        const conversion_factor = Number(getDataAttr(btn, 'conversionFactor')) || null;
+                        const unit_type = Number(getDataAttr(btn, 'unitType')) || null;
+                        // Si es la activa, tomar los valores editados del usuario
+                        const maximum_price = isActive ? parseNum(maxEl) : (Number(getDataAttr(btn, 'maximum')) || null);
+                        const offer_price = isActive ? parseNum(offerEl) : (Number(getDataAttr(btn, 'offer')) || null);
+                        const higher_price = isActive ? parseNum(higherEl) : (Number(getDataAttr(btn, 'higher')) || null);
+                        const minimum_price = isActive ? parseNum(minEl) : (Number(getDataAttr(btn, 'minimum')) || null);
+                        const unitary_cost = isActive ? parseNum(document.getElementById('unit-cost')) : (Number(getDataAttr(btn, 'cost')) || null);
+                        const main_unit = String(getDataAttr(btn, 'main') || '').toLowerCase() === 'true';
+                        return {
+                            unit_code,
+                            unit_description,
+                            conversion_factor,
+                            unit_type,
+                            maximum_price,
+                            offer_price,
+                            higher_price,
+                            minimum_price,
+                            unitary_cost,
+                            main_unit
+                        };
+                    });
+
+                    const current = (typeof window !== 'undefined' && window.currentProductForModal) ? window.currentProductForModal : {};
+                    // Validar parámetros de stock antes de enviar: máximo >= mínimo
+                    if (current && Array.isArray(current.parameters) && current.parameters.length) {
+                        let invalidStore = null;
+                        for (const p of current.parameters) {
+                            const minS = Number(p.minimal_stock);
+                            const maxS = Number(p.maximum_stock);
+                            if (isFinite(minS) && isFinite(maxS) && maxS < minS) {
+                                invalidStore = p.store_code || '';
+                                break;
+                            }
+                        }
+                        if (invalidStore != null) {
+                            // Resaltar inputs del depósito inválido
+                            try { validateStockForStore(String(invalidStore)); } catch (e) {}
+                            alert('Stock Máximo debe ser mayor o igual que Stock Mínimo en cada depósito.');
+                            return;
+                        }
+                    }
+                    const depositParameters = Array.isArray(current.parameters) ? current.parameters.map(p => ({
+                        store_code: p.store_code || null,
+                        store_description: p.store_description || null,
+                        correlative: p.correlative || null,
+                        location: p.location || null,
+                        minimal_stock: isFinite(Number(p.minimal_stock)) ? Number(p.minimal_stock) : null,
+                        maximum_stock: isFinite(Number(p.maximum_stock)) ? Number(p.maximum_stock) : null
+                    })) : [];
+
+                    const payload = {
+                        product_code: codeEl ? codeEl.value : null,
+                        description: descEl ? descEl.value : null,
+                        provider_code: (typeof selectedProvider === 'object' && selectedProvider && selectedProvider.provider_code) ? selectedProvider.provider_code : null,
+                        unit_code: unitBtn ? (getDataAttr(unitBtn, 'unitCode') || null) : null,
+                        unit_description: unitBtn ? (getDataAttr(unitBtn, 'unitDescription') || '') : null,
+                        conversion_factor: unitBtn ? Number(getDataAttr(unitBtn, 'conversionFactor')) || null : null,
+                        unit_type: unitBtn ? Number(getDataAttr(unitBtn, 'unitType')) || null : null,
+                        maximum_price: parseNum(maxEl),
+                        offer_price: parseNum(offerEl),
+                        higher_price: parseNum(higherEl),
+                        minimum_price: parseNum(minEl),
+                        unitary_cost: parseNum(document.getElementById('unit-cost')),
+                        units: unitsPayload,
+                        parameters: depositParameters
+                    };
+
+                    if (!payload.product_code) {
+                        alert('Debe existir un código de producto para actualizar.');
+                        return;
+                    }
+
+                    const res = await fetch('/shopping/api/product/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data || data.ok === false) {
+                        const msg = (data && data.error) ? data.error : 'Error al actualizar producto.';
+                        alert(msg);
+                        return;
+                    }
+
+                    // Actualizar tabla y datos locales con la nueva descripción
+                    try {
+                        const descValue = (document.getElementById('product-description')?.value || '').trim();
+                        if (Array.isArray(currentItems) && payload.product_code) {
+                            const idx = currentItems.findIndex(it => String(it.product_code) === String(payload.product_code));
+                            if (idx >= 0) {
+                                currentItems[idx].product_description = descValue;
+                                currentItems[idx].description = descValue;
+                                try { renderTable(currentItems); } catch (e) {}
+                            }
+                        }
+                    } catch (e) { console.warn('No se pudo refrescar la tabla tras actualizar descripción:', e); }
+
+                    alert('Producto actualizado correctamente.');
+                    try { window.closeProductDetailModal && window.closeProductDetailModal(); } catch (e) {}
+                } catch (e) {
+                    console.error('Error al enviar actualización de producto:', e);
+                    alert('Error inesperado al actualizar el producto.');
+                }
+            });
+        })();
 
         // Exponer funciones globalmente para uso externo
         window.openProductDetailModal = openProductDetailModal;
