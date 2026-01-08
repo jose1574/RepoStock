@@ -78,21 +78,6 @@ def api_products_history_by_provider(provider_code):
             # Esto es solo un placeholder, la lógica real puede ser más compleja
             p['suggested_quantity'] = 0 
             
-        # --- NUEVO: Guardar en sesión ---
-        # Convertimos la lista en un diccionario indexado por código de producto
-        # para recuperarlo fácilmente en el guardado.
-        products_map = {p['product_code']: p for p in products if 'product_code' in p}
-        session['current_auto_order_products'] = products_map
-        
-        # Guardar proveedor en sesión
-        provider_obj = get_provider_by_code(provider_code)
-        if provider_obj:
-            session['current_auto_order_provider'] = provider_obj.to_dict()
-            print(f"--- DEBUG: Proveedor {provider_code} guardado en sesión ---")
-            
-        session.modified = True
-        print(f"--- DEBUG: {len(products_map)} productos guardados en sesión ---")
-        # --------------------------------
 
         return jsonify({'ok': True, 'items': products})
     except Exception as e:
@@ -106,7 +91,8 @@ def api_products_history_by_provider(provider_code):
 def api_products_history_by_product_code(product_code):
     try:
         provider_code = request.args.get('provider_code')
-        item = get_products_history_by_provider(None, product_code)
+        # Pasar provider_code a la capa de datos para filtrar el historial del proveedor específico
+        item = get_products_history_by_provider(provider_code, product_code)
         if not item:
             return jsonify({'ok': False, 'error': 'Product history not found'}), 404
         # Convertir Decimal a float

@@ -847,6 +847,9 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
                 ORDER BY p.code
             """
 
+            # Ejecutar consulta para el caso sin proveedor pero con product_code
+            cur.execute(sql_products_provider, (product_code,))
+
         else:
             # 1b. Caso sin product_code: Listar todo el historial del proveedor (FROM products_provider)
             sql_products_provider = """
