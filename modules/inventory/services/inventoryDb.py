@@ -422,7 +422,42 @@ def get_products_by_codes(codes):
         close_connection(conn)
 
 
-
+def update_minmax_product_failure(
+    store_code: str,
+    product_code: str,
+    minimal_stock: int | None,
+    maximum_stock: int | None,
+):
+    """Actualiza únicamente los campos minimal_stock y maximum_stock en products_failures.
+    Si no existe el registro, lo inserta (location queda NULL por defecto).
+    """
+    sql_update = """
+    UPDATE products_failures
+    SET minimal_stock = %s,
+        maximum_stock = %s
+    WHERE product_code = %s AND store_code = %s
+    """
+    sql_insert = """
+    INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
+    VALUES (%s, %s, %s, %s, NULL)
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                sql_update, (minimal_stock, maximum_stock, product_code, store_code)
+            )
+            if cur.rowcount == 0:
+                cur.execute(
+                    sql_insert, (product_code, store_code, minimal_stock, maximum_stock)
+                )
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar min/max en products_failures: {e}")
+        conn.rollback()
+        raise
+    finally:
+        close_connection(conn)
 
 
 __all__ = [

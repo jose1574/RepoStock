@@ -31,6 +31,7 @@ from modules.inventory.services.inventoryDb import (
     get_marks,
     get_stores,
     get_products_by_codes,
+    update_minmax_product_failure,
     update_product_failure_params
 )
 
@@ -58,7 +59,6 @@ def get_pdfkit_config():
 
 
 from db import (
-    get_collection_products,
     get_correlative_product_unit,
     get_document_no_inventory_operation,
     get_inventory_operations_by_correlative,
@@ -73,7 +73,6 @@ from db import (
     search_products_with_stock_and_price,
     update_description_inventory_operations,
     update_inventory_operation_detail_amount,
-    update_minmax_product_failure,
     get_product_with_all_units,
 )
 from db import (
@@ -222,39 +221,6 @@ def save_collection_order():
        except Exception as e:
            print("Error save_collection_order:", e)
            return jsonify({"ok": False, "error": str(e)}), 500
-
-
-# Api para actualizar la existencia mim y max de un producto en products_failures
-@inventory_bp.route("/api/update_params_products_failures", methods=["POST"])
-def api_update_params_products_failures():
-    try:
-        data = request.get_json()
-        product_code = data.get("product_code")
-        store_code = data.get("store_code")
-        minimal_stock = data.get("minimal_stock")
-        maximum_stock = data.get("maximum_stock")
-        
-        if not product_code or not store_code:
-            return jsonify({"ok": False, "error": "Faltan product_code o store_code"}), 400
-        
-        print("Actualizando params en products_failures:", product_code, store_code, minimal_stock, maximum_stock)
-        
-        return jsonify({"ok": True, "message": "Parámetros llegan exitosamente."})
-    except Exception as e:
-        print("Error en api_update_params_products_failures:", e)
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 @inventory_bp.route("/destination-store-selection")
