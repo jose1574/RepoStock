@@ -860,6 +860,8 @@ def get_products_history_by_provider(provider_code: str, product_code: str = Non
                     p.department as product_department,
                     d.description as department_description,
                     pv.unitary_cost as product_provider_unitary_cost,
+                    p.buy_tax,
+                    p.sale_tax,
                     to_char(pv.emission_date, 'DD-MM-YYYY') as product_provider_emission_date,
                     pv.amount as product_provider_amount,
                     pv.coin_code as product_provider_coin,
@@ -1078,8 +1080,44 @@ def get_stores() -> list[dict]:
     except Exception as e:
         print(f"Error fetching stores: {e}")
         return []
+
+
+def get_shopping_operation_by_id(operation_id: int) -> dict:
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        # Obtener la operación
+        cur.execute("""
+            SELECT * FROM shopping_operation WHERE correlative = %s
+        """, (operation_id,))
+        operation_row = cur.fetchone()
+        if not operation_row:
+            return None
+        
+        colnames = [desc[0] for desc in cur.description]
+        operation = dict(zip(colnames, operation_row))
+        
+        # Obtener detalles
+        cur.execute("""
+            SELECT * FROM shopping_operation_details WHERE main_correlative = %s
+        """, (operation_id,))
+        detail_rows = cur.fetchall()
+        detail_colnames = [desc[0] for desc in cur.description]
+        details = [dict(zip(detail_colnames, row)) for row in detail_rows]
+        
+        operation['details'] = details
+        
+        return operation
+    
+    except Exception as e:
+        print(f"Error fetching shopping operation: {e}")
+        return None
     finally:
-        close_connection(conn)
+        try:
+            close_connection(conn)
+        except Exception:
+            pass
   
 __all__ = [
     "get_db_connection",
@@ -1100,5 +1138,6 @@ __all__ = [
     "get_stores",
     "get_product_in_order_by_code",
     "get_products_by_codes_list",
+    "get_shopping_operation_by_id",
 ]
 

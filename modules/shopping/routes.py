@@ -3,6 +3,36 @@ import io
 from datetime import date
 
 
+#definir la carpeta reports 
+
+
+
+import pdfkit
+import os
+
+# Configuración de wkhtmltopdf (Windows):
+WKHTMLTOPDF_BIN = os.environ.get("WKHTMLTOPDF_BIN")
+if not WKHTMLTOPDF_BIN:
+    possibles = [
+        r"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe",
+        r"C:\\Program Files (x86)\\wkhtmltopdf\\bin\\wkhtmltopdf.exe",
+    ]
+    for p in possibles:
+        if os.path.exists(p):
+            WKHTMLTOPDF_BIN = p
+            break
+
+def get_pdfkit_config():
+    if pdfkit is None:
+        return None
+    if not WKHTMLTOPDF_BIN or not os.path.exists(WKHTMLTOPDF_BIN):
+        return None
+    try:
+        return pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_BIN)
+    except Exception:
+        return None
+
+
 from modules.shopping.services.schemas.product import Product
 from modules.shopping.services.schemas.product_codes import ProductCodes
 from modules.shopping.services.schemas.product_units import ProductUnits
@@ -30,6 +60,7 @@ from modules.shopping.services.shoppingDb import (
     update_product,
     update_product_unit_price,
     update_product_failure,
+    get_shopping_operation_by_id,
 )
 
 shopping_bp = Blueprint('shopping', __name__, template_folder='templates', url_prefix='/shopping') 
@@ -410,9 +441,6 @@ def api_save_shopping_operation():
     try:
         # 1. Obtener datos JSON
         data = request.get_json()
-        print("--- DEBUG: Payload recibido ---")
-        print(data)
-        print("-------------------------------")
 
         # 2. validar proveedor exista
         provider_code = data.get('provider_code')
@@ -423,16 +451,17 @@ def api_save_shopping_operation():
             return jsonify({'ok': False, 'error': f'Provider with code {provider_code} not found'}), 400
 
         # 3. CALCULAR TOTALES DESDE EL BACKEND
-        details_data = data.get('details', [])
+        details_data
+        total_tax
+        total_net_detail 
+        total_operation 
         
         # Sumamos las cantidades (amount) y calculamos montos monetarios
         total_qty = sum(float(item.get('amount', 0)) for item in details_data)
         total_net = sum(float(item.get('amount', 0)) * float(item.get('unitary_cost', 0)) for item in details_data)
         
         # Asumiendo IVA del 16% si no es exento (puedes ajustar esta lógica)
-        tax_rate = 0.16 if not data.get('free_tax') else 0.0
-        total_tax = total_net * tax_rate
-        total_operation = total_net + total_tax
+        
         # 4. Construir el payload completo para la operación
         payload_header = SetShoppingOperationData(
             correlative=None,
@@ -468,14 +497,14 @@ def api_save_shopping_operation():
             total_amount=total_qty,
             total_net_details=total_net,
             total_tax_details=total_tax,
-            total_details=total_operation,
+            total_details=0,
             total_net=total_net,
             total_tax=total_tax,
-            total=total_operation,
+            total=0.0,
             total_retention_tax=0.0,
             total_retention_municipal=0.0,
             total_retention_islr=0.0,
-            total_operation=total_operation,
+            total_operation=0.0,
             retention_tax_prorration=0.0,
             retention_islr_prorration=0.0,
             retention_municipal_prorration=0.0,
@@ -509,6 +538,15 @@ def api_save_shopping_operation():
         for detail in details_data:
             product_code = detail.get('code_product')
             product_in_db = products_map.get(product_code)
+            # si el producto tiene buy_tax='01' entonces dividimos el IVA 
+            unitary_cost = float(detail.get('unitary_cost', 0)) / 1.16 if product_in_db and product_in_db.get('buy_tax') == '01' else float(detail.get('unitary_cost', 0))
+            total_net_gross = unitary_cost * float(detail.get('amount', 0))
+            total_tax_gross = total_net_gross * (float(product_in_db.get('buy_aliquot', 0.0)) / 100) if product_in_db else 0.0
+            total_gross = total_net_gross + total_tax_gross
+            total_net = total_net_gross
+            total_tax = total_tax_gross 
+            total = total_gross
+
 
             if not product_in_db:
                 print(f"--- WARNING: Producto con código {product_code} no encontrado en la base de datos. Se omite. ---")
@@ -541,12 +579,12 @@ def api_save_shopping_operation():
                 total_net_cost=float(detail.get('total_net_cost', 0)),
                 total_tax_cost=float(detail.get('total_tax_cost', 0)),
                 total_cost=float(detail.get('total_cost', 0)),
-                total_net_gross=float(detail.get('total_net_gross', 0)),
-                total_tax_gross=float(detail.get('total_tax_gross', 0)),
-                total_gross=float(detail.get('total_gross', 0)),
-                total_net=float(detail.get('total_net', 0)),
-                total_tax=float(detail.get('total_tax', 0)),
-                total=float(detail.get('total', 0)),
+                total_net_gross=total_net_gross,
+                total_tax_gross=total_tax_gross,
+                total_gross=total_gross,
+                total_net=total_net,
+                total_tax=total_tax,
+                total=total,
                 description=detail.get('description', ''),
                 technician=product_in_db.get('technician', '00'),
                 coin_code=payload_header.coin_code,
@@ -557,6 +595,56 @@ def api_save_shopping_operation():
             save_shopping_operation_detail(detail_payload)
             print(f"--- DEBUG: Detalle de producto {product_code} guardado ---")
         return jsonify({'ok': True, 'message': 'Operation saved successfully.', 'operation_id': operation_id})
+    except Exception as e:
+        print(f"Error saving shopping operation: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@shopping_bp.route('/pdf/<int:operation_id>', methods=['GET'])
+def get_shopping_operation_pdf(operation_id):
+    try:
+        operation = get_shopping_operation_by_id(operation_id)
+        if not operation:
+            return jsonify({'error': 'Operation not found'}), 404
+        
+        # Preparar detalles
+        detalles = []
+        for detail in operation['details']:
+            # Obtener descripción del producto
+            product = get_product_by_code(detail['code_product'])
+            if product:
+                # Obtener nombre de unidad
+                units = get_product_units_by_code(detail['code_product'])
+                unit_name = next((u['description'] for u in units if u['unit'] == detail['unit']), str(detail['unit']))
+                detalles.append({
+                    'codigo': detail['code_product'],
+                    'descripcion': product['description'],
+                    'unidad': unit_name,
+                    'cantidad': detail['amount'],
+                    'costo': detail['unitary_cost'],
+                    'subtotal': detail['amount'] * detail['unitary_cost']
+                })
+        
+        # Renderizar HTML
+        html = render_template('reports/shopping_operation_pdf.html',
+            correlativo=str(operation['correlative']),
+            documento_numero=operation['document_no'] or str(operation['correlative']),
+            fecha_emision=operation['emission_date'].strftime('%d/%m/%Y') if operation['emission_date'] else '',
+            detalles=detalles,
+            total_compra=operation['total']
+        )
+        
+        # Generar PDF
+        pdf = pdfkit.from_string(html, False, configuration=get_pdfkit_config())
+        
+        return send_file(io.BytesIO(pdf), mimetype='application/pdf', as_attachment=False, download_name=f'orden_compra_{operation_id}.pdf')
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
     except Exception as e:
         print(f"Error saving shopping operation: {e}")
         import traceback

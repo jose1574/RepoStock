@@ -2082,7 +2082,9 @@
                             total_net: lineTotal,
                             total: lineTotal,
                             coin_code: coinCode,
-                            unit_desc: opt ? opt.textContent || '' : ''
+                            unit_desc: opt ? opt.textContent || '' : '',
+                            buy_tax: item.buy_tax,
+
                         });
                         console.log('Detalle agregado:', details[details.length - 1]);
                     }
@@ -2110,7 +2112,9 @@
                     });
                     const data = await resp.json();
                     if (resp.ok && data && data.ok) {
-                        alert(`Orden guardada. ID: ${data.message}`);
+                        alert(`Orden guardada. ID: ${data.operation_id}`);
+                        // Abrir PDF en nueva ventana
+                        window.open(`/shopping/pdf/${data.operation_id}`, '_blank');
                         // Opcional: limpiar selección y recomputar
                         // selectedIndices.clear();
                         // computeAndRenderPurchaseSummary();
