@@ -204,7 +204,7 @@ def get_product_s_for_order_collection( store_origin: str, store_destination: st
         if product_code:
             cur.execute(sql_one_product, (store_origin, store_origin, store_destination, product_code))
         else:
-            cur.execute(sql_products, (store_origin, store_origin, store_destination))
+            cur.execute(sql_products, (store_destination, store_origin, store_destination))
         columns = [desc[0] for desc in cur.description]
         products = [dict(zip(columns, row)) for row in cur.fetchall()]
         print(f"Productos encontrados: {len(products)}")
