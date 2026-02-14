@@ -441,23 +441,27 @@ def update_minmax_product_failure(
     INSERT INTO products_failures (product_code, store_code, minimal_stock, maximum_stock, location)
     VALUES (%s, %s, %s, %s, NULL)
     """
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                sql_update, (minimal_stock, maximum_stock, product_code, store_code)
-            )
+    with get_db_connection() as conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(sql_update, (minimal_stock, maximum_stock, product_code, store_code))
             if cur.rowcount == 0:
                 cur.execute(
                     sql_insert, (product_code, store_code, minimal_stock, maximum_stock)
                 )
-        conn.commit()
-    except Exception as e:
-        print(f"Error al actualizar min/max en products_failures: {e}")
-        conn.rollback()
-        raise
-    finally:
-        close_connection(conn)
+            conn.commit()
+        except Exception as e:
+            print(f"Error al actualizar min/max en products_failures: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            try:
+                cur.close()
+            except Exception:
+                pass
 
 
 __all__ = [
